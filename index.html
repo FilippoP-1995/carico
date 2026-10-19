@@ -133,7 +133,7 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .hero-sum{border-radius:20px;padding:18px 16px 14px;color:var(--hero-ink);background:radial-gradient(120% 90% at 100% 0%,var(--hero-bg2) 0%,var(--hero-bg) 62%);display:flex;flex-direction:column;gap:16px;box-shadow:0 10px 30px rgba(20,26,43,.25);overflow:hidden}
 .hs-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .hs-hi{font-family:var(--f-display);font-weight:700;font-size:30px;text-transform:uppercase;line-height:1;letter-spacing:.02em}
-.hs-date{font-size:13px;color:var(--hero-mut);text-transform:capitalize;margin-top:4px}
+.hs-date{font-size:13px;color:var(--hero-mut);margin-top:4px}
 .streak{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:6px 10px}
 .streak svg{width:20px;height:20px;fill:var(--hero-d)}
 .streak b{font-family:var(--f-display);font-size:26px;line-height:1}
@@ -160,6 +160,38 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .insight{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;background:rgba(255,255,255,.07);border-radius:12px;padding:10px 12px}
 .insight svg{flex:none;width:18px;height:18px;fill:var(--hero-d);margin-top:1px}
 .insight b{color:#fff}
+.quote{font-size:14.5px;line-height:1.4;padding:2px 2px 0;display:flex;flex-direction:column;gap:3px}
+.quote .qk{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--hero-mut)}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badge-h{font-size:12.5px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:5px 10px;white-space:nowrap}
+.fab{position:fixed;z-index:15;width:58px;height:58px;border-radius:50%;border:0;display:grid;place-items:center;color:#fff;background:radial-gradient(120% 120% at 30% 20%,#3d63e0 0%,#1e2a52 70%);box-shadow:0 8px 24px rgba(20,26,43,.35),0 0 0 3px rgba(255,255,255,.6);touch-action:none;user-select:none;-webkit-user-select:none;transition:transform .15s}
+.fab svg{width:27px;height:27px;fill:none;stroke:#fff;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.fab.drag{transform:scale(1.08);transition:none}
+.fab::after{content:"";position:absolute;top:6px;right:6px;width:11px;height:11px;border-radius:50%;background:var(--hero-g);border:2px solid #1e2a52}
+.sheet{position:fixed;inset:0;z-index:30;background:var(--bg);display:flex;flex-direction:column}
+.sh-head{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-bottom:1px solid var(--line);background:var(--surface)}
+.sh-head .t{flex:1;min-width:0}
+.sh-head .t b{font-family:var(--f-display);font-size:24px;text-transform:uppercase;letter-spacing:.02em;display:block;line-height:1}
+.sh-head .t span{font-size:12.5px;color:var(--muted)}
+.msgs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px max(16px,env(safe-area-inset-right,0px)) 14px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px}
+.bub{max-width:88%;padding:10px 13px;border-radius:16px;font-size:15px;line-height:1.45;word-wrap:break-word}
+.bub.u{align-self:flex-end;background:var(--accent);color:var(--on-accent);border-bottom-right-radius:5px;white-space:pre-wrap}
+.bub.a{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:5px}
+.bub.a p{margin:0 0 6px} .bub.a p:last-child{margin:0}
+.bub.a ul{margin:4px 0 6px;padding-left:18px} .bub.a li{margin:2px 0}
+.bub.err{border-color:var(--danger);color:var(--danger)}
+.coach-hi{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.coach-hi p{margin:0;font-size:15px;line-height:1.45}
+.qchips{display:flex;flex-wrap:wrap;gap:8px}
+.qchip{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:9px 12px;font-size:14px;font-weight:600;text-align:left;color:inherit}
+.composer{display:flex;gap:8px;align-items:flex-end;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));border-top:1px solid var(--line);background:var(--surface)}
+.composer textarea{flex:1;min-height:46px;max-height:140px;resize:none;border:1px solid var(--line);background:var(--surface-2);border-radius:14px;padding:11px 12px;font-size:16px;line-height:1.35;color:var(--ink)}
+.composer .send{width:46px;height:46px;border-radius:50%;border:0;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.composer .send svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.typing{display:inline-flex;gap:4px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:tp 1s infinite ease-in-out}
+.typing i:nth-child(2){animation-delay:.15s} .typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -263,6 +295,8 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 </div>
 <div class="timer" id="timer" hidden></div>
 <div class="toast" id="toast" hidden></div>
+<button id="fab" class="fab" aria-label="Apri il coach" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9l-4.5 3.5V15.5H4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke-width="2.6"/></svg></button>
+<div id="coach" class="sheet" hidden role="dialog" aria-label="Coach"></div>
 <nav class="tabs" aria-label="Sezioni">
   <div class="in-nav">
     <button data-tab="oggi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Oggi</button>
@@ -297,7 +331,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "1.6 · 20 ottobre";
+const APP_VERSION = "1.7 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -673,6 +707,21 @@ function itemLi(it, rm) {
 
 
 /* ---------- riepilogo in "Oggi" ---------- */
+const QUOTES = ["💪 Il risultato di domani si costruisce con la serie di oggi.", "🔥 Non serve essere perfetti, serve essere costanti.", "🏋️ Un chilo in più sul bilanciere è comunque un passo avanti.", "🥗 Gli addominali si costruiscono in palestra e si scoprono in cucina.", "⏱️ Il recupero fa parte dell'allenamento: rispettalo.", "🎯 Pensa alla prossima ripetizione, non all'ultima.", "🚀 Ogni allenamento segnato è la prova che ci stai credendo.", "😤 I giorni in cui non hai voglia sono quelli che contano di più.", "📈 Piccoli progressi ogni settimana diventano grandi cambiamenti in un anno.", "🍳 Proteine a ogni pasto: i muscoli ringraziano.", "💧 Bevi acqua: anche la performance passa da lì.", "😴 Dormire bene è il miglior integratore che esista.", "🧠 La testa si stanca prima dei muscoli. Ancora una serie.", "🏆 Il tuo unico avversario è la versione di te della settimana scorsa.", "⚡ Inizia: la voglia arriva dopo il riscaldamento.", "🙌 Presentarsi anche oggi è già metà del lavoro.", "🎶 Metti la playlist migliore e spingi.", "🧱 Mattone dopo mattone: così si costruisce un fisico.", "🌅 Fatto oggi è meglio di perfetto domani.", "🥇 La disciplina batte la motivazione, sempre."];
+function dailyQuote() { const d = parseD(S.date); const n = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5); return QUOTES[n % QUOTES.length]; }
+function badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet }) {
+  const b = [];
+  if (day && l && l.w.dayId === day.id && l.w.done) b.push("💪 Allenamento di oggi fatto");
+  if (streak >= 3) b.push(`🔥 ${streak} giorni di fila`);
+  if (pr) b.push("🏆 Nuovo record");
+  if (weekN >= target) b.push("✅ Settimana completata");
+  if (hasDiet && Tg.p && t.p >= Tg.p * 0.95) b.push("🥩 Proteine centrate");
+  if (hasDiet && Tg.kcal && Math.abs(t.kcal - Tg.kcal) <= Tg.kcal * 0.05) b.push("🎯 Calorie in target");
+  if (sess.length >= 10) b.push(`🎖️ ${sess.length} allenamenti`);
+  if (!b.length) b.push(sess.length ? "👊 Oggi si spinge" : "🚀 Pronto a partire");
+  return `<div class="badges">${b.map(x => `<span class="badge-h">${esc(x)}</span>`).join("")}</div>`;
+}
+
 function dayHasActivity(d) { const l = S.days[d]; if (!l) return false; return setsDone(l) > 0 || Object.keys((l.m && l.m.eaten) || {}).length > 0 || ((l.m && l.m.extra) || []).length > 0; }
 function weekStart(d) { const x = parseD(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
 function sessionVolume(d) { let v = 0; const ex = (S.days[d] && S.days[d].w && S.days[d].w.ex) || {}; for (const k in ex) (ex[k].s || []).forEach(s => { if (s && s.done) v += (num(s.kg) || 0) * (num(s.reps) || 0); }); return v; }
@@ -690,7 +739,7 @@ function ring(pct, color, label, val) {
     <span class="rv">${val}</span></div><span class="rl">${label}</span></div>`;
 }
 function summaryCard() {
-  const h = new Date().getHours(); const hi = h < 12 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera";
+  const h = new Date().getHours(); const hi = h < 12 ? "Buongiorno ☀️" : h < 18 ? "Buon pomeriggio 💪" : "Buonasera 🌙";
   // allenamento di oggi
   const day = currentDay(); const l = peekLog();
   const done = day && l && l.w.dayId === day.id ? setsDone(l) : 0; const tot = day ? totalSets(day) : 0;
@@ -741,6 +790,8 @@ function summaryCard() {
       ${stat(sess.filter(d => d.slice(0, 7) === S.date.slice(0, 7)).length, "Allenamenti nel mese", sess.length ? `${sess.length} in totale` : "")}
     </div>
     <div class="insight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 5.6L20 9.3l-4.3 3.9 1.2 5.8L12 16l-4.9 3 1.2-5.8L4 9.3l5.6-.7z"/></svg><span>${insight}</span></div>
+    ${badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet })}
+    <div class="quote"><span class="qk">Frase del giorno</span>${esc(dailyQuote())}</div>
   </section>`;
 }
 
@@ -1218,6 +1269,9 @@ function vProgressi() {
   </div>`;
 }
 
+const PANELS = new Set((() => { try { return JSON.parse(lsGet("carico.panels") || "[]"); } catch (e) { return []; } })());
+const pnlOpen = k => PANELS.has(k) ? "open" : "";
+document.addEventListener("toggle", ev => { const d = ev.target; if (!d.dataset || !d.dataset.pnl) return; if (d.open) PANELS.add(d.dataset.pnl); else PANELS.delete(d.dataset.pnl); lsSet("carico.panels", JSON.stringify([...PANELS])); }, true);
 function vPiano() {
   const busy = S.importBusy;
   const p = S.pending;
@@ -1231,7 +1285,7 @@ function vPiano() {
         <label class="btn primary" for="fileIn" ${busy ? 'aria-disabled="true"' : ""}>Scegli foto o PDF</label>
         <input id="fileIn" type="file" accept="image/*,application/pdf" multiple hidden ${busy ? "disabled" : ""}>
       </div>
-      <details><summary class="small" style="cursor:pointer;font-weight:600">Oppure incolla il testo</summary>
+      <details data-pnl="paste" ${pnlOpen("paste")}><summary class="small" style="cursor:pointer;font-weight:600">Oppure incolla il testo</summary>
         <div class="stack" style="margin-top:10px"><textarea class="in" id="pasteIn" placeholder="Incolla qui la scheda o la dieta, così come te l'hanno mandata (WhatsApp, email…)"></textarea>
         <button class="btn" data-act="import-text" ${busy ? "disabled" : ""}>Leggi il testo</button></div>
       </details>
@@ -1241,7 +1295,7 @@ function vPiano() {
         <div class="row"><button class="btn primary" data-act="import-save" style="flex:1">Salva nel piano</button><button class="btn" data-act="import-cancel">Scarta</button></div>` : ""}
     </div>
 
-    <details class="card" ${days.length ? "open" : ""}><summary>Scheda di allenamento <span class="small muted" style="font-weight:500;margin-left:auto">${days.length} giorni</span></summary>
+    <details class="card" data-pnl="w" ${pnlOpen("w")}><summary>Scheda di allenamento <span class="small muted" style="font-weight:500;margin-left:auto">${days.length} giorni</span></summary>
       <div class="stack" style="margin-top:12px">
       ${days.map((d, di) => `<div class="stack" style="background:var(--surface-2);border-radius:12px;padding:12px">
         <div class="row"><input class="in" data-e="day-name" data-d="${d.id}" value="${esc(d.name)}" aria-label="Nome del giorno" style="font-weight:700">
@@ -1263,7 +1317,7 @@ function vPiano() {
       </div>
     </details>
 
-    <details class="card"><summary>Piano alimentare <span class="small muted" style="font-weight:500;margin-left:auto">${vars.reduce((a, v) => a + (v.meals || []).length, 0)} pasti</span></summary>
+    <details class="card" data-pnl="d" ${pnlOpen("d")}><summary>Piano alimentare <span class="small muted" style="font-weight:500;margin-left:auto">${vars.reduce((a, v) => a + (v.meals || []).length, 0)} pasti</span></summary>
       <div class="stack" style="margin-top:12px">
       <span class="small muted">Obiettivi giornalieri dalla tua scheda. Se li lasci vuoti uso la somma dei pasti.</span>
       <div class="grid4" style="grid-template-columns:repeat(4,1fr)">
@@ -1733,6 +1787,176 @@ function applyPending() {
   if (p.diet) { P.diet = p.diet; S.selVariant = null; for (const d in S.days) { const m = S.days[d].m; if (m) { m.pick = {}; m.eaten = {}; m.manual = {}; } } Object.keys(S.days).forEach(d => store.saveDay(d)); }
   S.pending = null; S.importMsg = null; store.saveProfile();
 }
+
+
+/* ---------- coach: chat con l'AI sui tuoi dati ---------- */
+const CH = { msgs: (() => { try { return JSON.parse(lsGet("carico.chat") || "[]"); } catch (e) { return []; } })(), busy: false, ctl: null, draft: "" };
+const saveChat = () => lsSet("carico.chat", JSON.stringify(CH.msgs.slice(-40)));
+const COACH_RULES = `Sei il coach dentro Carico, un'app per chi va in palestra. Parli italiano, con tono diretto, motivante ma onesto: se qualcosa non va lo dici.
+Rispondi in modo breve e pratico, adatto allo schermo di un telefono (di solito meno di 150 parole), con elenchi puntati quando aiutano. Usa **grassetto** solo per i punti chiave.
+Basati sui dati dell'utente qui sotto. Se un dato manca dillo e fai una stima ragionevole spiegando le ipotesi.
+- "Cosa faccio oggi": indica la seduta prevista, gli esercizi e i carichi da provare in base alle ultime volte (progressione graduale).
+- Sostituzione di un pasto: proponi alternative con quantità in grammi e macro simili all'originale, con il totale.
+- Cosa mangiare ancora oggi: parti dai macro che restano e proponi cibi concreti con quantità.
+- Stime di obiettivi (peso, carichi): usa i trend reali dei dati, indica una data o un intervallo e quanto è incerta la stima. Ritmi sani di riferimento: dimagrimento 0,5–1% del peso a settimana, aumento di massa 0,25–0,5% a settimana.
+Il piano è stato scritto da un trainer o nutrizionista: puoi suggerire, ma non stravolgerlo. Non sei un medico: per dolori, infortuni o problemi di salute consiglia un professionista.`;
+function coachContext() {
+  const L = [];
+  const now = new Date();
+  L.push("Data e ora: " + now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ", " + pad(now.getHours()) + ":" + pad(now.getMinutes()));
+  const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
+  if (ws.length) L.push("Peso (data kg): " + ws.slice(-20).map(w => w.d + " " + fmtN(w.kg)).join("; "));
+  else L.push("Peso: non ancora registrato.");
+  const days = wDays();
+  if (days.length) {
+    L.push("\nSCHEDA DI ALLENAMENTO:");
+    days.forEach(d => L.push(`- ${d.name}: ` + (d.exercises || []).map(e => `${e.name} ${e.sets}x${e.reps || "?"}${e.rest ? " rec " + e.rest + "s" : ""}${e.load ? " (" + e.load + ")" : ""}`).join("; ")));
+    const cd = currentDay(); if (cd) L.push("Seduta prevista oggi secondo la rotazione: " + cd.name);
+  } else L.push("\nNessuna scheda di allenamento caricata.");
+  const sess = sessionDates().slice(-15);
+  if (sess.length) {
+    L.push("\nALLENAMENTI RECENTI (serie fatte kg x rip):");
+    sess.forEach(d => { const w = S.days[d].w; L.push(`- ${d} ${w.dayName || ""}: ` + Object.values(w.ex || {}).map(e => { const sd = (e.s || []).filter(x => x && x.done); return sd.length ? `${e.name} ${sd.map(x => (x.kg || "–") + "x" + (x.reps || "–")).join(",")}` : null; }).filter(Boolean).join("; ")); });
+  } else L.push("Nessun allenamento registrato finora.");
+  const lt = peekLog(); if (lt && lt.w && setsDone(lt)) L.push(`Oggi: ${setsDone(lt)} serie fatte${lt.w.done ? ", allenamento terminato" : ""}.`);
+  if (variants().length) {
+    const Tg = targetsFor(); const t = dayTotals(); const ml = mealLog();
+    L.push(`\nOBIETTIVI GIORNALIERI: ${fmtI(Tg.kcal)} kcal, P ${fmtI(Tg.p)} g, C ${fmtI(Tg.c)} g, G ${fmtI(Tg.f)} g${Tg.fromPlan ? " (somma dei pasti della scheda)" : ""}.`);
+    L.push("PASTI DELLA SCHEDA (per ogni pasto le varianti possibili):");
+    let dietTxt = "";
+    slots().forEach(sl => {
+      dietTxt += `- ${sl.name}${sl.time ? " (" + sl.time + ")" : ""}:\n`;
+      sl.options.forEach((o, i) => { const m = sumItems(o.items); dietTxt += `  Variante ${i + 1}: ${o.items.map(x => (x.qty ? x.qty + " " : "") + x.food).join(", ")}${m.known ? ` [${fmtI(m.kcal)} kcal P${fmtI(m.p)} C${fmtI(m.c)} G${fmtI(m.f)}]` : ""}\n`; });
+      sl.alts.forEach(a => { const m = sumItems(a.items); dietTxt += `  ${a.name} (variante AI): ${(a.items || []).map(x => x.qty + " " + x.food).join(", ")} [${fmtI(m.kcal)} kcal]\n`; });
+    });
+    L.push(dietTxt.slice(0, 9000));
+    if (plan().diet.notes) L.push("Note della dieta: " + plan().diet.notes.slice(0, 600));
+    const eaten = slots().filter(sl => ml.eaten[sl.key]).map(sl => { const p = slotPick(ml, sl); const m = sumItems(p.items); return `${sl.name}: ${optLabel(sl, p.id)}${p.kind === "manual" ? " (" + p.items.map(x => x.qty + " " + x.food).join(", ") + ")" : ""} [${fmtI(m.kcal)} kcal P${fmtI(m.p)} C${fmtI(m.c)} G${fmtI(m.f)}]`; });
+    L.push("\nOGGI MANGIATO: " + (eaten.length ? eaten.join("; ") : "niente segnato") + (ml.extra.length ? "; fuori pasto: " + ml.extra.map(x => x.qty + " " + x.food).join(", ") : ""));
+    L.push(`Totale oggi: ${fmtI(t.kcal)} kcal, P ${fmtI(t.p)}, C ${fmtI(t.c)}, G ${fmtI(t.f)}. Restano: ${fmtI(Tg.kcal - t.kcal)} kcal, P ${fmtI(Tg.p - t.p)}, C ${fmtI(Tg.c - t.c)}, G ${fmtI(Tg.f - t.f)}.`);
+    const notEaten = slots().filter(sl => !ml.eaten[sl.key]).map(sl => sl.name); if (notEaten.length) L.push("Pasti ancora da fare oggi: " + notEaten.join(", "));
+  } else L.push("\nNessun piano alimentare caricato.");
+  return L.join("\n");
+}
+function md(t) {
+  const lines = esc(t).split("\n"); let out = "", ul = false;
+  const inl = x => x.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<i>$2</i>");
+  for (const raw of lines) {
+    const l = raw.trim();
+    const li = l.match(/^([-•*]|\d+[.)])\s+(.*)$/);
+    if (li) { if (!ul) { out += "<ul>"; ul = true; } out += "<li>" + inl(li[2]) + "</li>"; continue; }
+    if (ul) { out += "</ul>"; ul = false; }
+    if (!l) continue;
+    const h = l.match(/^#{1,4}\s+(.*)$/);
+    out += "<p>" + (h ? "<b>" + inl(h[1]) + "</b>" : inl(l)) + "</p>";
+  }
+  return out + (ul ? "</ul>" : "");
+}
+AI.chat = async function (turns, { onText, signal } = {}) {
+  const ctx = COACH_RULES + "\n\nDATI DELL'UTENTE:\n" + coachContext();
+  if (this.sample) {
+    const input = [{ role: "user", content: ctx }, ...turns];
+    const r = await this.sample(input, { cache: false, signal, onText: ({ text }) => onText && onText(text) });
+    return r.text;
+  }
+  const key = this.key(); if (!key) throw { code: "no_ai" };
+  const msgs = []; turns.forEach(m => { const last = msgs[msgs.length - 1]; if (last && last.role === m.role) last.content += "\n\n" + m.content; else msgs.push({ role: m.role, content: m.content }); });
+  while (msgs.length && msgs[0].role !== "user") msgs.shift();
+  let res;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal,
+      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 2000, stream: true, system: ctx, messages: msgs }) });
+  } catch (e) { throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
+  if (!res.ok) { let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {} throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail }; }
+  let text = "";
+  if (!res.body || !res.body.getReader) { const j = await res.json(); text = (j.content || []).filter(x => x.type === "text").map(x => x.text).join(""); onText && onText(text); return text; }
+  const rd = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+  try {
+    for (;;) {
+      const { done, value } = await rd.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i; while ((i = buf.indexOf("\n")) >= 0) {
+        const line = buf.slice(0, i).trim(); buf = buf.slice(i + 1);
+        if (!line.startsWith("data:")) continue;
+        let ev; try { ev = JSON.parse(line.slice(5)); } catch (e) { continue; }
+        if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") { text += ev.delta.text; onText && onText(text); }
+        else if (ev.type === "error") throw { code: ev.error && ev.error.type === "overloaded_error" ? "overloaded" : "upstream_error", detail: ev.error && ev.error.message, text };
+      }
+    }
+  } catch (e) { if (e && e.name === "AbortError") throw { code: "cancelled", text }; throw e.code ? e : { code: "network", text }; }
+  return text;
+};
+const COACH_Q = ["Cosa faccio oggi in palestra?", "Come stanno andando i miei progressi?", "In quanto tempo posso arrivare al mio obiettivo di peso?", "Cosa posso mangiare ancora oggi per chiudere i macro?", "Con cosa posso sostituire il pranzo?"];
+function renderCoach() {
+  const el = $("#coach");
+  const empty = !CH.msgs.length;
+  el.innerHTML = `<div class="sh-head"><div class="t"><b>Coach</b><span>Conosce scheda, dieta e progressi</span></div>
+      ${CH.msgs.length ? `<button class="btn ghost sm" data-act="coach-new">Nuova chat</button>` : ""}
+      <button class="iconbtn" data-act="coach-close" aria-label="Chiudi">${ICON_X}</button></div>
+    <div class="msgs" id="msgs">
+      ${empty ? `<div class="coach-hi"><p>Ciao 👋 Sono il tuo coach. Conosco la tua scheda, la dieta e quello che hai fatto finora. Chiedimi pure:</p>
+        <div class="qchips">${COACH_Q.map((q, i) => `<button class="qchip" data-act="coach-q" data-i="${i}">${esc(q)}</button>`).join("")}</div>
+        ${AI.ready() ? "" : `<p class="small muted">${esc(aiErr({ code: "no_ai" }))}</p>`}</div>` : ""}
+      ${CH.msgs.map((m, i) => `<div class="bub ${m.role === "user" ? "u" : "a"} ${m.err ? "err" : ""}" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${m.role === "user" ? esc(m.content) : (m.content ? md(m.content) : '<span class="typing"><i></i><i></i><i></i></span>')}</div>`).join("")}
+    </div>
+    <form class="composer" data-form="coach">
+      <textarea id="coachIn" rows="1" placeholder="Scrivi al coach…" enterkeyhint="send" aria-label="Messaggio">${esc(CH.draft)}</textarea>
+      ${CH.busy ? `<button type="button" class="send" data-act="coach-stop" aria-label="Ferma"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="1.5" fill="currentColor" stroke="none"/></svg></button>`
+        : `<button class="send" aria-label="Invia"><svg viewBox="0 0 24 24"><path d="M5 12h13M13 6l6 6-6 6"/></svg></button>`}
+    </form>`;
+  const ms = $("#msgs"); ms.scrollTop = ms.scrollHeight;
+}
+function openCoach() { $("#coach").hidden = false; $("#fab").hidden = true; document.body.style.overflow = "hidden"; renderCoach(); }
+function closeCoach() { if (CH.ctl && CH.busy) {} $("#coach").hidden = true; $("#fab").hidden = false; document.body.style.overflow = ""; }
+async function coachSend(text) {
+  text = String(text || "").trim(); if (!text || CH.busy) return;
+  if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
+  CH.msgs = CH.msgs.filter(m => !m.err);
+  CH.msgs.push({ role: "user", content: text }); CH.draft = "";
+  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: m.content }));
+  const ans = { role: "assistant", content: "" }; CH.msgs.push(ans); CH.busy = true; CH.ctl = new AbortController(); renderCoach();
+  let raf = 0;
+  const paint = () => { raf = 0; const b = $("#lastBub"); if (b && ans.content) { b.innerHTML = md(ans.content); const ms = $("#msgs"); if (ms.scrollHeight - ms.scrollTop - ms.clientHeight < 160) ms.scrollTop = ms.scrollHeight; } };
+  try {
+    const full = await AI.chat(turns, { signal: CH.ctl.signal, onText: t => { ans.content = t; if (!raf) raf = requestAnimationFrame(paint); } });
+    ans.content = full || ans.content;
+    if (!ans.content) { ans.content = "Non ho ricevuto risposta. Riprova."; ans.err = true; }
+  } catch (e) {
+    if (e && e.code === "cancelled") { if (!ans.content) CH.msgs.pop(); }
+    else { const m = aiErr(e); if (e && e.text) ans.content = e.text + "\n\n(" + (m || "risposta interrotta") + ")"; else { ans.content = (m || "Errore") + (e && e.detail ? " (" + String(e.detail).slice(0, 120) + ")" : ""); ans.err = true; } }
+  }
+  CH.busy = false; CH.ctl = null; saveChat(); if (!$("#coach").hidden) renderCoach();
+}
+// icona fluttuante trascinabile: un tocco apre il coach, trascinando la sposti (posizione ricordata)
+(function initFab() {
+  const fab = $("#fab"); const SZ = 58, M = 10;
+  let pos = (() => { try { return JSON.parse(lsGet("carico.fab") || "null"); } catch (e) { return null; } })();
+  const bounds = () => ({ w: window.innerWidth, h: window.innerHeight });
+  const clamp = p => { const { w, h } = bounds(); return { x: Math.min(Math.max(p.x, M), w - SZ - M), y: Math.min(Math.max(p.y, M + 40), h - SZ - 80) }; };
+  const place = () => { if (!pos) { const { w, h } = bounds(); pos = { x: w - SZ - 16, y: h - SZ - 150 }; } pos = clamp(pos); fab.style.left = pos.x + "px"; fab.style.top = pos.y + "px"; };
+  let st = null;
+  fab.addEventListener("pointerdown", e => { st = { x: e.clientX, y: e.clientY, px: pos.x, py: pos.y, moved: false }; fab.setPointerCapture(e.pointerId); });
+  fab.addEventListener("pointermove", e => { if (!st) return; const dx = e.clientX - st.x, dy = e.clientY - st.y; if (!st.moved && Math.hypot(dx, dy) < 8) return; st.moved = true; fab.classList.add("drag"); pos = clamp({ x: st.px + dx, y: st.py + dy }); fab.style.left = pos.x + "px"; fab.style.top = pos.y + "px"; });
+  const end = () => { if (!st) return; const moved = st.moved; st = null; fab.classList.remove("drag");
+    if (moved) { const { w } = bounds(); pos.x = pos.x + SZ / 2 < w / 2 ? M : w - SZ - M; place(); lsSet("carico.fab", JSON.stringify(pos)); } else openCoach(); };
+  fab.addEventListener("pointerup", end); fab.addEventListener("pointercancel", () => { st = null; fab.classList.remove("drag"); });
+  fab.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openCoach(); } });
+  window.addEventListener("resize", place);
+  place(); fab.hidden = false;
+})();
+document.addEventListener("input", ev => { if (ev.target.id === "coachIn") { CH.draft = ev.target.value; ev.target.style.height = "auto"; ev.target.style.height = Math.min(140, ev.target.scrollHeight) + "px"; } });
+document.addEventListener("keydown", ev => { if (ev.target.id === "coachIn" && ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); coachSend(ev.target.value); } else if (ev.key === "Escape" && !$("#coach").hidden) closeCoach(); });
+document.addEventListener("submit", ev => { if (ev.target.dataset.form === "coach") { ev.preventDefault(); coachSend($("#coachIn").value); } }, true);
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#coach")) return;
+  const a = b.dataset.act;
+  if (a === "coach-close") closeCoach();
+  else if (a === "coach-new") { if (CH.ctl) CH.ctl.abort(); CH.msgs = []; CH.busy = false; saveChat(); renderCoach(); }
+  else if (a === "coach-q") coachSend(COACH_Q[+b.dataset.i]);
+  else if (a === "coach-stop") { if (CH.ctl) CH.ctl.abort(); }
+  ev.stopPropagation();
+}, true);
 
 /* cambio giorno se l'app resta aperta oltre la mezzanotte */
 document.addEventListener("visibilitychange", () => { if (!document.hidden && S.date !== today()) { S.date = today(); S.selDay = null; S.selVariant = null; render(); } });
