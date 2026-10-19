@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8">
+<meta http-equiv="Cache-Control" content="no-cache">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -296,6 +297,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
+const APP_VERSION = "1.5 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -411,18 +413,24 @@ const AI = {
     const key = this.key(); if (!key) throw { code: "no_ai" };
     const content = [];
     for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } });
-    content.push({ type: "text", text: prompt + "\n\nRispondi solo con il JSON, senza altro testo." });
+    content.push({ type: "text", text: prompt + "\n\nConsegna il risultato chiamando lo strumento \"risposta\" con l'oggetto JSON richiesto (se è richiesto un elenco, usa {\"items\": [...]})." });
+    // uso di uno strumento obbligatorio: l'API restituisce sempre un oggetto JSON valido
+    const tool = { name: "risposta", description: "Restituisce il risultato strutturato richiesto.", input_schema: { type: "object", additionalProperties: true } };
     let res;
     try {
       res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal,
         headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({ model: tier === "quick" ? "claude-haiku-5-5" : "claude-sonnet-5-5", max_tokens: maxTokens, messages: [{ role: "user", content }] }) });
+        body: JSON.stringify({ model: tier === "quick" ? "claude-haiku-5-5" : "claude-sonnet-5-5", max_tokens: maxTokens, tools: [tool], tool_choice: { type: "tool", name: "risposta" }, messages: [{ role: "user", content }] }) });
     } catch (e) { throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
-    if (!res.ok) throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : res.status === 413 ? "prompt_too_large" : res.status === 400 ? "bad_request" : "upstream_error" };
+    if (!res.ok) {
+      let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {}
+      throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : res.status === 413 ? "prompt_too_large" : res.status === 400 && /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail };
+    }
     const j = await res.json();
-    const text = (j.content || []).filter(x => x.type === "text").map(x => x.text).join("");
     if (j.stop_reason === "max_tokens") throw { code: "too_long" };
-    const v = parseJsonLoose(text); if (v === undefined) throw { code: "invalid_json" };
+    const tu = (j.content || []).find(x => x.type === "tool_use");
+    let v = tu ? tu.input : undefined;
+    if (v === undefined) { const text = (j.content || []).filter(x => x.type === "text").map(x => x.text).join(""); v = parseJsonLoose(text); if (v === undefined) throw { code: "invalid_json", detail: text.slice(0, 200) }; }
     return v;
   }
 };
@@ -459,6 +467,8 @@ function aiErr(e) {
     image_rejected: "Una delle immagini non è leggibile. Prova con un'altra foto.",
     images_unavailable: "Qui non posso leggere immagini: incolla il testo.",
     invalid_json: "Non sono riuscito a interpretare la risposta. Riprova.",
+    no_credit: "Credito API esaurito: ricarica in console.anthropic.com → Billing.",
+    overloaded: "Il servizio AI è sovraccarico in questo momento. Riprova tra qualche minuto.",
     too_long: "La scheda è molto lunga: carica allenamento e dieta separatamente, o poche pagine alla volta.",
     prompt_too_large: "Il documento è troppo lungo: caricane una parte alla volta.",
     session_expired: "Accedi di nuovo a Claude e riprova.",
@@ -1282,6 +1292,7 @@ function vPiano() {
         <form class="row" data-form="apikey"><input class="in" id="keyIn" type="password" autocomplete="off" placeholder="${key ? "Chiave salvata ••••" + esc(key.slice(-4)) : "sk-ant-…"}" aria-label="Chiave API Anthropic"><button class="btn">Salva</button></form>
         ${key ? `<button class="btn ghost sm" data-act="key-del">Rimuovi chiave</button>` : `<a class="small" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--accent)">Crea una chiave su console.anthropic.com</a>`}`}
       <p class="small muted" style="margin:0">${store.mode === "cloud" ? "Piano e allenamenti sono salvati nel tuo account Claude: li ritrovi da qualsiasi dispositivo. Sono privati." : "I dati sono salvati su questo dispositivo. Aggiungi l'app alla schermata Home e fai ogni tanto un backup."}</p>
+      <p class="small muted" style="margin:0">Versione dell'app: <b>${APP_VERSION}</b></p>
       <div class="row"><button class="btn sm" style="flex:1" data-act="backup-out">Esporta backup</button><button class="btn sm" style="flex:1" data-act="backup-in">Importa backup</button></div>
       ${S.dataMsg ? `<div class="status">${esc(S.dataMsg)}</div>` : ""}
       ${S.confirmReset ? `<div class="confirm"><span class="small" style="flex:1;min-width:160px">Elimino piano, allenamenti, pasti e pesi? Non si può annullare.</span><button class="btn danger" data-act="reset-yes">Elimina</button><button class="btn" data-act="reset-no">Annulla</button></div>`
@@ -1360,7 +1371,7 @@ async function runImport({ text = "", images = [] }) {
     if (!p.workout && !p.diet) { S.importBusy = false; setImport("Non ho trovato né esercizi né pasti. Prova con una foto più nitida e dritta, o incolla il testo.", true); return; }
     S.pending = p; S.importBusy = false; setImport(null);
   } catch (e) {
-    S.importBusy = false; const m = aiErr(e); setImport(m, m !== null);
+    S.importBusy = false; let m = aiErr(e); if (m && e && e.detail) m += " (dettagli: " + String(e.detail).slice(0, 160) + ")"; setImport(m, m !== null);
   }
 }
 function setImport(msg, err = false) { S.importMsg = msg; S.importErr = err; if (S.tab === "piano") render(); }
@@ -1391,7 +1402,7 @@ async function handleFiles(files) {
 async function estimateFoods(text) {
   const r = await AI.json(`Stima i valori nutrizionali di quello che ha mangiato l'utente (italiano). Testo dell'utente: """${text.slice(0, 1500)}"""
 Dividi in singoli alimenti. Se la quantità non è indicata, assumi una porzione tipica italiana e scrivila in qty (es. "porzione ~80 g", "1 lattina 330 ml"). I valori sono per la quantità indicata, non per 100 g, con valori medi da tabelle nutrizionali (CREA, USDA).
-Rispondi solo con un array JSON: [{"food":"Pasta di semola","qty":"100 g","kcal":355,"p":12,"c":72,"f":1.5}]`, { tier: "quick" });
+Rispondi solo con JSON: {"items":[{"food":"Pasta di semola","qty":"100 g","kcal":355,"p":12,"c":72,"f":1.5}]}`, { tier: "quick" });
   const arr = Array.isArray(r) ? r : (r && Array.isArray(r.items) ? r.items : []);
   return arr.filter(x => x && (x.food || x.name)).map(cleanItem);
 }
