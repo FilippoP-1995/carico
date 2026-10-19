@@ -297,7 +297,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "1.5 · 20 ottobre";
+const APP_VERSION = "1.6 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -420,7 +420,7 @@ const AI = {
     try {
       res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal,
         headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({ model: tier === "quick" ? "claude-haiku-5-5" : "claude-sonnet-5-5", max_tokens: maxTokens, tools: [tool], tool_choice: { type: "tool", name: "risposta" }, messages: [{ role: "user", content }] }) });
+        body: JSON.stringify({ model: tier === "quick" ? "claude-haiku-5-5" : "claude-sonnet-5-5", max_tokens: maxTokens, tools: [tool], tool_choice: { type: "auto" }, messages: [{ role: "user", content }] }) });
     } catch (e) { throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
     if (!res.ok) {
       let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {}
