@@ -533,6 +533,7 @@ input.small,textarea.small,select.small,.in.small{font-size:16px}
 .copyrow svg{width:16px;height:16px;stroke:currentColor}
 /* Dieta */
 .meal{display:flex;flex-direction:column;gap:10px}
+.nt-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.nt-r .chip{flex:1 1 auto;justify-content:flex-start;min-width:0}.nt-t{width:auto;flex:0 0 108px;padding:8px 10px;font-size:16px}.nt-t:disabled{opacity:.4}.nt-days{width:100%;gap:4px}.chip.xs{padding:5px 9px;font-size:12px;min-height:0}
 .meal.eaten{border-color:var(--diet)}
 .meal .mt{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .mchk{flex:none;width:44px;height:44px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center}
@@ -673,7 +674,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "5.4 · 20 ottobre";
+const APP_VERSION = "5.5 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -741,10 +742,12 @@ const store = {
     S.profile.updated = Date.now();
     this.writeLocal();
     if (this.mode === "cloud") this.queue("profile", () => this.profRef.set(JSON.parse(JSON.stringify(S.profile))));
+    pushSync();
   },
   saveDay(date) {
     this.writeLocal();
     if (this.mode === "cloud") this.queue("day:" + date, () => this.profRef.collection("days").doc(date).set(JSON.parse(JSON.stringify(S.days[date]))));
+    if (date === today()) pushSync();
   },
   async replaceAll(profile, days) {
     const oldDays = Object.keys(S.days);
@@ -1222,7 +1225,7 @@ function summaryCard() {
       ${stat(hasDiet ? fmtI(t.p) + "<small> g</small>" : "–", "Proteine", hasDiet && Tg.p ? (t.p >= Tg.p * .95 ? "✅ centrate" : `mancano ${fmtI(Tg.p - t.p)}`) : "")}
       ${stat(sess.filter(d => d.slice(0, 7) === S.date.slice(0, 7)).length, "Nel mese", sess.length ? `${sess.length} totali` : "allenamenti")}
     </div>
-    ${coachTone() === "roast" || coachTone() === "cazzaro" ? `<button class="quote sarge" data-act="sarge"><span class="qk">${coachTone() === "cazzaro" ? "🍻 Il Cazzaro dice" : "🔥 Il Mental Coach dice"}</span>${esc(roastLine({ day, l, t, Tg, hasDiet, streak }))}<span class="sg-more">Rispondigli →</span></button>` : `<div class="quote"><span class="qk">Frase del giorno</span>${esc(dailyQuote())}</div>`}
+    ${coachTone() === "roast" || coachTone() === "cazzaro" ? `<button class="quote sarge" data-act="sarge"><span class="qk">${coachTone() === "cazzaro" ? "🍻 Il Cazzaro dice" : "🔥 Il Mental Coach dice"}</span>${esc(femTxt(roastLine({ day, l, t, Tg, hasDiet, streak })))}<span class="sg-more">Rispondigli →</span></button>` : `<div class="quote"><span class="qk">Frase del giorno</span>${esc(dailyQuote())}</div>`}
   </section>`;
 }
 
@@ -1814,6 +1817,8 @@ function vPiano() {
         <div class="f">Tono del Coach<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(TONES).map(([k, t]) => `<button class="chip sm ${coachTone() === k ? "on-acc" : ""}" aria-pressed="${coachTone() === k}" data-act="me-tone" data-k="${k}">${esc(t.label)}</button>`).join("")}</div></div>
       </div>
     </details>
+
+    ${notifPanel()}
 
     <div class="card stack">
       <span class="eyebrow">AI e dati</span>
@@ -3069,7 +3074,7 @@ function saveOnb(skip) {
     if (!OB.name.trim()) { toast("Scrivi il tuo nome"); $("#obName").focus(); return; }
     if (!OB.sex) { toast("Scegli uomo o donna"); return; }
   }
-  S.profile.user = { name: skip ? "" : OB.name.trim().slice(0, 40), sex: skip ? "" : OB.sex, goal: skip ? "" : OB.goal, targetKg: skip ? "" : (num(OB.tkg) || "") };
+  S.profile.user = { name: skip ? "" : OB.name.trim().slice(0, 40), sex: skip ? "" : OB.sex, goal: skip ? "" : OB.goal, targetKg: skip ? "" : (num(OB.tkg) || ""), tone: "cazzaro" };
   const kg = num(OB.kg);
   if (!skip && kg && kg > 20 && kg < 400) { const ws = S.profile.weights = S.profile.weights || []; const ex = ws.find(w => w.d === S.date); if (ex) ex.kg = kg; else ws.push({ d: S.date, kg }); ws.sort((a, b) => a.d < b.d ? -1 : 1); }
   store.saveProfile(); ovClose("onb"); render();
@@ -3112,6 +3117,7 @@ Basati sui dati dell'utente qui sotto. Se un dato manca dillo e fai una stima ra
 - Sostituzione di un pasto: proponi alternative con quantità in grammi e macro simili all'originale, con il totale.
 - Cosa mangiare ancora oggi: parti dai macro che restano e proponi cibi concreti con quantità.
 - Stime di obiettivi (peso, carichi): usa i trend reali dei dati, indica una data o un intervallo e quanto è incerta la stima. Ritmi sani di riferimento: dimagrimento 0,5–1% del peso a settimana, aumento di massa 0,25–0,5% a settimana.
+ACQUA E INTEGRATORI sono secondari: non parlarne né ricordarli di tua iniziativa nelle risposte normali. Nominali solo se l'utente lo chiede, se la domanda riguarda proprio idratazione o integratori, o nel check settimanale (al massimo una riga).
 Il piano è stato scritto da un trainer o nutrizionista: puoi suggerire, ma non stravolgerlo. Non sei un medico: per dolori, infortuni o problemi di salute consiglia un professionista.
 FOTO: l'utente può allegare foto. Capisci da solo di cosa si tratta e comportati di conseguenza:
 - Foto di un pasto o di un piatto: riconosci gli alimenti, stima grammi e macro e confronta con il pasto previsto dalla sua scheda e con quanto gli resta oggi. Se ti chiede di registrarlo, usa il blocco carico-pasto qui sotto.
@@ -3372,6 +3378,180 @@ setTimeout(checkUpdate, 1500);
 let TODAY_REF = today();
 document.addEventListener("visibilitychange", () => { if (!document.hidden && TODAY_REF !== today()) { if (S.date === TODAY_REF) S.date = today(); TODAY_REF = today(); S.selDay = null; S.selVariant = null; render(); } });
 
+/* ---------- notifiche push (server Cloudflare, app installata sulla Home) ---------- */
+const FEM = [["stronzo", "stronza"], ["coglione", "cogliona"], ["smidollato", "smidollata"], ["mollaccione", "mollacciona"], ["bestione", "bestiona"], ["campione", "campionessa"], ["scemo", "scema"], ["guerriero", "guerriera"], ["pronto", "pronta"], ["morto", "morta"], ["ingordo", "ingorda"], ["stanco", "stanca"], ["il cugino serio di te stesso", "la cugina seria di te stessa"], ["quello che inizia lunedì", "quella che inizia lunedì"], ["quello che c'è sempre", "quella che c'è sempre"], ["Quello che vuoi diventare", "Quella che vuoi diventare"], ["Bravo", "Brava"], ["fratello", "sorella"]];
+function femTxt(s) {
+  if ((S.profile.user || {}).sex !== "f" || !s) return s;
+  FEM.forEach(([m, f]) => { s = s.replace(new RegExp("\\b" + m + "\\b", "g"), f).replace(new RegExp("\\b" + m[0].toUpperCase() + m.slice(1) + "\\b", "g"), f[0].toUpperCase() + f.slice(1)); });
+  return s;
+}
+const NT_BANK = {
+  cazzaro: {
+    work: ["Oh coglione, oggi tocca {next}. Muovi il culo che ti aspetto al bilanciere 🍻", "{next} ti chiama. Rispondi, faccia di cazzo, che poi ci sentiamo fighi.", "Allora? {next} non si fa da solo, stronzo. Andiamo!", "Minchia, è l'ora di {next}. Telefono giù e ferro su 💪"],
+    meal: ["Ehi ingordo, è ora di {meal}. Mangia come da scheda e segnalo, che poi non mi dire che non ricordi un cazzo.", "{meal} time! Segnalo su Carico, coglione, che i macro non si contano da soli 🍽️", "Porca troia, {meal}! Mangia giusto e spunta, che stasera ti faccio i complimenti."],
+    weigh: ["Buongiorno stronzo, sali sulla bilancia prima del caffè. Non scappare ⚖️", "Pesata del mattino, coglione: un secondo e via."],
+    check: ["È il giorno del check! Vieni che facciamo il punto della settimana, testa di cazzo 📋", "Check settimanale pronto. Vediamo se hai spaccato o cazzeggiato 😂"],
+    water: ["Un bicchiere d'acqua, va'. Due secondi, coglione 💧"],
+  },
+  roast: {
+    work: ["Oggi tocca {next}. Non ti chiedo se hai voglia: ti chiedo di farlo. Vai.", "{next}. La scusa che stai preparando non brucia un cazzo. Alza il culo.", "Ora di {next}, smidollato. Fai il lavoro, la voglia arriva dopo.", "{next} ti aspetta. Chi vuoi diventare sta guardando cosa fai adesso."],
+    meal: ["È ora di {meal}. Come da scheda, niente cazzate, e segnalo.", "{meal}: mangia quello che c'è scritto, non quello che ti va. Poi segna.", "{meal}, coglione. Il fisico si costruisce anche a tavola."],
+    weigh: ["Bilancia. Adesso, a digiuno. I numeri non mentono, le scuse sì.", "Pesata del mattino, stronzo. Un dato in più per arrivare all'obiettivo."],
+    check: ["Check settimanale. Vieni a guardare in faccia la tua settimana, senza scuse.", "È il giorno del bilancio. Vediamo quanto hai lavorato davvero."],
+    water: ["Bevi un bicchiere d'acqua. Due secondi."],
+  },
+  wild: {
+    work: ["Oggi tocca {next}. Dai che si va, niente scuse 💪", "{next} in programma: telefono giù, culo in palestra."],
+    meal: ["Ora di {meal}: come da scheda e segnalo 🍽️", "{meal}! Mangia giusto e spunta su Carico."],
+    weigh: ["Pesata del mattino, prima del caffè ⚖️"], check: ["Check settimanale pronto: facciamo il punto 📋"], water: ["Un bicchiere d'acqua, dai 💧"],
+  },
+  fun: {
+    work: ["Oggi tocca {next}. Il divano può aspettare, lui è paziente 😄", "{next} ti aspetta. Promesso: niente burpees a sorpresa."],
+    meal: ["È ora di {meal}! Ricordati di segnarlo 🍽️", "{meal} in arrivo: come da scheda e poi spunta."],
+    weigh: ["Pesata del mattino: due secondi e via ⚖️"], check: ["È il giorno del check settimanale 📋"], water: ["Un bicchiere d'acqua? 💧"],
+  },
+  serious: {
+    work: ["Oggi in programma: {next}.", "Promemoria allenamento: {next}."],
+    meal: ["È ora di {meal}. Ricordati di registrarlo.", "Promemoria: {meal} come da piano."],
+    weigh: ["Pesata del mattino, a digiuno."], check: ["Oggi è il giorno del check settimanale."], water: ["Ricordati di bere."],
+  },
+};
+const NT_DEF_MEAL = n => { const s = norm(n); return /colaz/.test(s) ? "08:00" : /pranz/.test(s) ? "13:00" : /cena/.test(s) ? "20:30" : /merend|pomer/.test(s) ? "16:30" : /spunt|snack/.test(s) ? "10:30" : /pre.?work|pre.?allen/.test(s) ? "17:00" : /post/.test(s) ? "19:30" : "12:00"; };
+const ntTime = (t, def) => { const m = /(\d{1,2})[:.,h]?(\d{2})?/.exec(t || ""); if (!m || +m[1] > 23) return def; return String(+m[1]).padStart(2, "0") + ":" + (m[2] || "00"); };
+function ntCfg() {
+  const U = S.profile.user = S.profile.user || {};
+  const n = U.notif = U.notif || {};
+  if (!n.id) n.id = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join("");
+  const r = n.rem = n.rem || {};
+  r.work = r.work || { on: true, t: "18:00", days: [1, 2, 3, 4, 5] };
+  r.weigh = r.weigh || { on: false, t: "07:30" };
+  r.check = r.check || { on: true, t: "10:00" };
+  r.water = r.water || { on: false, t: "11:00" };
+  r.meals = r.meals || {};
+  slots().forEach(sl => { if (!r.meals[sl.key]) r.meals[sl.key] = { on: true, t: ntTime(sl.time, NT_DEF_MEAL(sl.name)) }; });
+  n.coach = n.coach || { n: 1, from: "09:00", to: "21:00" };
+  return n;
+}
+function ntBank() {
+  const tone = coachTone(); const nm = userName();
+  const b = JSON.parse(JSON.stringify(NT_BANK[tone] || NT_BANK.fun));
+  b.coach = tone === "roast" ? [...ROAST.base, ...ROAST.noWork, ...ROAST.streak] : tone === "cazzaro" ? [...CAZZARO.base, ...CAZZARO.noWork, ...CAZZARO.streak] : QUOTES.slice();
+  for (const k in b) b[k] = b[k].map(s => femTxt(nm && k === "coach" && Math.random() < 0.4 ? nm + ", " + s[0].toLowerCase() + s.slice(1) : s));
+  return b;
+}
+function ntPayload() {
+  const n = ntCfg(); const t = today(); const l = S.days[t];
+  const eaten = l && l.m && l.m.eaten ? Object.keys(l.m.eaten).filter(k => l.m.eaten[k]) : [];
+  const wDone = !!(l && l.w && (l.w.done || setsDone(l) > 0));
+  const sd = suggestedDay(); const d = sd && wDays().find(x => x.id === sd);
+  const meals = {}; const names = {}; slots().forEach(sl => names[sl.key] = sl.name);
+  for (const k in n.rem.meals) if (names[k]) meals[k] = { ...n.rem.meals[k], name: names[k] };
+  const tone = coachTone();
+  return { tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Rome", next: d ? d.name : "", checkDay: checkDay(),
+    coachTitle: tone === "cazzaro" ? "🍻 Il Cazzaro" : tone === "roast" ? "🔥 Il Mental Coach" : "💬 Il Coach",
+    rem: { ...n.rem, meals, work: wDays().length ? n.rem.work : { ...n.rem.work, on: false } }, coach: n.coach, bank: ntBank(), today: { date: t, eaten, wDone } };
+}
+let NT_URL = null;
+async function ntUrl() {
+  if (NT_URL) return NT_URL;
+  for (const u of ["./push.json?t=" + Date.now(), "https://raw.githubusercontent.com/FilippoP-1995/carico/main/push.json?t=" + Date.now()]) {
+    try { const r = await fetch(u, { cache: "no-store" }); if (r.ok) { const j = await r.json(); if (j && j.url) return (NT_URL = j.url.replace(/\/$/, "")); } } catch (e) {}
+  }
+  return "";
+}
+const ntSupported = () => !IN_CLAUDE && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+const ntIOSNotInstalled = () => /iPhone|iPad|iPod/.test(navigator.userAgent) && !(navigator.standalone || matchMedia("(display-mode: standalone)").matches);
+async function ntPost(path, body) {
+  const url = await ntUrl(); if (!url) throw { code: "no_server" };
+  const r = await fetch(url + path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw { code: j.error || "http_" + r.status, status: r.status }; return j;
+}
+const b64ToU8 = s => { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+async function ntSubscribe() {
+  const url = await ntUrl(); if (!url) throw { code: "no_server" };
+  const reg = await navigator.serviceWorker.register("./sw.js"); await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) { const k = await (await fetch(url + "/vapid")).json(); sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(k.key) }); }
+  await ntPost("/sub", { id: ntCfg().id, sub: sub.toJSON(), cfg: ntPayload() });
+}
+const NT = { busy: false, msg: "" };
+async function ntEnable() {
+  if (NT.busy) return;
+  if (ntIOSNotInstalled()) { toast("Prima aggiungi Carico alla schermata Home e aprila da lì"); return; }
+  let perm;
+  try { perm = await Notification.requestPermission(); } catch (e) { perm = Notification.permission; }
+  if (perm !== "granted") { NT.msg = "Permesso negato. Riattivalo da Impostazioni → Notifiche → Carico."; render(); return; }
+  NT.busy = true; NT.msg = ""; render();
+  try { await ntSubscribe(); ntCfg().on = true; store.saveProfile(); toast("Notifiche attive 🔔"); }
+  catch (e) { NT.msg = e && e.code === "no_server" ? "Il server delle notifiche non è ancora attivo." : "Non riesco ad attivarle: " + ((e && (e.code || e.message)) || "errore"); }
+  NT.busy = false; render();
+}
+async function ntDisable() {
+  const n = ntCfg(); n.on = false; store.saveProfile(); render();
+  try { const reg = await navigator.serviceWorker.getRegistration(); const s = reg && await reg.pushManager.getSubscription(); if (s) await s.unsubscribe(); } catch (e) {}
+  ntPost("/unsub", { id: n.id }).catch(() => {});
+  toast("Notifiche disattivate");
+}
+async function ntTest() {
+  const b = ntBank(); const sd = suggestedDay(); const d = sd && wDays().find(x => x.id === sd);
+  const body = (b.coach[Math.floor(Math.random() * b.coach.length)] || "Notifiche attive ✅");
+  try { await ntPost("/test", { id: ntCfg().id, msg: { title: ntPayload().coachTitle, body, go: "oggi", tag: "test" } }); toast("Inviata: chiudi l'app e guarda 👀"); }
+  catch (e) { if (e && e.status === 404) { try { await ntSubscribe(); toast("Riattivate, riprova"); } catch (_) { toast("Non riesco a inviarla"); } } else toast("Non riesco a inviarla"); }
+}
+let NT_T = null;
+function pushSync() {
+  const n = (S.profile.user || {}).notif; if (!n || !n.on || !ntSupported()) return;
+  clearTimeout(NT_T);
+  NT_T = setTimeout(() => ntPost("/sync", { id: n.id, cfg: ntPayload() }).catch(e => { if (e && e.status === 404) ntSubscribe().catch(() => {}); }), 2500);
+}
+function notifPanel() {
+  const sup = ntSupported(); const n = sup ? ntCfg() : ((S.profile.user || {}).notif || {}); const on = !!n.on;
+  const head = `<summary>🔔 Notifiche <span class="small muted" style="font-weight:500;margin-left:auto">${on ? "attive" : "spente"}</span></summary>`;
+  if (!sup) return `<details class="card" data-pnl="nt" ${pnlOpen("nt")}>${head}<p class="small muted" style="margin:12px 0 0">${IN_CLAUDE ? "Le notifiche funzionano dall'app installata sulla Home (il sito di Carico), non dentro Claude." : "Su iPhone servono iOS 16.4 o successivo e Carico aperta dall'icona sulla schermata Home."}</p></details>`;
+  const R = n.rem; const sl = slots();
+  const row = (k, label, r, extra = "") => `<div class="nt-r"><button class="chip sm ${r.on ? "on-acc" : ""}" data-nt="tog" data-k="${k}" aria-pressed="${!!r.on}">${label}</button><input class="in nt-t" type="time" data-ntk="${k}" value="${esc(r.t || "")}" ${r.on ? "" : "disabled"}>${extra}</div>`;
+  const days = [1, 2, 3, 4, 5, 6, 0].map(d => `<button class="chip xs ${(R.work.days || []).includes(d) ? "on-acc" : ""}" data-nt="day" data-d="${d}">${DOW[d].slice(0, 2)}</button>`).join("");
+  return `<details class="card" data-pnl="nt" ${pnlOpen("nt")}>${head}
+    <div class="stack" style="margin-top:12px">
+      ${on ? `<div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" data-nt="test">📨 Notifica di prova</button><button class="btn ghost sm" data-nt="off">Disattiva</button></div>`
+        : `<button class="btn acc" data-nt="on" ${NT.busy ? "disabled" : ""}>${NT.busy ? '<span class="spin"></span> Attivo…' : "🔔 Attiva le notifiche"}</button>`}
+      ${NT.msg ? `<p class="small" style="margin:0;color:var(--warn,#e5a23a)">${esc(NT.msg)}</p>` : ""}
+      ${ntIOSNotInstalled() ? `<p class="small muted" style="margin:0">Su iPhone funzionano solo aprendo Carico dall'icona sulla schermata Home.</p>` : ""}
+      <span class="eyebrow">Promemoria · tocca per accendere o spegnere</span>
+      ${wDays().length ? row("work", "🏋️ Allenamento", R.work, `<div class="chips nt-days">${days}</div>`) : ""}
+      ${sl.map(s => row("meals." + s.key, "🍽️ " + esc(s.name), R.meals[s.key])).join("")}
+      ${row("weigh", "⚖️ Pesata", R.weigh)}
+      ${row("check", "📋 Check " + DOW[checkDay()].slice(0, 3).toLowerCase(), R.check)}
+      ${row("water", "💧 Acqua", R.water)}
+      <span class="small muted">Allenamento e pasti non arrivano se li hai già segnati.</span>
+      <span class="eyebrow" style="margin-top:6px">Frasi del Coach</span>
+      <div class="chips">${[0, 1, 2, 3].map(x => `<button class="chip sm ${+n.coach.n === x ? "on-acc" : ""}" data-nt="cn" data-n="${x}">${x ? x + " al giorno" : "Mai"}</button>`).join("")}</div>
+      ${+n.coach.n ? `<div class="nt-r"><span class="small muted">Tra le</span><input class="in nt-t" type="time" data-ntk="coach.from" value="${esc(n.coach.from)}"><span class="small muted">e le</span><input class="in nt-t" type="time" data-ntk="coach.to" value="${esc(n.coach.to)}"></div>` : ""}
+      <span class="small muted">Orari a sorpresa, col tono che hai scelto per il Coach.</span>
+    </div></details>`;
+}
+const ntGet = k => { const n = ntCfg(); const p = k.split("."); return p[0] === "coach" ? n.coach : p[0] === "meals" ? n.rem.meals[p[1]] : n.rem[p[0]]; };
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-nt]"); if (!b) return;
+  const a = b.dataset.nt; const n = ntCfg();
+  if (a === "on") return ntEnable();
+  if (a === "off") return ntDisable();
+  if (a === "test") return ntTest();
+  if (a === "tog") { const r = ntGet(b.dataset.k); if (r) r.on = !r.on; }
+  if (a === "day") { const d = +b.dataset.d; const ds = n.rem.work.days = n.rem.work.days || []; const i = ds.indexOf(d); if (i >= 0) ds.splice(i, 1); else ds.push(d); }
+  if (a === "cn") n.coach.n = +b.dataset.n;
+  store.saveProfile(); render();
+});
+document.addEventListener("change", ev => {
+  const k = ev.target.dataset && ev.target.dataset.ntk; if (!k || !ev.target.value) return;
+  const p = k.split("."); const n = ntCfg();
+  if (p[0] === "coach") n.coach[p[1]] = ev.target.value; else { const r = ntGet(k); if (r) r.t = ev.target.value; }
+  store.saveProfile();
+}, true);
+if (ntSupported()) {
+  navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.go && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(e.data.go)) go(e.data.go); });
+}
+
 /* ---------- avvio ---------- */
 (async () => {
   await store.init();
@@ -3379,6 +3559,9 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && TO
   showMode();
   render();
   showOnboarding();
+  try { const q = new URLSearchParams(location.search).get("go"); if (q && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(q)) { go(q); history.replaceState(null, "", location.pathname); } } catch (e) {}
+  if (((S.profile.user || {}).notif || {}).on && ntSupported()) { navigator.serviceWorker.register("./sw.js").catch(() => {}); pushSync(); }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) pushSync(); });
   if (IN_CLAUDE) {
     try { AI.sample = await claude.use("sample"); if (AI.sample) AI.limits = await AI.sample.limits().catch(() => null); } catch (e) { AI.sample = null; }
     if (S.tab === "piano") render();

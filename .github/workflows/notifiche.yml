@@ -1,0 +1,62 @@
+name: Server notifiche
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["worker/**", ".github/workflows/notifiche.yml"]
+permissions:
+  contents: write
+concurrency: notifiche
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Controllo token
+        id: chk
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then echo "::notice::Manca il secret CLOUDFLARE_API_TOKEN: aggiungilo e rilancia questo workflow"; echo "ok=0" >> $GITHUB_OUTPUT; else echo "ok=1" >> $GITHUB_OUTPUT; fi
+      - name: Spazio dati (KV)
+        if: steps.chk.outputs.ok == '1'
+        working-directory: worker
+        run: |
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || unset CLOUDFLARE_ACCOUNT_ID
+          find_id() { npx --yes wrangler@4 kv namespace list 2>/dev/null | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const a=JSON.parse(s.slice(s.indexOf("[")));const n=a.find(x=>/carico_push_kv$/i.test(x.title));process.stdout.write(n?n.id:"")})'; }
+          ID=$(find_id || true)
+          if [ -z "$ID" ]; then npx --yes wrangler@4 kv namespace create carico_push_kv; ID=$(find_id); fi
+          if [ -z "$ID" ]; then echo "::error::Impossibile creare lo spazio KV: controlla i permessi del token (Workers KV Storage: Edit)"; exit 1; fi
+          cat > wrangler.toml <<TOML
+          name = "carico-push"
+          main = "index.js"
+          compatibility_date = "2025-06-01"
+          workers_dev = true
+          [triggers]
+          crons = ["* * * * *"]
+          [[kv_namespaces]]
+          binding = "KV"
+          id = "$ID"
+          TOML
+          sed -i 's/^ *//' wrangler.toml
+      - name: Pubblica
+        if: steps.chk.outputs.ok == '1'
+        working-directory: worker
+        run: |
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || unset CLOUDFLARE_ACCOUNT_ID
+          npx --yes wrangler@4 deploy 2>&1 | tee ../deploy.log
+          URL=$(grep -o 'https://[a-z0-9.-]*\.workers\.dev' ../deploy.log | head -1)
+          if [ -z "$URL" ]; then echo "::error::Nessun indirizzo workers.dev: apri una volta Workers & Pages su dash.cloudflare.com per scegliere il sottodominio, poi rilancia"; exit 1; fi
+          echo "URL=$URL" >> $GITHUB_ENV
+      - name: Collega l'app
+        if: steps.chk.outputs.ok == '1'
+        run: |
+          echo "{\"url\":\"$URL\"}" > push.json
+          if ! git diff --quiet -- push.json; then
+            git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add push.json; git commit -m "Indirizzo server notifiche"; git push
+          fi
+          echo "Server notifiche: $URL"
