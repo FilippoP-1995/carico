@@ -517,7 +517,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "2.5 · 20 ottobre";
+const APP_VERSION = "2.6 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -955,7 +955,7 @@ function summaryCard() {
   let wkPick = "";
   if (S.wkSel && wDays().length) { const L = S.days[S.wkSel]; const cur = isSession(L) ? L.w.dayId : null;
     wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: quale allenamento hai fatto?</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
-      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${cur === d.id ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${cur === d.id ? "✓ " : ""}${esc(d.name)}</button>`).join("")}${cur ? `<button class="wk-o rm" data-act="wk-mark" data-id="">Nessun allenamento</button>` : ""}</div></div>`; }
+      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${cur === d.id ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${cur === d.id ? "✓ " : ""}${esc(d.name)}</button>`).join("")}${cur ? `<button class="wk-o rm" data-act="wk-mark" data-id="">Nessun allenamento${setsDone(L) ? ` (cancella ${setsDone(L)} ${setsDone(L) === 1 ? "serie" : "serie"})` : ""}</button>` : ""}</div></div>`; }
   // frase del giorno
   let insight = "";
   if (pr) insight = `Nuovo record: <b>${esc(pr.name)}</b> ${fmtN(pr.kg)} kg (prima ${fmtN(pr.prev)} kg)`;
@@ -1913,8 +1913,8 @@ document.addEventListener("click", ev => {
     case "wk-close": S.wkSel = null; render(); return;
     case "wk-mark": {
       const d = S.wkSel; if (!d) return; const l = dayLog(d); const id = b.dataset.id; const wd = wDays().find(x => x.id === id);
-      if (!wd) { if (setsDone(l) === 0) l.w = { dayId: null, ex: {}, done: false }; else l.w.done = false; toast("Tolto"); }
-      else { if (l.w.dayId !== wd.id && setsDone(l) > 0) { toast("Quel giorno hai già registrato un'altra seduta"); return; } l.w.dayId = wd.id; l.w.dayName = wd.name; l.w.done = true; toast("✅ " + wd.name + " segnato come fatto"); }
+      if (!wd) { const n = setsDone(l); l.w = { dayId: null, ex: {}, done: false }; toast(n ? `Tolto: cancellate ${n} ${n === 1 ? "serie registrata" : "serie registrate"}` : "Tolto"); }
+      else { if (l.w.dayId !== wd.id && setsDone(l) > 0) { toast("Quel giorno hai serie registrate di un'altra seduta: tocca prima \"Nessun allenamento\"", 4500); return; } l.w.dayId = wd.id; l.w.dayName = wd.name; l.w.done = true; toast("✅ " + wd.name + " segnato come fatto"); }
       store.saveDay(d); S.wkSel = null; if (d === S.date) S.selDay = null; render(); return;
     }
     case "shop-open": openShop(); return;
