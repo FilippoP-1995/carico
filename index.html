@@ -592,7 +592,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "3.8 · 20 ottobre";
+const APP_VERSION = "3.9 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1988,7 +1988,7 @@ document.addEventListener("submit", ev => {
   else if (f.dataset.form === "apikey") {
     const k = $("#keyIn", f).value.trim();
     if (!/^sk-ant-/.test(k)) { toast("La chiave inizia con sk-ant-"); return; }
-    lsSet("carico.apikey", k); toast("Chiave salvata su questo dispositivo"); render();
+    lsSet("carico.apikey", k); toast("Chiave salvata su questo dispositivo"); render(); setTimeout(autoExtract, 500);
   }
 });
 document.addEventListener("click", ev => {
@@ -2148,7 +2148,7 @@ document.addEventListener("click", ev => {
 function applyPending() {
   const p = S.pending; if (!p) return; const P = plan();
   if (p.workout) { P.workout = p.workout; S.selDay = null; }
-  if (p.diet) { P.diet = p.diet; S.selVariant = null; for (const d in S.days) { const m = S.days[d].m; if (m) { m.pick = {}; m.eaten = {}; m.manual = {}; } } Object.keys(S.days).forEach(d => store.saveDay(d)); }
+  if (p.diet) { P.diet = p.diet; P.diet.autoX = false; setTimeout(autoExtract, 300); S.selVariant = null; for (const d in S.days) { const m = S.days[d].m; if (m) { m.pick = {}; m.eaten = {}; m.manual = {}; } } Object.keys(S.days).forEach(d => store.saveDay(d)); }
   S.pending = null; S.importMsg = null; store.saveProfile();
 }
 
@@ -2669,10 +2669,14 @@ function runCheck() {
 }
 
 /* ---------- obiettivi dalle note con l'AI ---------- */
-async function levelsFromNotes() {
-  const notes = plan().diet.notes || ""; if (!notes.trim()) { toast("Non ci sono note da leggere"); return; }
-  if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
-  S.busy.lv = true; render();
+function autoExtract() { // al primo caricamento di un piano ricavo da solo obiettivi ON/OFF, acqua e integratori dalle note
+  const D = plan().diet; if (!D || D.autoX || !(D.notes || "").trim() || !variants().length || !AI.ready() || S.busy.lv) return;
+  levelsFromNotes({ auto: true });
+}
+async function levelsFromNotes({ auto = false } = {}) {
+  const notes = plan().diet.notes || ""; if (!notes.trim()) { if (!auto) toast("Non ci sono note da leggere"); return; }
+  if (!AI.ready()) { if (!auto) toast(aiErr({ code: "no_ai" }), 4500); return; }
+  S.busy.lv = true; if (!auto) render();
   try {
     const r = await AI.json(`Dalle note di un piano alimentare estrai gli obiettivi giornalieri. Oggi è il ${today()} (usa questo anno per le date).
 Se ci sono obiettivi diversi per giorni di allenamento (ON) e di riposo (OFF), riportali separati; se ci sono più livelli o fasi con date di inizio, crea un livello per ciascuno con la data di inizio. Se per un macro c'è un intervallo (es. 182–192 g) usa il valore medio arrotondato. Se manca la data di inizio del primo livello usa ${today()}.
@@ -2684,14 +2688,16 @@ Rispondi solo con JSON: {"levels":[{"name":"Livello A","from":"2026-10-19","on":
       const o = k => { const s = x[k] || x[k === "on" ? "off" : "on"] || {}; return { kcal: num(s.kcal) || "", protein: num(s.protein) || "", carbs: num(s.carbs) || "", fat: num(s.fat) || "" }; };
       return { id: uid(), name: String(x.name || "Livello").slice(0, 40), from: /^\d{4}-\d{2}-\d{2}$/.test(x.from || "") ? x.from : today(), on: o("on"), off: o("off") };
     });
-    if (!lv.length) throw { code: "invalid_json" };
-    plan().diet.levels = lv;
+    if (!lv.length && !auto) throw { code: "invalid_json" };
+    if (lv.length && (!auto || !(plan().diet.levels || []).length)) plan().diet.levels = lv;
+    plan().diet.autoX = true;
     const added = [];
-    if (num(r.water_l) && !(S.profile.user || {}).waterGoal) { S.profile.user = S.profile.user || {}; S.profile.user.waterGoal = num(r.water_l); added.push("acqua"); }
+    if (num(r.water_l) && (!(S.profile.user || {}).waterGoal || auto)) { S.profile.user = S.profile.user || {}; S.profile.user.waterGoal = num(r.water_l); added.push("acqua"); }
     if (Array.isArray(r.supplements) && r.supplements.length) { S.profile.supps = S.profile.supps || []; r.supplements.forEach(x => { if (x && x.name && !S.profile.supps.some(y => norm(y.name) === norm(x.name))) { S.profile.supps.push({ id: uid(), name: String(x.name).slice(0, 40), dose: x.dose ? String(x.dose).slice(0, 20) : "" }); added.push(x.name); } }); }
     store.saveProfile(); S.busy.lv = false; render();
-    toast(`Trovati ${lv.length} ${lv.length === 1 ? "livello" : "livelli"} ON/OFF${added.length ? " + " + added.join(", ") : ""}`, 4500);
-  } catch (e) { S.busy.lv = false; render(); const m = aiErr(e); if (m) toast(m, 4500); }
+    const parts = []; if (lv.length) parts.push(`${lv.length} ${lv.length === 1 ? "livello" : "livelli"} ON/OFF`); if (added.includes("acqua")) parts.push(`acqua ${fmtN(waterGoal())} L`); const sn = added.filter(x => x !== "acqua"); if (sn.length) parts.push(sn.join(", "));
+    if (parts.length) toast((auto ? "✨ Dal tuo piano ho impostato: " : "Trovati: ") + parts.join(" · "), 5000); else if (!auto) toast("Nelle note non ho trovato obiettivi da impostare");
+  } catch (e) { S.busy.lv = false; render(); if (!auto) { const m = aiErr(e); if (m) toast(m, 4500); } }
 }
 function levelsEditor() {
   const L = (plan().diet.levels || []).slice().sort((a, b) => (a.from || "") < (b.from || "") ? -1 : 1);
@@ -3041,6 +3047,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && TO
     try { AI.sample = await claude.use("sample"); if (AI.sample) AI.limits = await AI.sample.limits().catch(() => null); } catch (e) { AI.sample = null; }
     if (S.tab === "piano") render();
   }
+  setTimeout(autoExtract, 1200);
   document.addEventListener("click", function wl() { try { navigator.wakeLock && navigator.wakeLock.request("screen").catch(() => {}); } catch (e) {} }, { once: true });
 })();
 })();
