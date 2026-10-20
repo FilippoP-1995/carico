@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8">
 <meta http-equiv="Cache-Control" content="no-cache">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -500,7 +500,7 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .nt-btn{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line);background:none;border-radius:99px;padding:4px 10px;font-size:13px;color:var(--muted);max-width:100%}
 .nt-btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
 .nt-btn.has{border-style:solid;color:var(--ink);background:var(--surface-2)}
-.nt-in{width:100%;min-height:64px;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:15px;color:var(--ink);resize:vertical}
+.nt-in{width:100%;min-height:64px;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:16px;color:var(--ink);resize:vertical}
 .nt.dark .nt-btn{border-color:rgba(255,255,255,.22);color:var(--hero-mut)}
 .nt.dark .nt-btn.has{color:var(--hero-ink);background:rgba(255,255,255,.08)}
 .nt.dark .nt-in{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:var(--hero-ink)}
@@ -516,6 +516,8 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .xd-next span{font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;opacity:.7}
 .xd-next b{font-size:19px}
 .xd-rest{flex:none;width:100%}
+input,textarea,select{font-size:16px}
+input.small,textarea.small,select.small,.in.small{font-size:16px}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -664,7 +666,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "5.1 · 20 ottobre";
+const APP_VERSION = "5.2 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
