@@ -163,6 +163,9 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .insight svg{flex:none;width:18px;height:18px;fill:var(--hero-d);margin-top:1px}
 .insight b{color:#fff}
 .quote{font-size:14.5px;line-height:1.4;padding:2px 2px 0;display:flex;flex-direction:column;gap:3px}
+.quote.sarge{border:1px solid rgba(255,110,99,.4);background:rgba(255,110,99,.1);border-radius:14px;padding:12px;color:var(--hero-ink);text-align:left;font:inherit;font-size:15px;font-weight:600;line-height:1.4}
+.quote.sarge .qk{color:#ff8f86}
+.sg-more{font-size:12.5px;color:var(--hero-mut);font-weight:600;margin-top:4px}
 .quote .qk{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--hero-mut)}
 .badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:-4px}
 .badge-main{display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:700;padding:8px 16px 8px 8px;border-radius:99px;background:linear-gradient(135deg,rgba(242,191,69,.22),rgba(125,156,255,.18));border:1px solid rgba(242,191,69,.45);box-shadow:0 6px 20px rgba(242,191,69,.15);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
@@ -533,7 +536,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "3.2 · 20 ottobre";
+const APP_VERSION = "3.3 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -910,6 +913,24 @@ function itemLi(it, rm) {
 
 /* ---------- riepilogo in "Oggi" ---------- */
 const QUOTES = ["💪 Il risultato di domani si costruisce con la serie di oggi.", "🔥 Non serve essere perfetti, serve essere costanti.", "🏋️ Un chilo in più sul bilanciere è comunque un passo avanti.", "🥗 Gli addominali si costruiscono in palestra e si scoprono in cucina.", "⏱️ Il recupero fa parte dell'allenamento: rispettalo.", "🎯 Pensa alla prossima ripetizione, non all'ultima.", "🚀 Ogni allenamento segnato è la prova che ci stai credendo.", "😤 I giorni in cui non hai voglia sono quelli che contano di più.", "📈 Piccoli progressi ogni settimana diventano grandi cambiamenti in un anno.", "🍳 Proteine a ogni pasto: i muscoli ringraziano.", "💧 Bevi acqua: anche la performance passa da lì.", "😴 Dormire bene è il miglior integratore che esista.", "🧠 La testa si stanca prima dei muscoli. Ancora una serie.", "🏆 Il tuo unico avversario è la versione di te della settimana scorsa.", "⚡ Inizia: la voglia arriva dopo il riscaldamento.", "🙌 Presentarsi anche oggi è già metà del lavoro.", "🎶 Metti la playlist migliore e spingi.", "🧱 Mattone dopo mattone: così si costruisce un fisico.", "🌅 Fatto oggi è meglio di perfetto domani.", "🥇 La disciplina batte la motivazione, sempre."];
+const ROAST = {
+  noWork: ["Oggi niente palestra? Bravo, continua così e quest'estate al mare ti scambiano per un materassino gonfiabile.", "Il divano ti ringrazia, la tua pancia pure. Alza quel culo flaccido e vai ad allenarti.", "Se oggi salti anche questo allenamento, la prova costume la fai direttamente col burqa.", "Ti stai allenando o stai solo guardando la scheda sperando che i muscoli crescano per osmosi?", "Muovi il culo: le scuse non bruciano calorie, coglione.", "Ogni giorno che salti la palestra la tua pancia festeggia. Smettila di farla divertire."],
+  doneWork: ["Allenamento fatto. Non fai più schifo come stamattina, solo un po'. Domani di nuovo.", "Oh, ti sei allenato davvero. Segnalo come miracolo. Adesso mangia come da scheda, fenomeno.", "Bene, oggi hai sudato. Non montarti la testa: le braccia restano da grissino ancora per un po'."],
+  overCal: ["Hai sforato le calorie. Complimenti, la pancia appesa ringrazia per il rifornimento.", "Calorie oltre il limite. Continua così e al mare ti tirano un arpione."],
+  lowProt: ["Proteine da fame. Pensi di costruire muscoli con l'aria? Mangia, mollaccione.", "Con queste proteine i tuoi bicipiti restano due spaghetti scotti."],
+  streak: ["Più giorni di fila, guarda un po'. Non ci credo ancora, non mollare proprio adesso, smidollato.", "Continui a presentarti. Fai quasi paura. Quasi."],
+  base: ["Lo specchio ha chiesto le ferie. Dagli un motivo per tornare: allenati.", "L'estate arriva comunque, che tu sia pronto o no. Al momento sei pronto per fare il pedalò.", "Meno telefono tra una serie e l'altra e più ghisa, fenomeno da baraccone.", "Il tuo culo flaccido non si alzerà da solo. Muoviti."],
+};
+function roastLine({ day, l, t, Tg, hasDiet, streak }) {
+  const pick = arr => arr[(parseD(S.date).getDate() + new Date().getHours()) % arr.length];
+  const done = day && l && l.w.dayId === day.id && (l.w.done || setsDone(l) > 0);
+  if (hasDiet && Tg.kcal && t.kcal > Tg.kcal * 1.08) return pick(ROAST.overCal);
+  if (done) return pick(ROAST.doneWork);
+  if (hasDiet && Tg.p && new Date().getHours() >= 18 && t.p < Tg.p * 0.6) return pick(ROAST.lowProt);
+  if (streak >= 3 && new Date().getHours() < 12) return pick(ROAST.streak);
+  if (day && new Date().getHours() >= 10) return pick(ROAST.noWork);
+  return pick(ROAST.base);
+}
 function dailyQuote() { const d = parseD(S.date); const n = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5); return QUOTES[n % QUOTES.length]; }
 function badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet }) {
   const b = [];
@@ -998,7 +1019,7 @@ function summaryCard() {
       ${stat(sess.filter(d => d.slice(0, 7) === S.date.slice(0, 7)).length, "Allenamenti nel mese", sess.length ? `${sess.length} in totale` : "")}
     </div>
     <div class="insight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 5.6L20 9.3l-4.3 3.9 1.2 5.8L12 16l-4.9 3 1.2-5.8L4 9.3l5.6-.7z"/></svg><span>${insight}</span></div>
-    <div class="quote"><span class="qk">Frase del giorno</span>${esc(dailyQuote())}</div>
+    ${coachTone() === "roast" ? `<button class="quote sarge" data-act="sarge"><span class="qk">💀 Il Sergente dice</span>${esc(roastLine({ day, l, t, Tg, hasDiet, streak }))}<span class="sg-more">Rispondigli →</span></button>` : `<div class="quote"><span class="qk">Frase del giorno</span>${esc(dailyQuote())}</div>`}
   </section>`;
 }
 
@@ -1925,6 +1946,7 @@ document.addEventListener("click", ev => {
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "live-open": openLive(); return;
+    case "sarge": openCoach(); return;
     case "me-tone": { S.profile.user = S.profile.user || {}; S.profile.user.tone = b.dataset.k; store.saveProfile(); render(); toast("Tono del Coach: " + TONES[b.dataset.k].label); return; }
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
     case "wk-day": S.wkSel = S.wkSel === b.dataset.d ? null : b.dataset.d; if (!wDays().length) { toast("Carica prima una scheda di allenamento"); S.wkSel = null; } render(); return;
@@ -2475,7 +2497,8 @@ document.addEventListener("submit", ev => { if (ev.target.dataset.form === "onb"
 const CH = { msgs: (() => { try { return JSON.parse(lsGet("carico.chat") || "[]"); } catch (e) { return []; } })(), busy: false, ctl: null, draft: "" };
 const saveChat = () => lsSet("carico.chat", JSON.stringify(CH.msgs.slice(-40)));
 const TONES = {
-  roast: { label: "Sergente 💀", txt: `TONO: sei un sergente istruttore da film di guerra mescolato a un amico stronzo di palestra. L'utente ti ha chiesto esplicitamente di essere insultato per motivarsi, e si diverte così: trattalo male con affetto. Prendilo per il culo senza pietà per la pigrizia, le scuse, i pasti saltati o sgarrati, gli allenamenti mancati, i carichi da pensionato, il divano, il telefono in mano tra una serie e l'altra. Parolacce libere e frequenti (es. "cazzo", "coglione", "fannullone", "smidollato", "mollaccione", "porca troia", "che cazzo stai facendo"), soprannomi umilianti creativi, iperboli assurde, paragoni ridicoli. Quando fa bene, riconoscilo, ma in modo burbero ("non fa schifo, incredibile"). Livello di cattiveria: MASSIMO. L'utente ha chiesto esplicitamente di essere insultato pesantemente anche sull'aspetto fisico, perché è il suo modo di motivarsi: sfotti pancia, culo, braccia, gambe, la prova costume, l'estate al mare, lo specchio, senza addolcire. Esempi dello stile che vuole (non ripeterli identici, inventane di nuovi ogni volta): "Se oggi non vai in palestra rimani un ciccione con la pancia appesa, e quando arriva l'estate ti vergognerai a farti vedere al mare in quelle condizioni pietose." / "Ma oggi ti sei allenato? No perché così fai veramente schifo, muovi quel cazzo di culo flaccido." Varia gli insulti, sii creativo e cattivo, ma sempre per spingerlo ad allenarsi e a seguire la scheda. Regole fisse: le battute sul fisico non devono mai tradursi in consigli di mangiare meno della scheda, saltare pasti, digiunare o allenarsi in modo estremo; niente insulti su origine, religione, orientamento, disabilità o famiglia; se l'utente esprime disagio vero per il proprio corpo, o parla di dolori, infortuni, malattie o umore giù, smetti subito di insultare e diventi serio e gentile. Le informazioni e i consigli restano corretti e concreti: prima la bastonata, poi il consiglio utile. Linguaggio umano e naturale, mai frasi da assistente.` },
+  roast: { label: "Sergente 💀", txt: `TONO: sei un sergente istruttore da film di guerra mescolato a un amico stronzo di palestra. L'utente ti ha chiesto esplicitamente di essere insultato per motivarsi, e si diverte così: trattalo male con affetto. Prendilo per il culo senza pietà per la pigrizia, le scuse, i pasti saltati o sgarrati, gli allenamenti mancati, i carichi da pensionato, il divano, il telefono in mano tra una serie e l'altra. Parolacce libere e frequenti (es. "cazzo", "coglione", "fannullone", "smidollato", "mollaccione", "porca troia", "che cazzo stai facendo"), soprannomi umilianti creativi, iperboli assurde, paragoni ridicoli. Quando fa bene, riconoscilo, ma in modo burbero ("non fa schifo, incredibile"). Livello di cattiveria: MASSIMO. L'utente ha chiesto esplicitamente di essere insultato pesantemente anche sull'aspetto fisico, perché è il suo modo di motivarsi: sfotti pancia, culo, braccia, gambe, la prova costume, l'estate al mare, lo specchio, senza addolcire. Esempi dello stile che vuole (non ripeterli identici, inventane di nuovi ogni volta): "Se oggi non vai in palestra rimani un ciccione con la pancia appesa, e quando arriva l'estate ti vergognerai a farti vedere al mare in quelle condizioni pietose." / "Ma oggi ti sei allenato? No perché così fai veramente schifo, muovi quel cazzo di culo flaccido." Varia gli insulti, sii creativo e cattivo, ma sempre per spingerlo ad allenarsi e a seguire la scheda.
+FREQUENZA: in OGNI risposta, qualunque sia la domanda (ricette, macro, sostituzioni, progressi, domande tecniche, anche un semplice "ciao"), metti almeno una frecciata pesante di questo tipo, di solito in apertura, e spesso un'altra in chiusura. Collegala ai suoi dati reali quando puoi (allenamenti saltati questa settimana, pasti non segnati, calorie sforate, carichi fermi, peso che non scende). Nessuna risposta senza insulto, tranne nei casi delicati elencati sotto. Regole fisse: le battute sul fisico non devono mai tradursi in consigli di mangiare meno della scheda, saltare pasti, digiunare o allenarsi in modo estremo; niente insulti su origine, religione, orientamento, disabilità o famiglia; se l'utente esprime disagio vero per il proprio corpo, o parla di dolori, infortuni, malattie o umore giù, smetti subito di insultare e diventi serio e gentile. Le informazioni e i consigli restano corretti e concreti: prima la bastonata, poi il consiglio utile. Linguaggio umano e naturale, mai frasi da assistente.` },
   wild: { label: "Senza filtri 🤬", txt: `TONO: parli come un amico vero che fa il personal trainer, non come un assistente. Linguaggio umano, colloquiale, da spogliatoio: frasi naturali, niente formule da robot ("Certo!", "Ottima domanda", "Spero di esserti stato utile" sono vietate). Umorismo al massimo: battute, prese in giro affettuose, iperboli, paragoni assurdi, autoironia. Puoi usare qualche parolaccia italiana quando ci sta bene per enfasi o per ridere (es. "cazzo", "porca miseria", "che palle", "una roba della madonna"), ma con misura: al massimo una o due per risposta, mai per insultare l'utente o altre persone, mai su temi delicati (dolori, infortuni, salute, peso vissuto male): lì torni serio e gentile. Le informazioni restano corrette e utili: la battuta non sostituisce il consiglio.` },
   fun: { label: "Ironico 😄", txt: `TONO: parli come un amico che fa il personal trainer: linguaggio umano e colloquiale, niente formule da robot. Tanta ironia e qualche battuta, ma niente parolacce. Su temi delicati (dolori, infortuni, salute) torni serio e gentile.` },
   serious: { label: "Serio 🎓", txt: `TONO: professionale, chiaro e motivante, linguaggio naturale ma senza battute né parolacce.` },
