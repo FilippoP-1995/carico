@@ -456,6 +456,7 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .hk-v i{width:8px;height:8px;border-radius:50%;flex:none;align-self:center}
 .hk-v b{font-family:var(--f-display);font-size:19px;color:var(--ink);font-variant-numeric:tabular-nums}
 .hk-guide{font-size:15px;line-height:1.5}
+.hk-stale{font-size:13px;color:var(--muted);background:var(--surface-2);border-radius:10px;padding:8px 10px}
 .hk-guide p{margin:0}
 .hk-guide ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
 .hk-tpl{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -608,7 +609,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "4.3 · 20 ottobre";
+const APP_VERSION = "4.4 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2765,7 +2766,12 @@ const HKG = () => { const u = S.profile.user || {}; return { kcal: num(u.moveGoa
 const hkDay = (d = S.date) => (S.days[d] && S.days[d].hk) || null;
 function parseHK(t) {
   t = String(t || ""); if (!/carico/i.test(t)) return null;
-  const g = k => { const m = t.match(new RegExp(k + "\\s*[=:]\\s*([\\d.,]+)", "i")); if (!m) return null; let v = m[1]; if (/\d\.\d{3}(,|$)/.test(v)) v = v.replace(/\./g, ""); return num(v.replace(/,(?=\d{3}\b)/g, "")); };
+  // Comandi rapidi scrive i numeri senza separatore delle migliaia e con la virgola per i decimali (es. 404,045)
+  const g = k => { const m = t.match(new RegExp(k + "\\s*[=:]\\s*([\\d.,]+)", "i")); if (!m) return null; let v = m[1].replace(/[.,]$/, "");
+    if (v.includes(",") && v.includes(".")) v = v.lastIndexOf(",") > v.lastIndexOf(".") ? v.replace(/\./g, "").replace(",", ".") : v.replace(/,/g, "");
+    else if ((v.match(/\./g) || []).length > 1) v = v.replace(/\./g, "");
+    else v = v.replace(",", ".");
+    const n = parseFloat(v); return isFinite(n) ? n : null; };
   const o = { kcal: g("kcal"), ex: g("ex"), steps: g("passi"), weight: g("peso") };
   return o.kcal == null && o.ex == null && o.steps == null && o.weight == null ? null : o;
 }
@@ -2793,7 +2799,7 @@ function hkCard() {
       </div>
     </div>
     ${S.hkPaste ? `<form class="stack" data-form="hk" style="gap:8px"><textarea class="in" id="hkTxt" style="min-height:70px" placeholder="Incolla qui il testo copiato dal Comando rapido (tieni premuto → Incolla)"></textarea><div class="row"><button class="btn primary sm" style="flex:1">Importa</button><button type="button" class="btn sm" data-act="hk-cancel">Annulla</button></div></form>`
-      : `<div class="row" style="gap:8px"><button class="btn sm" style="flex:1" data-act="hk-import">📲 Importa da Salute</button><button class="btn ghost sm" data-act="hk-guide">Come si configura?</button></div>`}
+      : `${h && h.ts && S.date === today() && Date.now() - h.ts > 3 * 3600e3 ? `<div class="hk-stale">⏱️ Dati delle ${new Date(h.ts).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}: lancia "Carico Salute" e reimporta per aggiornarli</div>` : ""}<div class="row" style="gap:8px"><button class="btn sm ${!h || (S.date === today() && Date.now() - h.ts > 3 * 3600e3) ? "primary" : ""}" style="flex:1" data-act="hk-import">📲 ${h ? "Aggiorna da Salute" : "Importa da Salute"}</button><button class="btn ghost sm" data-act="hk-guide">Come si configura?</button></div>`}
   </div>`;
 }
 function renderHKGuide() {
