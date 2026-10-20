@@ -496,6 +496,14 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .lf-row{display:flex;flex-direction:column;gap:2px;background:rgba(255,255,255,.05);border-radius:12px;padding:8px 10px 0}
 .lf-row>span{font-size:13px;font-weight:600}
 .lf-row .feel{padding-bottom:8px}
+.nt{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.nt-btn{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line);background:none;border-radius:99px;padding:4px 10px;font-size:13px;color:var(--muted);max-width:100%}
+.nt-btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.nt-btn.has{border-style:solid;color:var(--ink);background:var(--surface-2)}
+.nt-in{width:100%;min-height:64px;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:15px;color:var(--ink);resize:vertical}
+.nt.dark .nt-btn{border-color:rgba(255,255,255,.22);color:var(--hero-mut)}
+.nt.dark .nt-btn.has{color:var(--hero-ink);background:rgba(255,255,255,.08)}
+.nt.dark .nt-in{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:var(--hero-ink)}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -644,7 +652,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "4.9 · 20 ottobre";
+const APP_VERSION = "5.0 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -964,17 +972,28 @@ function feelRow(exId, dark) {
   return `<div class="feel ${dark ? "dark" : ""}"><span>${cur ? "Sensazione:" : "Com'è andata?"}</span>${FEELS.map(([k, em, lb]) => `<button class="fl ${cur === k ? "on" : ""}" data-act="feel" data-ex="${exId}" data-f="${k}" aria-label="${lb}" title="${lb}">${em}<small>${lb}</small></button>`).join("")}</div>`;
 }
 function setFeel(exId, f) { const l = dayLog(); const e = l.w.ex[exId]; if (!e) return; e.feel = e.feel === f ? "" : f; store.saveDay(S.date); }
+function noteBox(exId, dark) {
+  const l = peekLog(); const e = l && l.w && l.w.ex[exId]; const txt = (e && e.note) || ""; const open = S.noteOpen === exId;
+  return `<div class="nt ${dark ? "dark" : ""}"><button class="nt-btn ${txt ? "has" : ""}" data-act="note" data-ex="${exId}" aria-label="Note dell'esercizio">📝${txt && !open ? `<span>${esc(txt.length > 40 ? txt.slice(0, 40) + "…" : txt)}</span>` : open ? "" : "<span>Nota</span>"}</button>
+    ${open ? `<textarea class="nt-in" id="note-${exId}" data-note="${exId}" placeholder="Es. sedile in posizione 4, spalla sinistra tira un po'…">${esc(txt)}</textarea>` : ""}</div>`;
+}
+function setNote(exId, txt) {
+  const l = dayLog(); const day = currentDay(); const ex = day && (day.exercises || []).find(x => x.id === exId); if (!ex) return;
+  if (l.w.dayId !== day.id && setsDone(l) === 0) l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false };
+  const e = l.w.ex[exId] = l.w.ex[exId] || { name: ex.name, s: [] }; e.note = txt.slice(0, 500); store.saveDay(S.date);
+}
 function feelHint(last) {
-  if (!last || !last.feel) return ""; const fo = feelOf(last.feel); if (!fo) return "";
+  const nt = last && last.note ? ` · 📝 "${last.note.length > 60 ? last.note.slice(0, 60) + "…" : last.note}"` : "";
+  if (!last || !last.feel) return nt; const fo = feelOf(last.feel); if (!fo) return nt;
   const tip = { light: "prova a salire di carico", ok: "tieni il carico o prova una rip. in più", heavy: "tieni il carico e cura la tecnica", pain: "attenzione: riduci o chiedi al trainer" }[last.feel];
-  return ` · ${fo[1]} ${fo[2].toLowerCase()}, ${tip}`;
+  return ` · ${fo[1]} ${fo[2].toLowerCase()}, ${tip}` + nt;
 }
 function lastPerformance(exName, beforeDate) {
   const key = norm(exName);
   const dates = sortedDates().filter(d => d < beforeDate).reverse();
   for (const d of dates) {
     const ex = S.days[d].w && S.days[d].w.ex; if (!ex) continue;
-    for (const k in ex) if (norm(ex[k].name) === key) { const done = (ex[k].s || []).filter(s => s && s.done); if (done.length) return { date: d, sets: done, feel: ex[k].feel || "" }; }
+    for (const k in ex) if (norm(ex[k].name) === key) { const done = (ex[k].s || []).filter(s => s && s.done); if (done.length) return { date: d, sets: done, feel: ex[k].feel || "", note: ex[k].note || "" }; }
   }
   return null;
 }
@@ -993,7 +1012,25 @@ function startRest(sec, label) {
   try { if (!T.audio) T.audio = new (window.AudioContext || window.webkitAudioContext)(); if (T.audio.state === "suspended") T.audio.resume(); } catch (e) {}
   clearInterval(T.iv); T.iv = setInterval(tick, 250); tick();
 }
-function beep() { // allarme a due toni, forte, per la fine del recupero
+let ALARM_EL = null;
+function alarmWavUrl() { // allarme a due toni generato in WAV (riprodotto da un elemento audio: più affidabile su iPhone)
+  const sr = 22050, dur = 1.9, n = Math.floor(sr * dur), buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+  for (let i = 0; i < n; i++) { const t = i / sr, k = Math.floor(t / 0.19), ph = t - k * 0.19; const on = ph < 0.15; const f = k % 2 ? 1175 : 1760; const sq = Math.sin(2 * Math.PI * f * t) >= 0 ? 1 : -1; const env = on ? Math.min(1, ph / 0.005, (0.15 - ph) / 0.01) : 0; v.setInt16(44 + i * 2, sq * env * 32000, true); }
+  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+}
+function unlockAlarm() { // va chiamata dentro un tocco: sblocca la riproduzione automatica successiva
+  try { if (!ALARM_EL) { ALARM_EL = new Audio(alarmWavUrl()); ALARM_EL.preload = "auto"; ALARM_EL.volume = 1; }
+    ALARM_EL.muted = true; const pr = ALARM_EL.play(); if (pr && pr.then) pr.then(() => { ALARM_EL.pause(); ALARM_EL.currentTime = 0; ALARM_EL.muted = false; }).catch(() => { ALARM_EL.muted = false; }); else { ALARM_EL.pause(); ALARM_EL.muted = false; } } catch (e) {}
+  try { const a = T.audio || (T.audio = new (window.AudioContext || window.webkitAudioContext)()); if (a.state !== "running") a.resume(); const b = a.createBuffer(1, 1, 22050), src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); src.start(0); } catch (e) {}
+}
+function beep() {
+  try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
+  if (ALARM_EL) { try { ALARM_EL.muted = false; ALARM_EL.currentTime = 0; const pr = ALARM_EL.play(); if (pr && pr.catch) pr.catch(() => beepSynth()); return; } catch (e) {} }
+  beepSynth();
+}
+function beepSynth() { // allarme a due toni, forte, per la fine del recupero
   try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
   try {
     const a = T.audio || (T.audio = new (window.AudioContext || window.webkitAudioContext)()); if (a.state === "suspended") a.resume();
@@ -1248,7 +1285,7 @@ function vAllenamento() {
         const copy = i === 0 && sets > 1 ? `<div class="copyrow" data-copy="${ex.id}" ${copyVisible(ex.id) ? "" : "hidden"}><button data-act="copy-first" data-ex="${ex.id}">${ICON_DOWN}Stessi kg e rip. per le altre serie</button></div>` : "";
         return row + copy;
       }).join("");
-      inner = `<div class="ex-b">${muscleBlock(ex, false)}</div>${last || ex.notes ? `<div class="ex-b">
+      inner = `<div class="ex-b">${muscleBlock(ex, false)}${noteBox(ex.id, false)}</div>${last || ex.notes ? `<div class="ex-b">
           ${last ? `<div class="last">Ultima volta (${esc(fmtDay(last.date, { day: "numeric", month: "short" }))}): ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${esc(feelHint(last))}</div>` : ""}
           ${ex.notes ? `<div class="ex-n">${esc(ex.notes)}</div>` : ""}</div>` : ""}
         <div class="sets">${rows}</div>
@@ -2086,7 +2123,7 @@ document.addEventListener("click", ev => {
     case "rest-add": T.end = Math.max(T.end, Date.now()) + 15000; T.beeped = false; tick(); return;
     case "rest-stop": stopRest(); return;
     case "sel-day": S.selDay = b.dataset.id; render(); return;
-    case "set": {
+    case "set": { unlockAlarm();
       const row = b.closest(".set"); const day = currentDay(); const ex = day.exercises.find(e => e.id === row.dataset.ex); const i = +row.dataset.i;
       const l = dayLog(); if (l.w.dayId !== day.id) l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false };
       const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] };
@@ -2119,6 +2156,7 @@ document.addEventListener("click", ev => {
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "live-open": openLive(); return;
     case "feel": setFeel(b.dataset.ex, b.dataset.f); render(); return;
+    case "note": S.noteOpen = S.noteOpen === b.dataset.ex ? null : b.dataset.ex; render(); if (S.noteOpen) setTimeout(() => { const t = document.getElementById("note-" + S.noteOpen); t && t.focus(); }, 30); return;
     case "hk-import": importHK(); return;
     case "me-hk": { S.profile.user = S.profile.user || {}; S.profile.user.hkOn = !!b.dataset.k; store.saveProfile(); render(); return; }
     case "hk-cancel": S.hkPaste = false; render(); return;
@@ -2431,7 +2469,7 @@ function renderLive() {
     const last = lastPerformance(ex.name, S.date);
     const t = repTargets(ex.reps, n)[LV.setIdx];
     body = `<div class="lv-ex"><span class="lv-k">Esercizio ${LV.exIdx + 1} di ${exs.length}</span><h1>${esc(ex.name)}</h1>
-        <div class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · recupero " + esc(ex.rest) + " s" : ""}${ex.load ? " · " + esc(ex.load) : ""}</div></div>
+        <div class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · recupero " + esc(ex.rest) + " s" : ""}${ex.load ? " · " + esc(ex.load) : ""}</div>${noteBox(ex.id, true)}</div>
       ${muscleBlock(ex, true)}
       ${ex.notes ? `<div class="lv-note">${esc(ex.notes)}</div>` : ""}
       <div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span>${t ? `<span>obiettivo <b>${esc(t)}</b> rip.</span>` : ""}</div>
@@ -2461,6 +2499,7 @@ function renderLive() {
   const on = el.querySelector(".lv-pill.on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
 }
 function lvSetDone() {
+  unlockAlarm();
   const day = lvDay(); const ex = day.exercises[LV.exIdx]; const l = lvLog();
   const kgI = $("#lvKg"), rI = $("#lvReps"); if (kgI) LV.kg = String(num(kgI.value) ?? ""); if (rI) LV.reps = String(parseInt(rI.value) || "");
   const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] }; e.name = ex.name;
@@ -2484,6 +2523,7 @@ document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#live")) return;
   ev.stopPropagation(); const a = b.dataset.act; const day = lvDay();
   if (a === "lv-close") closeLive();
+  else if (a === "note") { S.noteOpen = S.noteOpen === b.dataset.ex ? null : b.dataset.ex; renderLive(); if (S.noteOpen) setTimeout(() => { const t = document.getElementById("note-" + S.noteOpen); t && t.focus(); }, 30); }
   else if (a === "feel") { setFeel(b.dataset.ex, b.dataset.f); if (LV.feelEx === b.dataset.ex) LV.feelEx = null; renderLive(); const fo = feelOf(b.dataset.f); if (fo) toast(fo[1] + " Segnato: " + fo[2].toLowerCase()); }
   else if (a === "lv-spot") openSpotify();
   else if (a === "lv-done") lvSetDone();
@@ -2503,7 +2543,7 @@ document.addEventListener("click", ev => {
   else if (a === "lv-skip") { const wasRestPhase = LV.phase === "rest"; LV.phase = "set"; LV.resting = false; LV.over = false; LV.flash = ""; if (wasRestPhase) lvDefaults(); renderLive(); }
   else if (a === "lv-finish") { const l = dayLog(); l.w.done = true; if (!l.w.end) l.w.end = Date.now(); store.saveDay(S.date); closeLive(); toast("Allenamento salvato 💪"); }
 }, true);
-document.addEventListener("input", ev => { if (ev.target.id === "lvKg") LV.kg = String(num(ev.target.value) ?? ""); else if (ev.target.id === "lvReps") LV.reps = String(parseInt(ev.target.value) || ""); });
+document.addEventListener("input", ev => { const nk = ev.target.dataset && ev.target.dataset.note; if (nk) { setNote(nk, ev.target.value); return; } if (ev.target.id === "lvKg") LV.kg = String(num(ev.target.value) ?? ""); else if (ev.target.id === "lvReps") LV.reps = String(parseInt(ev.target.value) || ""); });
 
 /* ---------- foto del piatto ---------- */
 const PLATE_PROMPT = `Nella foto c'è un piatto o un pasto. Identifica gli alimenti visibili (anche condimenti evidenti come olio o sughi) e stima per ciascuno il peso in grammi così come appare (cotto se è cotto), usando le dimensioni del piatto e delle posate come riferimento.
@@ -3012,7 +3052,7 @@ function coachContext() {
   const sess = sessionDates().slice(-15);
   if (sess.length) {
     L.push("\nALLENAMENTI RECENTI (serie fatte kg x rip):");
-    sess.forEach(d => { const w = S.days[d].w; L.push(`- ${d} ${w.dayName || ""}: ` + Object.values(w.ex || {}).map(e => { const sd = (e.s || []).filter(x => x && x.done); return sd.length ? `${e.name} ${sd.map(x => (x.kg || "–") + "x" + (x.reps || "–")).join(",")}${e.feel && feelOf(e.feel) ? " (sensazione: " + feelOf(e.feel)[2].toLowerCase() + ")" : ""}` : null; }).filter(Boolean).join("; ")); });
+    sess.forEach(d => { const w = S.days[d].w; L.push(`- ${d} ${w.dayName || ""}: ` + Object.values(w.ex || {}).map(e => { const sd = (e.s || []).filter(x => x && x.done); return sd.length ? `${e.name} ${sd.map(x => (x.kg || "–") + "x" + (x.reps || "–")).join(",")}${e.feel && feelOf(e.feel) ? " (sensazione: " + feelOf(e.feel)[2].toLowerCase() + ")" : ""}${e.note ? ' [nota: "' + e.note.slice(0, 120) + '"]' : ""}` : null; }).filter(Boolean).join("; ")); });
   } else L.push("Nessun allenamento registrato finora.");
   { const hk = hkDay(today()); if (hk) L.push(`Anelli di Salute oggi: ${fmtI(hk.kcal)} kcal attive (obiettivo ${fmtI(HKG().kcal)}), ${fmtI(hk.ex)} min di esercizio (obiettivo ${HKG().ex}), ${fmtI(hk.steps)} passi (obiettivo ${fmtI(HKG().steps)}).`); }
   { const h = hydro(today()); L.push(`Acqua oggi: ${fmtN(Math.round((h.w || 0) / 100) / 10)} L su ${fmtN(waterGoal())} L.${supps().length ? " Integratori: " + supps().map(x => `${x.name}${x.dose ? " " + x.dose : ""} ${h.s && h.s[x.id] ? "(preso)" : "(non ancora)"}`).join(", ") + "." : ""}`); }
