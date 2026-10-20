@@ -504,6 +504,18 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .nt.dark .nt-btn{border-color:rgba(255,255,255,.22);color:var(--hero-mut)}
 .nt.dark .nt-btn.has{color:var(--hero-ink);background:rgba(255,255,255,.08)}
 .nt.dark .nt-in{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18);color:var(--hero-ink)}
+.lv-exdone{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding-top:18px}
+.xd-check{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-size:44px;font-weight:700;color:#0b1020;background:linear-gradient(135deg,#2fbf7a,#8be6b8);box-shadow:0 12px 34px rgba(79,210,150,.35);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
+.lv-exdone h1{font-family:var(--f-display);font-size:34px;text-transform:uppercase;margin:0;line-height:1.05;text-wrap:balance}
+.xd-sets{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.xd-sets span{background:rgba(79,210,150,.14);border:1px solid rgba(79,210,150,.4);color:var(--hero-g);border-radius:10px;padding:6px 10px;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.lv-exdone .feel{justify-content:center}
+.lv-exdone .nt{align-items:center;width:100%}
+.lv-exdone .nt-btn{align-self:center}
+.xd-next{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;line-height:1.2;margin-top:6px}
+.xd-next span{font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;opacity:.7}
+.xd-next b{font-size:19px}
+.xd-rest{flex:none;width:100%}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -652,7 +664,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "5.0 · 20 ottobre";
+const APP_VERSION = "5.1 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2444,7 +2456,17 @@ function renderLive() {
     <div class="lv-prog"><i style="width:${tot ? done / tot * 100 : 0}%"></i></div>
     <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${i === LV.exIdx && LV.phase !== "done" ? "on" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(ex.name)}</button>`; }).join("")}</div>`;
   let body = "";
-  if (LV.phase === "done") {
+  if (LV.phase === "exdone") {
+    const dx = exs.find(x => x.id === LV.doneEx) || {}; const de = l.w.ex[dx.id] || { s: [] }; const nx = exs[LV.exIdx];
+    const sets = (de.s || []).filter(x => x && x.done);
+    body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Esercizio completato</span><h1>${esc(dx.name || "")}</h1>
+      <div class="xd-sets">${sets.map(x => `<span>${esc(x.kg || "–")}×${esc(x.reps || "–")}</span>`).join("")}</div>
+      ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
+      ${feelRow(dx.id, true)}
+      ${noteBox(dx.id, true)}
+      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? nx.name : "")} →</b></button>
+      <button class="lv-btn xd-rest" data-act="lv-restbtw">⏱ Prima recupero ${fmtI(LV.restTotal)} s</button></div>`;
+  } else if (LV.phase === "done") {
     const s = lvSummary();
     body = `<div class="lv-done"><div class="lv-emoji">🎉</div><h1>Allenamento completato</h1><p>${esc(day.name)}. Ottimo lavoro, ora recupera bene.</p>
       <div class="lv-stats"><div><b>${s.mins}</b><span>minuti</span></div><div><b>${s.sets}</b><span>serie</span></div><div><b>${s.vol >= 10000 ? fmtN(Math.round(s.vol / 100) / 10) + " t" : fmtI(s.vol)}</b><span>${s.vol >= 10000 ? "sollevate" : "kg sollevati"}</span></div></div>
@@ -2510,12 +2532,16 @@ function lvSetDone() {
   // se avevi copiato i valori su tutte le serie e poi li cambi, le serie successive ancora da fare si aggiornano
   ["kg", "reps"].forEach(f => { const old = prevS[f], nv = f === "kg" ? kg : LV.reps; if (old === "" || old == null || old === nv) return; for (let k = LV.setIdx + 1; k < e.s.length; k++) { const sk = e.s[k]; if (sk && !sk.done && sk[f] === old) sk[f] = nv; } });
   store.saveDay(S.date);
-  LV.feelEx = e.s.filter(x => x && x.done).length >= exSets(ex) && !e.feel ? ex.id : null;
+  const exComplete = e.s.filter(x => x && x.done).length >= exSets(ex);
+  LV.feelEx = null;
   const b = bestBefore(ex.name); LV.flash = num(kg) && b && num(kg) > b ? `🏆 Nuovo record su ${ex.name}: ${fmtN(num(kg))} kg` : "";
   try { if (T.audio && T.audio.state === "suspended") T.audio.resume(); } catch (er) {}
   const f = lvFirstOpen();
   if (!f) { l.w.end = Date.now(); store.saveDay(S.date); LV.phase = "done"; renderLive(); return; }
   const rest = parseInt(ex.rest) || 90;
+  if (exComplete && f[0] !== LV.exIdx) { // esercizio finito: schermata di passaggio al prossimo, niente recupero automatico
+    LV.doneEx = ex.id; LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "exdone"; LV.resting = false; LV.over = false; LV.restTotal = rest; lvDefaults(); renderLive(); return;
+  }
   LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; LV.resting = true; LV.over = false; LV.nextLabel = (day.exercises[f[0]] || {}).name + " · serie " + (f[1] + 1); LV.restTotal = rest; LV.restEnd = Date.now() + rest * 1000;
   lvDefaults(); renderLive();
 }
@@ -2540,6 +2566,8 @@ document.addEventListener("click", ev => {
   else if (a === "lv-set") { LV.setIdx = +b.dataset.i; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-prev" || a === "lv-next") { LV.exIdx = Math.max(0, Math.min(day.exercises.length - 1, LV.exIdx + (a === "lv-next" ? 1 : -1))); const ex = day.exercises[LV.exIdx]; const e = dayLog().w.ex[ex.id]; let j = 0; while (j < exSets(ex) - 1 && e && e.s && e.s[j] && e.s[j].done) j++; LV.setIdx = j; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-rest") { if (LV.over || !LV.resting) return; LV.restEnd += +b.dataset.d * 1000; LV.restTotal = Math.max(LV.restTotal, Math.ceil((LV.restEnd - Date.now()) / 1000)); lvTick(); }
+  else if (a === "lv-nextex") { LV.phase = "set"; LV.flash = ""; LV.doneEx = null; lvDefaults(); renderLive(); window.scrollTo(0, 0); $("#live").scrollTop = 0; }
+  else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.nextLabel = (nx ? nx.name : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
   else if (a === "lv-skip") { const wasRestPhase = LV.phase === "rest"; LV.phase = "set"; LV.resting = false; LV.over = false; LV.flash = ""; if (wasRestPhase) lvDefaults(); renderLive(); }
   else if (a === "lv-finish") { const l = dayLog(); l.w.done = true; if (!l.w.end) l.w.end = Date.now(); store.saveDay(S.date); closeLive(); toast("Allenamento salvato 💪"); }
 }, true);
