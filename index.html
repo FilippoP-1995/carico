@@ -461,6 +461,8 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .hk-guide ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
 .hk-tpl{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
 .hk-tpl code{font-size:13.5px;word-break:break-word;font-family:ui-monospace,Menlo,monospace}
+.lv-s.pre{border-style:dashed;color:var(--hero-ink)}
+.lv-copy{align-self:flex-start;border:0;background:rgba(125,156,255,.14);color:var(--hero-a);border-radius:10px;padding:8px 12px;font-weight:700;font-size:13.5px;margin-top:-6px}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -609,7 +611,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "4.5 · 20 ottobre";
+const APP_VERSION = "4.6 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2373,7 +2375,8 @@ function renderLive() {
         <div class="lv-step"><span>kg</span><div><button data-act="lv-adj" data-f="kg" data-d="-2.5" aria-label="Meno 2,5 kg">−</button><input id="lvKg" inputmode="decimal" value="${esc(fmtN(num(LV.kg)))}" aria-label="Chili"><button data-act="lv-adj" data-f="kg" data-d="2.5" aria-label="Più 2,5 kg">+</button></div></div>
         <div class="lv-step"><span>ripetizioni</span><div><button data-act="lv-adj" data-f="reps" data-d="-1" aria-label="Una ripetizione in meno">−</button><input id="lvReps" inputmode="numeric" value="${esc(LV.reps)}" aria-label="Ripetizioni"><button data-act="lv-adj" data-f="reps" data-d="1" aria-label="Una ripetizione in più">+</button></div></div>
       </div>
-      <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; return `<button class="lv-s ${s && s.done ? "ok" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && s.done ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}</div>
+      <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}</div>
+      ${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte le serie da fare</button>` : ""}
       <button class="lv-go" data-act="lv-done">✓ Serie fatta</button>
       <div class="lv-row"><button class="lv-btn" data-act="lv-prev" ${LV.exIdx ? "" : "disabled"}>← Precedente</button><button class="lv-btn" data-act="lv-next" ${LV.exIdx < exs.length - 1 ? "" : "disabled"}>Prossimo →</button></div>`;
   }
@@ -2403,6 +2406,14 @@ document.addEventListener("click", ev => {
   if (a === "lv-close") closeLive();
   else if (a === "lv-spot") openSpotify();
   else if (a === "lv-done") lvSetDone();
+  else if (a === "lv-copy") {
+    const ex = day.exercises[LV.exIdx]; const l = lvLog(); const kgI = $("#lvKg"), rI = $("#lvReps");
+    const kg = kgI ? String(num(kgI.value) ?? "") : LV.kg, reps = rI ? String(parseInt(rI.value) || "") : LV.reps;
+    if (!kg && !reps) { toast("Imposta prima kg e ripetizioni"); return; }
+    const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] }; const n = exSets(ex); let c = 0;
+    for (let i = 0; i < n; i++) { const s0 = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; if (!s0.done) { s0.kg = kg; s0.reps = reps; c++; } }
+    LV.kg = kg; LV.reps = reps; store.saveDay(S.date); renderLive(); toast(`${fmtN(num(kg))} kg × ${reps} su ${c} ${c === 1 ? "serie" : "serie"}`);
+  }
   else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); }
   else if (a === "lv-ex") { LV.exIdx = +b.dataset.i; const ex = day.exercises[LV.exIdx]; const l = dayLog(); const e = l.w.ex[ex.id]; let j = 0; while (j < exSets(ex) - 1 && e && e.s && e.s[j] && e.s[j].done) j++; LV.setIdx = j; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-set") { LV.setIdx = +b.dataset.i; LV.phase = "set"; lvDefaults(); renderLive(); }
