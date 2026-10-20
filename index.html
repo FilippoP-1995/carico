@@ -407,6 +407,44 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .cb-imgs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;display:block}
 .cb-imgs img:only-child{grid-column:span 2;width:160px;aspect-ratio:auto;max-height:200px}
 .cb-imgs-n{align-self:flex-end;font-size:12px;color:var(--muted);margin-bottom:-6px}
+.dnav{display:flex;align-items:center;gap:2px;margin-left:-6px}
+.dn{border:0;background:none;color:var(--muted);font-size:22px;line-height:1;padding:2px 6px;font-weight:600}
+.dn:disabled{opacity:.25}
+.date.past{color:var(--accent);font-weight:700}
+#hdrDate{border:0;background:none;padding:0;font:inherit;font-size:13px;white-space:nowrap}
+#hdrDate .back{font-weight:600}
+.pastbar{display:flex;align-items:center;gap:8px;justify-content:space-between;background:var(--accent-soft);color:var(--accent);border-radius:12px;padding:8px 12px;font-size:13.5px;margin-top:6px}
+.pastbar button{border:0;background:var(--accent);color:var(--on-accent);border-radius:9px;padding:6px 10px;font-weight:700;font-size:12.5px;white-space:nowrap}
+.dtype{display:flex;flex-direction:column;gap:6px}
+.dt-sw{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px}
+.dt-sw button{border:0;background:none;border-radius:10px;padding:9px;font-weight:700;font-size:14px;color:var(--muted)}
+.dt-sw button.on{background:var(--ink);color:var(--bg)}
+.linkbtn{border:0;background:none;color:var(--accent);font-weight:600;padding:0;font-size:inherit;text-decoration:underline}
+.bar.water>i{background:linear-gradient(90deg,#4fb3ff,#2a7fe0)}
+.wbtn{flex:1;flex-direction:column;gap:0;line-height:1.15}
+.wbtn small{font-size:11px;color:var(--muted);font-weight:500}
+.chip.sup.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.meas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.meas-vals{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.mv{border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;color:inherit}
+.mv span{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.mv b{font-family:var(--f-display);font-size:19px;font-variant-numeric:tabular-nums}
+.mv small{font-size:10.5px;font-weight:700}
+.mv small.dn{color:var(--ok)} .mv small.up{color:var(--danger)}
+.mv.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.check{display:flex;align-items:center;gap:12px;text-align:left;width:100%;border:1px solid var(--accent);background:linear-gradient(135deg,var(--accent-soft),var(--surface));color:inherit;font:inherit}
+.check.done{border-color:var(--ok);background:var(--surface)}
+.ck-i{font-size:28px;flex:none}
+.ck-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.chk-h{border-top:1px solid var(--line);padding-top:8px}
+.chk-h summary{cursor:pointer;font-weight:600;text-transform:capitalize;font-size:14.5px}
+.chk-b{font-size:14px;line-height:1.5;padding-top:6px}
+.chk-b p{margin:0 0 6px} .chk-b ul{margin:4px 0 6px;padding-left:18px}
+.lvl-card{background:var(--surface-2);border-radius:12px;padding:12px;border:1px solid var(--line)}
+.lvl-card.cur{border-color:var(--ok)}
+.lv-tg{display:flex;flex-direction:column;gap:4px}
+.onb-sex{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.onb-sex .onb-g{align-items:center;font-size:16px;padding:14px}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -502,7 +540,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
   <header class="top">
     <div>
       <div class="brand">Car<span>i</span>co</div>
-      <div class="date" id="hdrDate"></div>
+      <div class="dnav"><button class="dn" data-act="day-prev" aria-label="Giorno precedente">‹</button><button class="date" id="hdrDate" data-act="day-today"></button><button class="dn" data-act="day-next" id="dayNext" aria-label="Giorno successivo">›</button></div>
     </div>
     <span class="badge" id="saveMode" hidden></span>
   </header>
@@ -554,7 +592,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "3.7 · 20 ottobre";
+const APP_VERSION = "3.8 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -652,7 +690,7 @@ const store = {
 };
 function showMode() {
   const b = $("#saveMode"); b.hidden = false;
-  b.textContent = store.mode === "cloud" ? "Salvato nel tuo account" : "Salvato su questo dispositivo";
+  b.textContent = store.mode === "cloud" ? "☁️ Nel tuo account" : "💾 Sul telefono";
 }
 
 /* ---------- AI: account Claude dentro Claude, chiave API fuori ---------- */
@@ -798,7 +836,9 @@ function dayTotals() {
   slots().forEach(sl => { if (ml.eaten[sl.key]) addT(t, sumItems(slotPick(ml, sl).items)); });
   return addT(t, sumItems(ml.extra));
 }
-function targetsFor() {
+function targetsFor(date = S.date) {
+  const lvl = (plan().diet.levels || []).length ? levelFor(date) : null;
+  if (lvl) { const dt = dayTypeFor(date); const T0 = targetsFromObj(lvl[dt.t]); if (MK.some(k => T0[k])) { T0.dayType = dt.t; T0.level = lvl.name; return T0; } }
   const t = plan().diet.targets || {};
   let T = { kcal: num(t.kcal), p: num(t.protein), c: num(t.carbs), f: num(t.fat) };
   if (MK.every(k => !T[k])) {
@@ -906,10 +946,11 @@ function stopRest() { clearInterval(T.iv); $("#timer").hidden = true; }
 /* ---------- render ---------- */
 function render() {
   document.querySelectorAll("nav.tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.tab === S.tab ? "page" : "false"));
-  $("#hdrDate").textContent = fmtDay(S.date);
+  const past = S.date !== today();
+  $("#hdrDate").innerHTML = esc(fmtDay(S.date)) + (past ? ' <span class="back">· oggi ↩</span>' : ""); $("#hdrDate").classList.toggle("past", past); $("#dayNext").disabled = !past;
   const v = $("#view");
   const y = window.scrollY;
-  v.innerHTML = ({ oggi: vOggi, allenamento: vAllenamento, dieta: vDieta, progressi: vProgressi, piano: vPiano }[S.tab])();
+  v.innerHTML = (S.date !== today() && S.tab !== "piano" ? `<div class="pastbar"><span>📅 Stai registrando <b>${esc(fmtDay(S.date))}</b></span><button data-act="day-today">Torna a oggi</button></div>` : "") + ({ oggi: vOggi, allenamento: vAllenamento, dieta: vDieta, progressi: vProgressi, piano: vPiano }[S.tab])();
   window.scrollTo(0, y);
 }
 function go(tab) { S.tab = tab; render(); window.scrollTo(0, 0); }
@@ -958,6 +999,7 @@ function badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet })
   if (weekN >= target) b.push("✅ Settimana completata");
   if (hasDiet && Tg.p && t.p >= Tg.p * 0.95) b.push("🥩 Proteine centrate");
   if (hasDiet && Tg.kcal && Math.abs(t.kcal - Tg.kcal) <= Tg.kcal * 0.05) b.push("🎯 Calorie in target");
+  if (hydro(S.date).w >= waterGoal() * 1000) b.push("💧 Acqua centrata");
   if (sess.length >= 10) b.push(`🎖️ ${sess.length} allenamenti`);
   if (!b.length) b.push(sess.length ? "👊 Oggi si spinge" : "🚀 Pronto a partire");
   const [first, ...rest] = b; const sp = first.indexOf(" ");
@@ -1042,7 +1084,7 @@ function summaryCard() {
 
 function vOggi() {
   if (!wDays().length && !variants().length) return `<h2>Benvenuto</h2>` + noPlan();
-  const out = [summaryCard()];
+  const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc);
   const day = currentDay();
   if (day) {
     const l = peekLog(); const done = l && l.w.dayId === day.id ? setsDone(l) : 0; const tot = totalSets(day);
@@ -1445,6 +1487,7 @@ function vDieta() {
   const missing = planMissingMacros();
   return `<h2>Dieta</h2>
     <div class="stack" style="margin-top:10px">
+    ${dayTypeBar()}
     ${MK.some(k => Tg[k]) ? `<div class="macros">
       <div><span class="num">${fmtI(Tg.kcal)}</span><small>kcal</small></div>
       <div><span class="num">${fmtI(Tg.p)}</span><small>Prot. g</small></div>
@@ -1452,6 +1495,7 @@ function vDieta() {
       <div><span class="num">${fmtI(Tg.f)}</span><small>Grassi g</small></div></div>` : ""}
     ${missing ? `<div class="card stack" style="border-color:var(--diet)"><span class="small">Alcuni alimenti della scheda non hanno i macro. Servono per i conti e per creare varianti.</span>
       <button class="btn diet" data-act="fill-macros" ${S.busy.fill ? "disabled" : ""}>${S.busy.fill ? '<span class="spin"></span> Calcolo i macro…' : "Calcola i macro della scheda"}</button></div>` : ""}
+    ${hydroCard()}
     <div class="row between small muted"><span>${n} di ${SL.length} pasti</span><span>Tocca un pasto per vedere le varianti</span></div>
     <div class="bar d"><i style="width:${SL.length ? n / SL.length * 100 : 0}%"></i></div>
     ${SL.map(sl => mealCard(sl, ml, nextKey)).join("")}
@@ -1505,6 +1549,12 @@ function vProgressi() {
       ${delta != null ? `<span class="small muted">${delta > 0 ? "+" : ""}${fmtN(delta)} kg dal ${esc(fmtDay(ws[0].d, { day: "numeric", month: "long" }))}</span>` : ""}
       ${lineChart(wpts, "peso")}
       <form class="row" data-form="weight"><input class="in" id="wIn" inputmode="decimal" placeholder="Peso di oggi" aria-label="Peso di oggi in kg"><span class="muted">kg</span><button class="btn">Salva</button></form>
+    </div>
+    ${measCard()}
+    <div class="card stack">
+      <div class="row between"><span class="eyebrow">📋 Check settimanali</span><button class="btn ghost sm" data-act="check-run">Fai il check ora</button></div>
+      <span class="small muted">Ogni ${DOW[checkDay()].toLowerCase()} il Coach fa il punto della settimana (giorno modificabile in Piano → Il tuo profilo).</span>
+      ${(S.profile.checks || []).length ? (S.profile.checks || []).slice(0, 8).map((c, i) => `<details class="chk-h" ${S.openCheck === i ? "open" : ""}><summary>${esc(fmtDay(c.date, { weekday: "long", day: "numeric", month: "long" }))}</summary><div class="chk-b">${md(c.text)}</div></details>`).join("") : ""}
     </div>
     <div class="card stack">
       <div class="row between"><span class="eyebrow">Allenamenti a settimana</span><span class="small muted">${sess.length} in totale</span></div>
@@ -1571,7 +1621,8 @@ function vPiano() {
 
     <details class="card" data-pnl="d" ${pnlOpen("d")}><summary>Piano alimentare <span class="small muted" style="font-weight:500;margin-left:auto">${vars.reduce((a, v) => a + (v.meals || []).length, 0)} pasti</span></summary>
       <div class="stack" style="margin-top:12px">
-      <span class="small muted">Obiettivi giornalieri dalla tua scheda. Se li lasci vuoti uso la somma dei pasti.</span>
+      ${levelsEditor()}
+      <span class="small muted">${(plan().diet.levels || []).length ? "Obiettivo unico, usato solo se togli i livelli ON/OFF." : "Obiettivo unico giornaliero. Se lo lasci vuoto uso la somma dei pasti."}</span>
       <div class="grid4" style="grid-template-columns:repeat(4,1fr)">
         ${[["kcal", "kcal"], ["protein", "Prot. g"], ["carbs", "Carb. g"], ["fat", "Grassi g"]].map(([k, l]) => `<label class="f">${l}<input class="in" inputmode="numeric" data-e="target" data-k="${k}" value="${esc((plan().diet.targets || {})[k] ?? "")}"></label>`).join("")}
       </div>
@@ -1591,11 +1642,21 @@ function vPiano() {
       </div>
     </details>
 
+    <details class="card" data-pnl="hy" ${pnlOpen("hy")}><summary>Acqua e integratori <span class="small muted" style="font-weight:500;margin-left:auto">${fmtN(waterGoal())} L · ${supps().length} integr.</span></summary>
+      <div class="stack" style="margin-top:12px">
+        <label class="f">Obiettivo acqua al giorno (litri)<input class="in" inputmode="decimal" data-e="user" data-k="waterGoal" value="${esc(fmtN(waterGoal()))}"></label>
+        ${supps().map(x => `<div class="row"><input class="in" data-e="supp" data-id="${x.id}" data-k="name" value="${esc(x.name)}" placeholder="Nome"><input class="in" data-e="supp" data-id="${x.id}" data-k="dose" value="${esc(x.dose || "")}" placeholder="Dose" style="max-width:96px"><button class="iconbtn" data-act="supp-del" data-id="${x.id}" aria-label="Elimina">${ICON_X}</button></div>`).join("")}
+        <form class="row" data-form="supp"><input class="in" id="suppName" placeholder="Es. Creatina"><input class="in" id="suppDose" placeholder="3 g" style="max-width:96px"><button class="btn">＋</button></form>
+      </div>
+    </details>
+
     <details class="card" data-pnl="me" ${pnlOpen("me")}><summary>Il tuo profilo <span class="small muted" style="font-weight:500;margin-left:auto">${esc(userName() || "—")}</span></summary>
       <div class="stack" style="margin-top:12px">
         <label class="f">Nome<input class="in" data-e="user" data-k="name" value="${esc((S.profile.user || {}).name || "")}" placeholder="Il tuo nome"></label>
         <div class="f">Obiettivo<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(GOALS).map(([k, v]) => `<button class="chip sm ${(S.profile.user || {}).goal === k ? "on-acc" : ""}" aria-pressed="${(S.profile.user || {}).goal === k}" data-act="me-goal" data-k="${k}">${GOAL_EMOJI[k]} ${esc(v)}</button>`).join("")}</div></div>
         <label class="f">Peso obiettivo (kg)<input class="in" inputmode="decimal" data-e="user" data-k="targetKg" value="${esc(fmtN(num((S.profile.user || {}).targetKg)))}" placeholder="es. 75"></label>
+        <div class="f">Sesso<div class="chips" style="margin-top:4px">${[["m", "Uomo"], ["f", "Donna"]].map(([k, l]) => `<button class="chip sm ${(S.profile.user || {}).sex === k || (!(S.profile.user || {}).sex && k === "m") ? "on-acc" : ""}" data-act="me-sex" data-k="${k}">${l}</button>`).join("")}</div></div>
+        <div class="f">Giorno del check settimanale<div class="chips" style="flex-wrap:wrap;margin-top:4px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button class="chip sm ${checkDay() === d ? "on-acc" : ""}" data-act="me-check" data-k="${d}">${DOW[d].slice(0, 3)}</button>`).join("")}</div></div>
         <div class="f">Tono del Coach<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(TONES).map(([k, t]) => `<button class="chip sm ${coachTone() === k ? "on-acc" : ""}" aria-pressed="${coachTone() === k}" data-act="me-tone" data-k="${k}">${esc(t.label)}</button>`).join("")}</div></div>
       </div>
     </details>
@@ -1904,7 +1965,9 @@ document.addEventListener("change", ev => {
     }
   }
   if (e === "diet-notes") P.diet.notes = el.value;
-  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = el.dataset.k === "targetKg" ? (num(el.value) || "") : el.value.trim().slice(0, 40); store.saveProfile(); render(); return; }
+  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = ["targetKg", "waterGoal"].includes(el.dataset.k) ? (num(el.value) || "") : el.value.trim().slice(0, 40); store.saveProfile(); render(); return; }
+  if (e === "lvl") { const lv = (P.diet.levels || []).find(x => x.id === el.dataset.id); if (lv) { if (el.dataset.s) { lv[el.dataset.s] = lv[el.dataset.s] || {}; lv[el.dataset.s][el.dataset.k] = num(el.value) || ""; } else lv[el.dataset.k] = el.value.trim(); } store.saveProfile(); render(); return; }
+  if (e === "supp") { const x = supps().find(y => y.id === el.dataset.id); if (x) x[el.dataset.k] = el.value.trim().slice(0, 40); store.saveProfile(); return; }
   store.saveProfile();
 });
 document.addEventListener("submit", ev => {
@@ -1916,6 +1979,12 @@ document.addEventListener("submit", ev => {
     ws.sort((a, b) => a.d < b.d ? -1 : 1); if (ws.length > 730) ws.splice(0, ws.length - 730);
     store.saveProfile(); toast("Peso salvato"); render();
   } else if (f.dataset.form === "food") { const k = f.dataset.key; const list = S.sug[k] || []; if (list.length && list[0].sc >= 3 * parseQuery(S.drafts[k] || "").terms.length) openPicker(k, list[0]); else addFood(k); }
+  else if (f.dataset.form === "supp") { const n = $("#suppName").value.trim(); if (!n) { toast("Scrivi il nome dell'integratore"); return; } S.profile.supps = [...supps(), { id: uid(), name: n.slice(0, 40), dose: $("#suppDose").value.trim().slice(0, 20) }]; store.saveProfile(); render(); }
+  else if (f.dataset.form === "meas") {
+    const fd = new FormData(f); const e = { d: S.date }; let any = false; MEAS.forEach(([k]) => { const v = num(fd.get(k)); if (v && v > 10 && v < 300) { e[k] = v; any = true; } });
+    if (!any) { toast("Inserisci almeno una misura in cm"); return; }
+    S.profile.measures = (S.profile.measures || []).filter(m => m.d !== S.date).concat(e); store.saveProfile(); S.measOpen = false; render(); toast("📏 Misure salvate");
+  }
   else if (f.dataset.form === "apikey") {
     const k = $("#keyIn", f).value.trim();
     if (!/^sk-ant-/.test(k)) { toast("La chiave inizia con sk-ant-"); return; }
@@ -1963,6 +2032,21 @@ document.addEventListener("click", ev => {
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "live-open": openLive(); return;
+    case "day-prev": case "day-next": { const d = parseD(S.date); d.setDate(d.getDate() + (a === "day-next" ? 1 : -1)); const nd = dstr(d); if (nd > today()) return; S.date = nd; S.selDay = null; S.wkSel = null; S.picker = null; S.review = null; render(); return; }
+    case "day-today": if (S.date === today()) return; S.date = today(); S.selDay = null; S.wkSel = null; render(); window.scrollTo(0, 0); return;
+    case "daytype": { const l = dayLog(); if (b.dataset.t) l.m.dayType = b.dataset.t; else delete l.m.dayType; store.saveDay(S.date); render(); const T = targetsFor(); toast(`Obiettivo ${dayTypeFor(S.date).t === "on" ? "giorno ON" : "giorno OFF"}: ${fmtI(T.kcal)} kcal`); return; }
+    case "water": { const h = hydroLog(); h.w = Math.max(0, (h.w || 0) + +b.dataset.ml); store.saveDay(S.date); render(); if (+b.dataset.ml > 0 && h.w >= waterGoal() * 1000 && h.w - +b.dataset.ml < waterGoal() * 1000) toast("💧 Obiettivo acqua raggiunto!"); return; }
+    case "supp": { const h = hydroLog(); if (h.s[b.dataset.id]) delete h.s[b.dataset.id]; else h.s[b.dataset.id] = true; store.saveDay(S.date); render(); return; }
+    case "supp-del": S.profile.supps = supps().filter(x => x.id !== b.dataset.id); break;
+    case "meas-open": S.measOpen = !S.measOpen; render(); return;
+    case "meas-k": S.measK = b.dataset.k; render(); return;
+    case "check-run": runCheck(); return;
+    case "check-read": S.openCheck = 0; go("progressi"); return;
+    case "lv-ai": levelsFromNotes(); return;
+    case "lv-add": { const D = plan().diet; D.levels = D.levels || []; const last = D.levels.slice().sort((x, y) => (x.from || "") < (y.from || "") ? -1 : 1).pop(); const base = last || { on: { ...(D.targets || {}) }, off: { ...(D.targets || {}) } }; D.levels.push({ id: uid(), name: "Livello " + String.fromCharCode(65 + D.levels.length), from: last ? dstr(new Date(parseD(today()).getTime() + 7 * 864e5)) : today(), on: { ...base.on }, off: { ...base.off } }); break; }
+    case "lv-del": plan().diet.levels = (plan().diet.levels || []).filter(x => x.id !== b.dataset.id); break;
+    case "me-sex": { S.profile.user = S.profile.user || {}; S.profile.user.sex = b.dataset.k; store.saveProfile(); render(); return; }
+    case "me-check": { S.profile.user = S.profile.user || {}; S.profile.user.checkDay = +b.dataset.k; store.saveProfile(); render(); toast("Check settimanale: ogni " + DOW[+b.dataset.k].toLowerCase()); return; }
     case "sarge": openCoach(); return;
     case "me-tone": { S.profile.user = S.profile.user || {}; S.profile.user.tone = b.dataset.k; store.saveProfile(); render(); toast("Tono del Coach: " + TONES[b.dataset.k].label); return; }
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
@@ -2472,17 +2556,172 @@ document.addEventListener("click", ev => {
 document.addEventListener("change", ev => { const k = ev.target.dataset && ev.target.dataset.shk; if (k == null) return; if (ev.target.checked) SH.checked.add(k); else SH.checked.delete(k); lsSet("carico.shopChk", JSON.stringify([...SH.checked])); const lab = ev.target.closest(".shop-it"); if (lab) lab.classList.toggle("ck", ev.target.checked); const all = Object.values(shopList()).flat(); const sp = $("#shop .sh-head .t span"); if (sp) sp.textContent = `${all.filter(x => !SH.checked.has(x.k)).length} di ${all.length} da prendere`; }, true);
 
 
+
+/* ---------- obiettivi ON / OFF e livelli ---------- */
+const TKEYS = [["kcal", "kcal"], ["protein", "Prot. g"], ["carbs", "Carb. g"], ["fat", "Grassi g"]];
+function levelFor(date) { const L = (plan().diet.levels || []).filter(x => x.from && x.from <= date).sort((a, b) => a.from < b.from ? -1 : 1); return L[L.length - 1] || (plan().diet.levels || []).slice().sort((a, b) => (a.from || "") < (b.from || "") ? -1 : 1)[0] || null; }
+function weekRange(date) { const ws = weekStart(date); const we = new Date(ws); we.setDate(ws.getDate() + 7); return [dstr(ws), dstr(we)]; }
+function dayTypeFor(date) {
+  const l = S.days[date];
+  if (l && l.m && l.m.dayType) return { t: l.m.dayType, auto: false };
+  if (isSession(l)) return { t: "on", auto: true, why: "allenamento registrato" };
+  if (date < today()) return { t: "off", auto: true, why: "nessun allenamento" };
+  const [a, b] = weekRange(date); const done = sessionDates().filter(d => d >= a && d < b && d !== date).length;
+  const target = wDays().length || 3;
+  return done < target ? { t: "on", auto: true, why: "ti mancano allenamenti questa settimana" } : { t: "off", auto: true, why: "obiettivo settimanale già raggiunto" };
+}
+function targetsFromObj(o) { o = o || {}; return { kcal: num(o.kcal), p: num(o.protein), c: num(o.carbs), f: num(o.fat) }; }
+
+/* ---------- acqua, integratori, misure ---------- */
+const waterGoal = () => num((S.profile.user || {}).waterGoal) || 2;
+const supps = () => S.profile.supps || [];
+function hydro(date = S.date) { const l = S.days[date]; return (l && l.h) || { w: 0, s: {} }; }
+function hydroLog(date = S.date) { const l = dayLog(date); l.h = l.h || { w: 0, s: {} }; l.h.s = l.h.s || {}; return l.h; }
+const MEAS = [["vita", "Vita"], ["fianchi", "Fianchi"], ["petto", "Petto"], ["braccio", "Braccio"], ["coscia", "Coscia"]];
+function measures() { return (S.profile.measures || []).slice().sort((a, b) => a.d < b.d ? -1 : 1); }
+function hydroCard() {
+  const h = hydro(); const g = waterGoal(); const L = (h.w || 0) / 1000; const pct = Math.min(100, L / g * 100);
+  const sp = supps();
+  return `<div class="card stack hydro">
+    <div class="row between"><span class="eyebrow">💧 Acqua</span><span class="small"><b class="num" style="font-size:20px">${String(Math.round(L * 100) / 100).replace(".", ",")}</b> <span class="muted">/ ${fmtN(g)} L</span>${L >= g ? " ✅" : ""}</span></div>
+    <div class="bar water"><i style="width:${pct}%"></i></div>
+    <div class="row" style="gap:6px"><button class="btn sm wbtn" data-act="water" data-ml="250">＋ Bicchiere<small>250 ml</small></button><button class="btn sm wbtn" data-act="water" data-ml="500">＋ Bottiglietta<small>500 ml</small></button><button class="btn sm" data-act="water" data-ml="-250" aria-label="Togli 250 ml" ${h.w ? "" : "disabled"}>−</button></div>
+    <div class="row between" style="margin-top:2px"><span class="eyebrow">💊 Integratori</span>${sp.length ? `<span class="small muted">${sp.filter(x => h.s && h.s[x.id]).length}/${sp.length} presi</span>` : ""}</div>
+    ${sp.length ? `<div class="chips" style="flex-wrap:wrap">${sp.map(x => `<button class="chip sm sup ${h.s && h.s[x.id] ? "on" : ""}" data-act="supp" data-id="${x.id}">${h.s && h.s[x.id] ? "✓ " : ""}${esc(x.name)}${x.dose ? ` · ${esc(x.dose)}` : ""}</button>`).join("")}</div>`
+      : `<button class="btn ghost sm" data-go="piano" style="align-self:flex-start">＋ Aggiungi i tuoi integratori in Piano</button>`}
+  </div>`;
+}
+function dayTypeBar() {
+  if (!(plan().diet.levels || []).length) return "";
+  const dt = dayTypeFor(S.date); const lv = levelFor(S.date);
+  return `<div class="dtype"><div class="dt-sw"><button class="${dt.t === "on" ? "on" : ""}" data-act="daytype" data-t="on">🏋️ Giorno ON</button><button class="${dt.t === "off" ? "on" : ""}" data-act="daytype" data-t="off">😴 Giorno OFF</button></div>
+    <span class="small muted">${esc(lv ? lv.name : "")}${dt.auto ? ` · automatico: ${esc(dt.why)}` : ` · scelto da te <button class="linkbtn" data-act="daytype" data-t="">ripristina automatico</button>`}</span></div>`;
+}
+function measCard() {
+  const M = measures(); const last = M[M.length - 1]; const prev = M[M.length - 2]; const first = M[0];
+  if (!S.measK) S.measK = "vita";
+  const pts = M.filter(m => num(m[S.measK])).slice(-20).map(m => ({ y: num(m[S.measK]), l: fmtDay(m.d, { day: "numeric", month: "short" }) }));
+  const today_ = M.find(m => m.d === S.date) || {};
+  return `<div class="card stack">
+    <div class="row between"><span class="eyebrow">📏 Misure corporee</span><button class="btn ghost sm" data-act="meas-open">${S.measOpen ? "Chiudi" : "＋ Registra"}</button></div>
+    ${S.measOpen ? `<form class="stack" data-form="meas" style="gap:8px"><div class="meas-grid">${MEAS.map(([k, l]) => `<label class="f">${l} (cm)<input class="in" inputmode="decimal" name="${k}" value="${esc(fmtN(num(today_[k])))}" placeholder="${last && num(last[k]) ? esc(fmtN(num(last[k]))) : "–"}"></label>`).join("")}</div>
+      <p class="small muted" style="margin:0">Misura al mattino, a digiuno, sempre negli stessi punti (vita all'altezza dell'ombelico).</p>
+      <button class="btn primary">Salva misure di ${esc(fmtDay(S.date, { day: "numeric", month: "long" }))}</button></form>` : ""}
+    ${last ? `<div class="meas-vals">${MEAS.map(([k, l]) => { const v = num(last[k]); if (v == null) return ""; const pv = prev && num(prev[k]); const d = pv != null ? v - pv : null; return `<button class="mv ${S.measK === k ? "on" : ""}" data-act="meas-k" data-k="${k}"><span>${l}</span><b>${fmtN(v)}</b>${d != null && Math.abs(d) >= 0.1 ? `<small class="${d < 0 ? "dn" : "up"}">${d > 0 ? "+" : "−"}${fmtN(Math.abs(Math.round(d * 10) / 10))}</small>` : "<small>&nbsp;</small>"}</button>`; }).join("")}</div>
+      ${lineChart(pts, MEAS.find(x => x[0] === S.measK)[1])}
+      ${first && first !== last && num(first[S.measK]) && num(last[S.measK]) ? `<span class="small muted">${MEAS.find(x => x[0] === S.measK)[1]}: ${(() => { const d = num(last[S.measK]) - num(first[S.measK]); return `${d > 0 ? "+" : "−"}${fmtN(Math.abs(Math.round(d * 10) / 10))} cm dal ${fmtDay(first.d, { day: "numeric", month: "long" })}`; })()}</span>` : ""}`
+      : (S.measOpen ? "" : `<p class="small muted" style="margin:0">Il peso da solo inganna: registra vita, fianchi, petto, braccio e coscia ogni 1–2 settimane.</p>`)}
+  </div>`;
+}
+
+/* ---------- check settimanale ---------- */
+const DOW = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+const checkDay = () => { const v = (S.profile.user || {}).checkDay; return v === undefined || v === "" || v === null ? 6 : +v; };
+function lastCheckDate(date = today()) { const d = parseD(date); while (d.getDay() !== checkDay()) d.setDate(d.getDate() - 1); return dstr(d); }
+function checkDue() { if (S.date !== today()) return null; const lc = lastCheckDate(); const done = (S.profile.checks || []).find(c => c.date >= lc); const age = Math.round((parseD(today()) - parseD(lc)) / 864e5); return { lc, done, show: !!done || age <= 2 }; }
+function checkCard() {
+  const c = checkDue(); if (!c || !c.show) return "";
+  if (c.done) return `<button class="card check done" data-act="check-read"><span class="ck-i">✅</span><span class="ck-t"><b>Check della settimana fatto</b><span class="small muted">Tocca per rileggerlo</span></span></button>`;
+  return `<div class="card check"><span class="ck-i">📋</span><span class="ck-t"><b>${c.lc === today() ? "Oggi è il giorno del check!" : "Check settimanale da fare"}</b><span class="small muted">Il Coach fa il punto su peso, allenamenti, dieta e misure della settimana.</span></span><button class="btn primary sm" data-act="check-run">Fai il check</button></div>`;
+}
+function weekStats() {
+  const end = today(); const st = new Date(parseD(end)); st.setDate(st.getDate() - 6); const start = dstr(st);
+  const pst = new Date(st); pst.setDate(pst.getDate() - 7); const pstart = dstr(pst);
+  const inR = (d, a, b) => d >= a && d <= b;
+  const L = [`Settimana dal ${fmtDay(start)} al ${fmtDay(end)}.`];
+  const sess = sessionDates(); const ws = sess.filter(d => inR(d, start, end)); const target = wDays().length || 3;
+  L.push(`Allenamenti: ${ws.length} su ${target} previsti${ws.length ? " (" + ws.map(d => fmtDay(d, { weekday: "short" }) + " " + (S.days[d].w.dayName || "")).join("; ") + ")" : ""}.`);
+  const vol = ds => ds.reduce((a, d) => a + sessionVolume(d), 0); const v1 = vol(ws), v0 = vol(sess.filter(d => d >= pstart && d < start));
+  if (v1 || v0) L.push(`Volume sollevato: ${fmtI(v1)} kg (settimana prima ${fmtI(v0)} kg).`);
+  const prs = []; ws.forEach(d => { const ex = S.days[d].w.ex || {}; for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(s => s && s.done).map(s => num(s.kg) || 0)); let best = 0; sortedDates().filter(x => x < d).forEach(x => { const e2 = (S.days[x].w && S.days[x].w.ex) || {}; for (const k2 in e2) if (norm(e2[k2].name) === norm(ex[k].name)) (e2[k2].s || []).forEach(s => { if (s && s.done) best = Math.max(best, num(s.kg) || 0); }); }); if (top && best && top > best) prs.push(`${ex[k].name} ${fmtN(top)} kg (prima ${fmtN(best)})`); } });
+  if (prs.length) L.push("Record: " + prs.join("; ") + ".");
+  const W = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
+  const wIn = W.filter(w => inR(w.d, start, end)), wPrev = W.filter(w => inR(w.d, pstart, start) && w.d < start);
+  const avg = a => a.reduce((x, y) => x + y.kg, 0) / a.length;
+  if (wIn.length) L.push(`Peso: media ${fmtN(Math.round(avg(wIn) * 10) / 10)} kg (${wIn.map(w => fmtN(w.kg)).join(", ")})${wPrev.length ? `, settimana prima media ${fmtN(Math.round(avg(wPrev) * 10) / 10)} kg` : ""}.`); else L.push("Peso: nessuna pesata questa settimana.");
+  if (variants().length) {
+    const days = []; for (let d = new Date(st); dstr(d) <= end; d.setDate(d.getDate() + 1)) days.push(dstr(d));
+    const logged = days.filter(d => S.days[d] && S.days[d].m && (Object.keys(S.days[d].m.eaten || {}).length || (S.days[d].m.extra || []).length));
+    const sd = S.date; let tk = 0, tp = 0, gk = 0, gp = 0; const per = [];
+    logged.forEach(d => { S.date = d; const t = dayTotals(), T = targetsFor(); tk += t.kcal; tp += t.p; gk += T.kcal || 0; gp += T.p || 0; per.push(`${fmtDay(d, { weekday: "short" })} ${fmtI(t.kcal)}/${fmtI(T.kcal)} kcal, P ${fmtI(t.p)}/${fmtI(T.p)} (${dayTypeFor(d).t.toUpperCase()})`); });
+    S.date = sd;
+    L.push(`Dieta: pasti segnati in ${logged.length} giorni su 7${logged.length ? `; media ${fmtI(tk / logged.length)} kcal contro obiettivo medio ${fmtI(gk / logged.length)}, proteine ${fmtI(tp / logged.length)} g contro ${fmtI(gp / logged.length)} g. Dettaglio: ${per.join("; ")}` : ""}.`);
+  }
+  const hd = []; let wsum = 0, wdays = 0; for (let d = new Date(st); dstr(d) <= end; d.setDate(d.getDate() + 1)) { const h = hydro(dstr(d)); if (h.w) { wsum += h.w; wdays++; } hd.push(h); }
+  L.push(`Acqua: ${wdays ? `media ${fmtN(Math.round(wsum / wdays / 100) / 10)} L nei ${wdays} giorni segnati (obiettivo ${fmtN(waterGoal())} L)` : "mai segnata"}.`);
+  if (supps().length) L.push("Integratori presi: " + supps().map(x => `${x.name} ${hd.filter(h => h.s && h.s[x.id]).length}/7`).join(", ") + ".");
+  const M = measures(); if (M.length) { const lm = M[M.length - 1], pm = M.filter(m => m.d < lm.d).pop(); L.push(`Misure (${lm.d}): ` + MEAS.filter(([k]) => num(lm[k])).map(([k, l]) => `${l} ${fmtN(num(lm[k]))} cm${pm && num(pm[k]) ? ` (prima ${fmtN(num(pm[k]))})` : ""}`).join(", ") + "."); }
+  return L.join("\n");
+}
+const CHECK_PROMPT = `Fai il CHECK SETTIMANALE come il mio coach, con il tuo solito tono. Struttura:
+1. **Voto della settimana** da 1 a 10 con una riga di motivazione.
+2. **Cosa è andato bene.**
+3. **Cosa non va.**
+4. **Peso e misure:** trend e se il ritmo è in linea con il mio obiettivo.
+5. **3 obiettivi concreti** per la prossima settimana.
+Se nelle note della dieta c'è un cambio di livello legato al check, dimmi chiaramente cosa suggeriscono i dati (la decisione finale resta del nutrizionista). Massimo 250 parole.
+
+DATI DELLA SETTIMANA:
+`;
+function runCheck() {
+  if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
+  openCoach(); coachSend(CHECK_PROMPT + weekStats(), { check: true, label: "📋 Check settimanale" });
+}
+
+/* ---------- obiettivi dalle note con l'AI ---------- */
+async function levelsFromNotes() {
+  const notes = plan().diet.notes || ""; if (!notes.trim()) { toast("Non ci sono note da leggere"); return; }
+  if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
+  S.busy.lv = true; render();
+  try {
+    const r = await AI.json(`Dalle note di un piano alimentare estrai gli obiettivi giornalieri. Oggi è il ${today()} (usa questo anno per le date).
+Se ci sono obiettivi diversi per giorni di allenamento (ON) e di riposo (OFF), riportali separati; se ci sono più livelli o fasi con date di inizio, crea un livello per ciascuno con la data di inizio. Se per un macro c'è un intervallo (es. 182–192 g) usa il valore medio arrotondato. Se manca la data di inizio del primo livello usa ${today()}.
+Estrai anche l'obiettivo di acqua in litri se indicato, e gli integratori con dose.
+NOTE:
+"""${notes.slice(0, 8000)}"""
+Rispondi solo con JSON: {"levels":[{"name":"Livello A","from":"2026-10-19","on":{"kcal":2450,"protein":187,"carbs":276,"fat":66},"off":{"kcal":2250,"protein":180,"carbs":238,"fat":66}}],"water_l":2,"supplements":[{"name":"Creatina monoidrato","dose":"3 g"}]}`, { tier: "default" });
+    const lv = (r && Array.isArray(r.levels) ? r.levels : []).filter(x => x && (x.on || x.off)).map(x => {
+      const o = k => { const s = x[k] || x[k === "on" ? "off" : "on"] || {}; return { kcal: num(s.kcal) || "", protein: num(s.protein) || "", carbs: num(s.carbs) || "", fat: num(s.fat) || "" }; };
+      return { id: uid(), name: String(x.name || "Livello").slice(0, 40), from: /^\d{4}-\d{2}-\d{2}$/.test(x.from || "") ? x.from : today(), on: o("on"), off: o("off") };
+    });
+    if (!lv.length) throw { code: "invalid_json" };
+    plan().diet.levels = lv;
+    const added = [];
+    if (num(r.water_l) && !(S.profile.user || {}).waterGoal) { S.profile.user = S.profile.user || {}; S.profile.user.waterGoal = num(r.water_l); added.push("acqua"); }
+    if (Array.isArray(r.supplements) && r.supplements.length) { S.profile.supps = S.profile.supps || []; r.supplements.forEach(x => { if (x && x.name && !S.profile.supps.some(y => norm(y.name) === norm(x.name))) { S.profile.supps.push({ id: uid(), name: String(x.name).slice(0, 40), dose: x.dose ? String(x.dose).slice(0, 20) : "" }); added.push(x.name); } }); }
+    store.saveProfile(); S.busy.lv = false; render();
+    toast(`Trovati ${lv.length} ${lv.length === 1 ? "livello" : "livelli"} ON/OFF${added.length ? " + " + added.join(", ") : ""}`, 4500);
+  } catch (e) { S.busy.lv = false; render(); const m = aiErr(e); if (m) toast(m, 4500); }
+}
+function levelsEditor() {
+  const L = (plan().diet.levels || []).slice().sort((a, b) => (a.from || "") < (b.from || "") ? -1 : 1);
+  const cur = levelFor(today());
+  const row = (lv, k) => `<div class="lv-tg"><span class="small" style="font-weight:700">${k === "on" ? "🏋️ ON" : "😴 OFF"}</span><div class="grid4" style="grid-template-columns:repeat(4,1fr)">${TKEYS.map(([tk, l]) => `<label class="f">${l}<input class="in" inputmode="numeric" data-e="lvl" data-id="${lv.id}" data-s="${k}" data-k="${tk}" value="${esc((lv[k] || {})[tk] ?? "")}"></label>`).join("")}</div></div>`;
+  return `<div class="stack" style="gap:10px">
+    <div class="row between"><span class="small" style="font-weight:700">Obiettivi giorni ON (allenamento) e OFF (riposo)</span></div>
+    ${plan().diet.notes ? `<button class="btn diet sm" data-act="lv-ai" ${S.busy.lv ? "disabled" : ""}>${S.busy.lv ? '<span class="spin"></span> Leggo le note…' : "✨ Ricava obiettivi, acqua e integratori dalle note"}</button>` : ""}
+    ${L.map(lv => `<div class="stack lvl-card ${cur && cur.id === lv.id ? "cur" : ""}" style="gap:8px">
+      <div class="row"><input class="in" data-e="lvl" data-id="${lv.id}" data-k="name" value="${esc(lv.name)}" style="font-weight:700"><button class="iconbtn" data-act="lv-del" data-id="${lv.id}" aria-label="Elimina livello">${ICON_X}</button></div>
+      <label class="f">Valido dal<input class="in" type="date" data-e="lvl" data-id="${lv.id}" data-k="from" value="${esc(lv.from || "")}"></label>
+      ${row(lv, "on")}${row(lv, "off")}
+      ${cur && cur.id === lv.id ? `<span class="small" style="color:var(--ok);font-weight:600">● In uso oggi</span>` : ""}
+    </div>`).join("")}
+    <button class="btn ghost sm" data-act="lv-add">＋ ${L.length ? "Aggiungi un livello (es. dal prossimo check)" : "Usa obiettivi diversi per giorni ON e OFF"}</button>
+  </div>`;
+}
+
 /* ---------- profilo utente e registrazione ---------- */
 const GOALS = { cut: "Perdere grasso", bulk: "Mettere massa", recomp: "Ricomposizione corporea", fit: "Restare in forma" };
 const GOAL_EMOJI = { cut: "🔥", bulk: "💪", recomp: "⚖️", fit: "🏃" };
 const userName = () => String((S.profile.user || {}).name || "").trim().split(/\s+/)[0] || "";
-const OB = { name: "", goal: "", kg: "", tkg: "" };
+const OB = { name: "", goal: "", kg: "", tkg: "", sex: "" };
 function renderOnb() {
   $("#onb").innerHTML = `<div class="lv-in onb">
     <div class="onb-logo"><div class="plates"><i style="height:44px;background:var(--danger)"></i><i style="height:38px;background:var(--hero-a)"></i><i style="height:32px;background:var(--hero-d)"></i><i style="height:26px;background:var(--hero-g)"></i></div><div class="brand" style="color:var(--hero-ink)">Car<span>i</span>co</div></div>
-    <div><h1 class="onb-h">Benvenuto 👋</h1><p class="onb-p">Due informazioni per personalizzare l'app. Restano solo su questo dispositivo.</p></div>
+    <div><h1 class="onb-h">${OB.sex === "f" ? "Benvenuta" : "Benvenuto"} 👋</h1><p class="onb-p">Due informazioni per personalizzare l'app. Restano solo su questo dispositivo.</p></div>
     <form class="stack" data-form="onb" style="gap:16px">
       <label class="onb-f"><span>Come ti chiami?</span><input id="obName" value="${esc(OB.name)}" placeholder="Il tuo nome" autocomplete="given-name" enterkeyhint="next"></label>
+      <div class="onb-f"><span>Sei</span><div class="onb-sex">${[["m", "👨 Uomo"], ["f", "👩 Donna"]].map(([k, l]) => `<button type="button" class="onb-g ${OB.sex === k ? "on" : ""}" data-act="ob-sex" data-k="${k}">${l}</button>`).join("")}</div></div>
       <div class="onb-f"><span>Qual è il tuo obiettivo?</span><div class="onb-goals">${Object.entries(GOALS).map(([k, v]) => `<button type="button" class="onb-g ${OB.goal === k ? "on" : ""}" data-act="ob-goal" data-k="${k}"><b>${GOAL_EMOJI[k]}</b>${esc(v)}</button>`).join("")}</div></div>
       <div class="onb-two">
         <label class="onb-f"><span>Peso attuale <small>(facoltativo)</small></span><div class="onb-u"><input id="obKg" inputmode="decimal" value="${esc(OB.kg)}" placeholder="78,5"><em>kg</em></div></label>
@@ -2498,15 +2737,17 @@ function saveOnb(skip) {
   if (!skip) {
     OB.name = ($("#obName") || {}).value || OB.name; OB.kg = ($("#obKg") || {}).value || OB.kg; OB.tkg = ($("#obTkg") || {}).value || OB.tkg;
     if (!OB.name.trim()) { toast("Scrivi il tuo nome"); $("#obName").focus(); return; }
+    if (!OB.sex) { toast("Scegli uomo o donna"); return; }
   }
-  S.profile.user = { name: skip ? "" : OB.name.trim().slice(0, 40), goal: skip ? "" : OB.goal, targetKg: skip ? "" : (num(OB.tkg) || "") };
+  S.profile.user = { name: skip ? "" : OB.name.trim().slice(0, 40), sex: skip ? "" : OB.sex, goal: skip ? "" : OB.goal, targetKg: skip ? "" : (num(OB.tkg) || "") };
   const kg = num(OB.kg);
   if (!skip && kg && kg > 20 && kg < 400) { const ws = S.profile.weights = S.profile.weights || []; const ex = ws.find(w => w.d === S.date); if (ex) ex.kg = kg; else ws.push({ d: S.date, kg }); ws.sort((a, b) => a.d < b.d ? -1 : 1); }
   store.saveProfile(); ovClose("onb"); render();
   if (!skip) toast(`Ciao ${userName()}! Iniziamo 💪`);
 }
 document.addEventListener("click", ev => { const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#onb")) return; ev.stopPropagation();
-  if (b.dataset.act === "ob-goal") { OB.name = $("#obName").value; OB.kg = $("#obKg").value; OB.tkg = $("#obTkg").value; OB.goal = OB.goal === b.dataset.k ? "" : b.dataset.k; renderOnb(); }
+  if (b.dataset.act === "ob-sex") { OB.name = $("#obName").value; OB.kg = $("#obKg").value; OB.tkg = $("#obTkg").value; OB.sex = b.dataset.k; renderOnb(); }
+  else if (b.dataset.act === "ob-goal") { OB.name = $("#obName").value; OB.kg = $("#obKg").value; OB.tkg = $("#obTkg").value; OB.goal = OB.goal === b.dataset.k ? "" : b.dataset.k; renderOnb(); }
   else if (b.dataset.act === "ob-skip") saveOnb(true); }, true);
 document.addEventListener("submit", ev => { if (ev.target.dataset.form === "onb") { ev.preventDefault(); ev.stopPropagation(); saveOnb(false); } }, true);
 
@@ -2545,6 +2786,7 @@ function coachContext() {
   const L = [];
   const now = new Date();
   const U = S.profile.user || {};
+  L.push(U.sex === "f" ? "L'utente è una DONNA: rivolgiti a lei al femminile, accordando aggettivi, participi e insulti al femminile (es. \"sei pronta\", \"smidollata\", \"mollacciona\")." : "L'utente è un uomo: rivolgiti a lui al maschile.");
   if (U.name || U.goal || U.targetKg) L.push(`Utente: ${U.name || "senza nome"}${U.goal ? ". Obiettivo: " + (GOALS[U.goal] || U.goal) : ""}${num(U.targetKg) ? ". Peso obiettivo: " + fmtN(num(U.targetKg)) + " kg" : ""}. Chiamalo per nome ogni tanto, senza esagerare.`);
   L.push("Data e ora: " + now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ", " + pad(now.getHours()) + ":" + pad(now.getMinutes()));
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
@@ -2561,6 +2803,10 @@ function coachContext() {
     L.push("\nALLENAMENTI RECENTI (serie fatte kg x rip):");
     sess.forEach(d => { const w = S.days[d].w; L.push(`- ${d} ${w.dayName || ""}: ` + Object.values(w.ex || {}).map(e => { const sd = (e.s || []).filter(x => x && x.done); return sd.length ? `${e.name} ${sd.map(x => (x.kg || "–") + "x" + (x.reps || "–")).join(",")}` : null; }).filter(Boolean).join("; ")); });
   } else L.push("Nessun allenamento registrato finora.");
+  { const h = hydro(today()); L.push(`Acqua oggi: ${fmtN(Math.round((h.w || 0) / 100) / 10)} L su ${fmtN(waterGoal())} L.${supps().length ? " Integratori: " + supps().map(x => `${x.name}${x.dose ? " " + x.dose : ""} ${h.s && h.s[x.id] ? "(preso)" : "(non ancora)"}`).join(", ") + "." : ""}`); }
+  { const M = measures(); if (M.length) L.push("Misure corporee (cm): " + M.slice(-4).map(m => m.d + " " + MEAS.filter(([k]) => num(m[k])).map(([k, l]) => l.toLowerCase() + " " + fmtN(num(m[k]))).join(", ")).join("; ")); }
+  if ((plan().diet.levels || []).length) { const T = targetsFor(today()); L.push(`Oggi è un giorno ${T.dayType === "on" ? "ON (allenamento)" : "OFF (riposo)"}, ${T.level || ""}: obiettivo ${fmtI(T.kcal)} kcal, P ${fmtI(T.p)}, C ${fmtI(T.c)}, G ${fmtI(T.f)}.`); }
+  if ((S.profile.checks || []).length) L.push("Ultimo check settimanale (" + S.profile.checks[0].date + "): " + S.profile.checks[0].text.slice(0, 600));
   const lt = peekLog(); if (lt && lt.w && setsDone(lt)) L.push(`Oggi: ${setsDone(lt)} serie fatte${lt.w.done ? ", allenamento terminato" : ""}.`);
   if (variants().length) {
     const Tg = targetsFor(); const t = dayTotals(); const ml = mealLog();
@@ -2687,14 +2933,14 @@ function renderCoach() {
 function openCoach() { $("#coachBg").hidden = false; ovOpen("coach"); renderCoach(); }
 function closeCoach() { $("#coachBg").hidden = true; ovClose("coach"); }
 document.addEventListener("click", ev => { if (ev.target.id === "coachBg") closeCoach(); });
-async function coachSend(text) {
+async function coachSend(text, opts = {}) {
   text = String(text || "").trim(); const att = CH.att.slice(); if ((!text && !att.length) || CH.busy) return;
   if (!text) text = att.length > 1 ? "Valuta queste foto." : "Valuta questa foto.";
   if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
   CH.msgs = CH.msgs.filter(m => !m.err);
-  const um = { role: "user", content: text }; if (att.length) um.imgs = att.map(a => a.thumb).filter(Boolean);
+  const um = { role: "user", content: text }; if (opts.label) { um.full = text; um.content = opts.label; } if (att.length) um.imgs = att.map(a => a.thumb).filter(Boolean);
   CH.msgs.push(um); CH.draft = ""; CH.att = [];
-  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: m.content + ((m.imgs || m.nimg) && m !== um ? `\n[In questo messaggio l'utente aveva allegato ${(m.imgs || []).length || m.nimg} foto]` : "") + (m.action ? `\n[Proposta di registrazione: ${m.action.items.map(x => x.qty + " " + x.food).join(", ")}${m.action.done ? " — registrata in " + m.action.done : " — non ancora confermata"}]` : "") }));
+  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: (m.full || m.content) + ((m.imgs || m.nimg) && m !== um ? `\n[In questo messaggio l'utente aveva allegato ${(m.imgs || []).length || m.nimg} foto]` : "") + (m.action ? `\n[Proposta di registrazione: ${m.action.items.map(x => x.qty + " " + x.food).join(", ")}${m.action.done ? " — registrata in " + m.action.done : " — non ancora confermata"}]` : "") }));
   const ans = { role: "assistant", content: "" }; CH.msgs.push(ans); CH.busy = true; CH.ctl = new AbortController(); renderCoach();
   let raf = 0;
   const paint = () => { raf = 0; const b = $("#lastBub"); const vis = splitAction(ans.content).text; if (b && vis) { b.innerHTML = md(vis); const ms = $("#msgs"); if (ms.scrollHeight - ms.scrollTop - ms.clientHeight < 160) ms.scrollTop = ms.scrollHeight; } };
@@ -2707,7 +2953,9 @@ async function coachSend(text) {
     if (e && e.code === "cancelled") { if (!ans.content) CH.msgs.pop(); }
     else { const m = aiErr(e); if (e && e.text) ans.content = e.text + "\n\n(" + (m || "risposta interrotta") + ")"; else { ans.content = (m || "Errore") + (e && e.detail ? " (" + String(e.detail).slice(0, 120) + ")" : ""); ans.err = true; } }
   }
-  CH.busy = false; CH.ctl = null; saveChat(); if (!$("#coach").hidden) renderCoach();
+  CH.busy = false; CH.ctl = null;
+  if (opts.check && !ans.err && ans.content && ans.content.length > 80) { S.profile.checks = [{ date: today(), text: ans.content }, ...(S.profile.checks || []).filter(c => c.date !== today())].slice(0, 30); store.saveProfile(); render(); }
+  saveChat(); if (!$("#coach").hidden) renderCoach();
 }
 // icona fluttuante trascinabile: un tocco apre il coach, trascinando la sposti (posizione ricordata)
 (function initFab() {
@@ -2779,7 +3027,8 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden) chec
 setTimeout(checkUpdate, 1500);
 
 /* cambio giorno se l'app resta aperta oltre la mezzanotte */
-document.addEventListener("visibilitychange", () => { if (!document.hidden && S.date !== today()) { S.date = today(); S.selDay = null; S.selVariant = null; render(); } });
+let TODAY_REF = today();
+document.addEventListener("visibilitychange", () => { if (!document.hidden && TODAY_REF !== today()) { if (S.date === TODAY_REF) S.date = today(); TODAY_REF = today(); S.selDay = null; S.selVariant = null; render(); } });
 
 /* ---------- avvio ---------- */
 (async () => {
