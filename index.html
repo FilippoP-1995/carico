@@ -351,6 +351,26 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .sv-c{border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:9px;padding:6px 9px;font-size:13px;font-weight:700;min-width:38px}
 .sv-c.on{background:var(--diet);border-color:var(--diet);color:var(--bg)}
 .sv-all{display:flex;align-items:center;gap:6px;padding:8px 0 4px;border-top:1px solid var(--line)}
+.onb{justify-content:center;gap:22px;max-width:460px}
+.onb-logo{display:flex;align-items:center;gap:12px}
+.onb-logo .plates i{width:10px}
+.onb-h{font-family:var(--f-display);font-size:44px;text-transform:uppercase;margin:0;line-height:1}
+.onb-p{margin:8px 0 0;color:var(--hero-mut);font-size:15px;line-height:1.45}
+.onb-f{display:flex;flex-direction:column;gap:8px;font-size:13px;font-weight:600;color:var(--hero-mut);text-transform:uppercase;letter-spacing:.06em}
+.onb-f small{text-transform:none;letter-spacing:0;font-weight:500;opacity:.8}
+.onb-f input{width:100%;min-width:0;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:14px 16px;font-size:18px;font-weight:600;color:var(--hero-ink);text-transform:none;letter-spacing:0}
+.onb-f input::placeholder{color:rgba(255,255,255,.35)}
+.onb-f input:focus{outline:none;border-color:var(--hero-a);box-shadow:0 0 0 3px rgba(125,156,255,.25)}
+.onb-goals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.onb-g{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px;color:var(--hero-ink);font-size:14.5px;font-weight:600;text-transform:none;letter-spacing:0}
+.onb-g b{font-size:22px}
+.onb-g.on{background:rgba(125,156,255,.2);border-color:var(--hero-a);box-shadow:0 0 0 1px var(--hero-a)}
+.onb-two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.onb-u{position:relative}
+.onb-u em{position:absolute;right:14px;top:50%;transform:translateY(-50%);font-style:normal;color:var(--hero-mut);text-transform:none}
+.onb-u input{padding-right:40px}
+.onb-skip{background:none;border:0;color:var(--hero-mut);font-size:14px;font-weight:600;padding:6px}
+.chip.on-acc{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -457,6 +477,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 <button id="fab" class="fab" aria-label="Apri il coach" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9l-4.5 3.5V15.5H4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke-width="2.6"/></svg></button>
 <div id="coachBg" class="coach-bg" hidden></div>
 <div id="coach" class="coach-pop" hidden role="dialog" aria-label="Coach"></div>
+<div id="onb" class="live" hidden role="dialog" aria-label="Benvenuto"></div>
 <div id="live" class="live" hidden role="dialog" aria-label="Modalità allenamento"></div>
 <div id="scan" class="sheet" hidden role="dialog" aria-label="Scanner codice a barre"></div>
 <div id="shop" class="sheet" hidden role="dialog" aria-label="Lista della spesa"></div>
@@ -496,7 +517,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "2.4 · 20 ottobre";
+const APP_VERSION = "2.5 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -905,7 +926,7 @@ function ring(pct, color, label, val) {
     <span class="rv">${val}</span></div><span class="rl">${label}</span></div>`;
 }
 function summaryCard() {
-  const h = new Date().getHours(); const hi = h < 12 ? "Buongiorno\u00a0☀️" : h < 18 ? "Buon pomeriggio\u00a0💪" : "Buonasera\u00a0🌙";
+  const h = new Date().getHours(); const uname = userName(); const hi = (h < 12 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera") + (uname ? ", " + uname : "") + "\u00a0" + (h < 12 ? "☀️" : h < 18 ? "💪" : "🌙");
   // allenamento di oggi
   const day = currentDay(); const l = peekLog();
   const done = day && l && l.w.dayId === day.id ? setsDone(l) : 0; const tot = day ? totalSets(day) : 0;
@@ -955,7 +976,7 @@ function summaryCard() {
     </div>
     <div class="week">${strip}</div>${wkPick}
     <div class="hs-grid">
-      ${stat(lastW ? fmtN(lastW.kg) + "<small> kg</small>" : "–", "Peso", dW != null ? `${dW > 0 ? "+" : ""}${fmtN(dW)} kg in 30 gg` : "segna il peso qui sotto")}
+      ${stat(lastW ? fmtN(lastW.kg) + "<small> kg</small>" : "–", "Peso", (() => { const tg = num((S.profile.user || {}).targetKg); const parts = []; if (dW != null) parts.push(`${dW > 0 ? "+" : ""}${fmtN(dW)} kg in 30 gg`); if (tg && lastW) { const r = Math.round((lastW.kg - tg) * 10) / 10; parts.push(Math.abs(r) < 0.3 ? "🎯 obiettivo raggiunto" : `${r > 0 ? "−" : "+"}${fmtN(Math.abs(r))} kg all'obiettivo`); } return parts.join(" · ") || "segna il peso qui sotto"; })())}
       ${stat(vol ? (vol >= 10000 ? fmtN(Math.round(vol / 100) / 10) + "<small> t</small>" : fmtI(vol) + "<small> kg</small>") : "–", "Volume settimana", pvol ? `${vol >= pvol ? "+" : "−"}${fmtI(Math.abs(vol - pvol) / pvol * 100)}% vs scorsa` : "kg × ripetizioni")}
       ${stat(hasDiet && Tg.p ? fmtI(t.p) + "<small>/" + fmtI(Tg.p) + " g</small>" : (hasDiet ? fmtI(t.p) + "<small> g</small>" : "–"), "Proteine oggi", hasDiet && Tg.p ? (t.p >= Tg.p * .95 ? "obiettivo raggiunto" : `mancano ${fmtI(Tg.p - t.p)} g`) : "")}
       ${stat(sess.filter(d => d.slice(0, 7) === S.date.slice(0, 7)).length, "Allenamenti nel mese", sess.length ? `${sess.length} in totale` : "")}
@@ -1516,6 +1537,14 @@ function vPiano() {
       </div>
     </details>
 
+    <details class="card" data-pnl="me" ${pnlOpen("me")}><summary>Il tuo profilo <span class="small muted" style="font-weight:500;margin-left:auto">${esc(userName() || "—")}</span></summary>
+      <div class="stack" style="margin-top:12px">
+        <label class="f">Nome<input class="in" data-e="user" data-k="name" value="${esc((S.profile.user || {}).name || "")}" placeholder="Il tuo nome"></label>
+        <div class="f">Obiettivo<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(GOALS).map(([k, v]) => `<button class="chip sm ${(S.profile.user || {}).goal === k ? "on-acc" : ""}" aria-pressed="${(S.profile.user || {}).goal === k}" data-act="me-goal" data-k="${k}">${GOAL_EMOJI[k]} ${esc(v)}</button>`).join("")}</div></div>
+        <label class="f">Peso obiettivo (kg)<input class="in" inputmode="decimal" data-e="user" data-k="targetKg" value="${esc(fmtN(num((S.profile.user || {}).targetKg)))}" placeholder="es. 75"></label>
+      </div>
+    </details>
+
     <div class="card stack">
       <span class="eyebrow">AI e dati</span>
       ${AI.sample ? `<p class="small muted" style="margin:0">Lettura delle schede, macro e varianti usano il tuo account Claude.</p>`
@@ -1820,6 +1849,7 @@ document.addEventListener("change", ev => {
     }
   }
   if (e === "diet-notes") P.diet.notes = el.value;
+  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = el.dataset.k === "targetKg" ? (num(el.value) || "") : el.value.trim().slice(0, 40); store.saveProfile(); render(); return; }
   store.saveProfile();
 });
 document.addEventListener("submit", ev => {
@@ -1878,6 +1908,7 @@ document.addEventListener("click", ev => {
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "live-open": openLive(); return;
+    case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
     case "wk-day": S.wkSel = S.wkSel === b.dataset.d ? null : b.dataset.d; if (!wDays().length) { toast("Carica prima una scheda di allenamento"); S.wkSel = null; } render(); return;
     case "wk-close": S.wkSel = null; render(); return;
     case "wk-mark": {
@@ -1984,7 +2015,7 @@ function applyPending() {
 
 /* ---------- overlay a tutto schermo ---------- */
 function ovOpen(id) { $("#" + id).hidden = false; $("#fab").hidden = true; document.body.style.overflow = "hidden"; }
-function ovClose(id) { $("#" + id).hidden = true; if (["live", "scan", "shop", "coach"].every(x => $("#" + x).hidden)) { $("#fab").hidden = false; document.body.style.overflow = ""; } }
+function ovClose(id) { $("#" + id).hidden = true; if (["live", "scan", "shop", "coach", "onb"].every(x => $("#" + x).hidden)) { $("#fab").hidden = false; document.body.style.overflow = ""; } }
 
 /* ---------- mappa dei muscoli ---------- */
 const MNAMES = { pettorali: "Pettorali", delt_a: "Deltoidi anteriori", delt_l: "Deltoidi laterali", delt_p: "Deltoidi posteriori", bicipiti: "Bicipiti", tricipiti: "Tricipiti", avambracci: "Avambracci", addominali: "Addominali", dorsali: "Dorsali", trapezio: "Trapezio", lombari: "Lombari", glutei: "Glutei", quadricipiti: "Quadricipiti", femorali: "Femorali", polpacci: "Polpacci", adduttori: "Adduttori" };
@@ -2383,6 +2414,45 @@ document.addEventListener("click", ev => {
 }, true);
 document.addEventListener("change", ev => { const k = ev.target.dataset && ev.target.dataset.shk; if (k == null) return; if (ev.target.checked) SH.checked.add(k); else SH.checked.delete(k); lsSet("carico.shopChk", JSON.stringify([...SH.checked])); const lab = ev.target.closest(".shop-it"); if (lab) lab.classList.toggle("ck", ev.target.checked); const all = Object.values(shopList()).flat(); const sp = $("#shop .sh-head .t span"); if (sp) sp.textContent = `${all.filter(x => !SH.checked.has(x.k)).length} di ${all.length} da prendere`; }, true);
 
+
+/* ---------- profilo utente e registrazione ---------- */
+const GOALS = { cut: "Perdere grasso", bulk: "Mettere massa", recomp: "Ricomposizione corporea", fit: "Restare in forma" };
+const GOAL_EMOJI = { cut: "🔥", bulk: "💪", recomp: "⚖️", fit: "🏃" };
+const userName = () => String((S.profile.user || {}).name || "").trim().split(/\s+/)[0] || "";
+const OB = { name: "", goal: "", kg: "", tkg: "" };
+function renderOnb() {
+  $("#onb").innerHTML = `<div class="lv-in onb">
+    <div class="onb-logo"><div class="plates"><i style="height:44px;background:var(--danger)"></i><i style="height:38px;background:var(--hero-a)"></i><i style="height:32px;background:var(--hero-d)"></i><i style="height:26px;background:var(--hero-g)"></i></div><div class="brand" style="color:var(--hero-ink)">Car<span>i</span>co</div></div>
+    <div><h1 class="onb-h">Benvenuto 👋</h1><p class="onb-p">Due informazioni per personalizzare l'app. Restano solo su questo dispositivo.</p></div>
+    <form class="stack" data-form="onb" style="gap:16px">
+      <label class="onb-f"><span>Come ti chiami?</span><input id="obName" value="${esc(OB.name)}" placeholder="Il tuo nome" autocomplete="given-name" enterkeyhint="next"></label>
+      <div class="onb-f"><span>Qual è il tuo obiettivo?</span><div class="onb-goals">${Object.entries(GOALS).map(([k, v]) => `<button type="button" class="onb-g ${OB.goal === k ? "on" : ""}" data-act="ob-goal" data-k="${k}"><b>${GOAL_EMOJI[k]}</b>${esc(v)}</button>`).join("")}</div></div>
+      <div class="onb-two">
+        <label class="onb-f"><span>Peso attuale <small>(facoltativo)</small></span><div class="onb-u"><input id="obKg" inputmode="decimal" value="${esc(OB.kg)}" placeholder="78,5"><em>kg</em></div></label>
+        <label class="onb-f"><span>Peso obiettivo <small>(facoltativo)</small></span><div class="onb-u"><input id="obTkg" inputmode="decimal" value="${esc(OB.tkg)}" placeholder="75"><em>kg</em></div></label>
+      </div>
+      <button class="lv-go" type="submit">Iniziamo 🚀</button>
+      <button class="onb-skip" type="button" data-act="ob-skip">Salta per ora</button>
+    </form>
+  </div>`;
+}
+function showOnboarding() { if (S.profile.user) return; ovOpen("onb"); renderOnb(); setTimeout(() => { const n = $("#obName"); n && n.focus(); }, 300); }
+function saveOnb(skip) {
+  if (!skip) {
+    OB.name = ($("#obName") || {}).value || OB.name; OB.kg = ($("#obKg") || {}).value || OB.kg; OB.tkg = ($("#obTkg") || {}).value || OB.tkg;
+    if (!OB.name.trim()) { toast("Scrivi il tuo nome"); $("#obName").focus(); return; }
+  }
+  S.profile.user = { name: skip ? "" : OB.name.trim().slice(0, 40), goal: skip ? "" : OB.goal, targetKg: skip ? "" : (num(OB.tkg) || "") };
+  const kg = num(OB.kg);
+  if (!skip && kg && kg > 20 && kg < 400) { const ws = S.profile.weights = S.profile.weights || []; const ex = ws.find(w => w.d === S.date); if (ex) ex.kg = kg; else ws.push({ d: S.date, kg }); ws.sort((a, b) => a.d < b.d ? -1 : 1); }
+  store.saveProfile(); ovClose("onb"); render();
+  if (!skip) toast(`Ciao ${userName()}! Iniziamo 💪`);
+}
+document.addEventListener("click", ev => { const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#onb")) return; ev.stopPropagation();
+  if (b.dataset.act === "ob-goal") { OB.name = $("#obName").value; OB.kg = $("#obKg").value; OB.tkg = $("#obTkg").value; OB.goal = OB.goal === b.dataset.k ? "" : b.dataset.k; renderOnb(); }
+  else if (b.dataset.act === "ob-skip") saveOnb(true); }, true);
+document.addEventListener("submit", ev => { if (ev.target.dataset.form === "onb") { ev.preventDefault(); ev.stopPropagation(); saveOnb(false); } }, true);
+
 /* ---------- coach: chat con l'AI sui tuoi dati ---------- */
 const CH = { msgs: (() => { try { return JSON.parse(lsGet("carico.chat") || "[]"); } catch (e) { return []; } })(), busy: false, ctl: null, draft: "" };
 const saveChat = () => lsSet("carico.chat", JSON.stringify(CH.msgs.slice(-40)));
@@ -2397,6 +2467,8 @@ Il piano è stato scritto da un trainer o nutrizionista: puoi suggerire, ma non 
 function coachContext() {
   const L = [];
   const now = new Date();
+  const U = S.profile.user || {};
+  if (U.name || U.goal || U.targetKg) L.push(`Utente: ${U.name || "senza nome"}${U.goal ? ". Obiettivo: " + (GOALS[U.goal] || U.goal) : ""}${num(U.targetKg) ? ". Peso obiettivo: " + fmtN(num(U.targetKg)) + " kg" : ""}. Chiamalo per nome ogni tanto, senza esagerare.`);
   L.push("Data e ora: " + now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ", " + pad(now.getHours()) + ":" + pad(now.getMinutes()));
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
   if (ws.length) L.push("Peso (data kg): " + ws.slice(-20).map(w => w.d + " " + fmtN(w.kg)).join("; "));
@@ -2494,7 +2566,7 @@ function renderCoach() {
       <button class="cp-ic" data-act="coach-close" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
     <div class="cp-msgs" id="msgs">
-      ${empty ? `<div class="cp-hi"><div class="cp-big">${COACH_AV}</div><h3>Ciao, come posso aiutarti?</h3><p>Rispondo usando la tua scheda, la dieta e i tuoi allenamenti.</p>
+      ${empty ? `<div class="cp-hi"><div class="cp-big">${COACH_AV}</div><h3>Ciao${userName() ? " " + esc(userName()) : ""}, come posso aiutarti?</h3><p>Rispondo usando la tua scheda, la dieta e i tuoi allenamenti.</p>
         <div class="cp-grid">${COACH_QL.map((q, i) => `<button class="cp-q" data-act="coach-q" data-i="${i}"><span>${q[0]}</span>${esc(q[1])}</button>`).join("")}</div></div>` : ""}
       ${CH.msgs.map((m, i) => m.role === "user" ? `<div class="cb u" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${esc(m.content)}</div>`
         : `<div class="cb-row"><div class="cb-av">${COACH_AV}</div><div class="cb a ${m.err ? "err" : ""}" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${m.content ? md(m.content) : '<span class="typing"><i></i><i></i><i></i></span>'}</div></div>`).join("")}
@@ -2571,6 +2643,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && S.
   try { migrateDiet(); } catch (e) { console.warn("migrazione", e); }
   showMode();
   render();
+  showOnboarding();
   if (IN_CLAUDE) {
     try { AI.sample = await claude.use("sample"); if (AI.sample) AI.limits = await AI.sample.limits().catch(() => null); } catch (e) { AI.sample = null; }
     if (S.tab === "piano") render();
