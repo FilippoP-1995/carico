@@ -518,6 +518,13 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .xd-rest{flex:none;width:100%}
 input,textarea,select{font-size:16px}
 input.small,textarea.small,select.small,.in.small{font-size:16px}
+.imp-prev{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface-2)}
+.imp-prev summary{cursor:pointer;font-weight:700;font-size:14.5px}
+.ip-day{margin-top:10px;display:flex;flex-direction:column;gap:2px}
+.ip-day>b{font-size:13.5px}
+.ip-ex{display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;border-top:1px dashed var(--line)}
+.ip-ex span:first-child{min-width:0}
+.ip-ex span:last-child{color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -666,7 +673,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "5.2 · 20 ottobre";
+const APP_VERSION = "5.3 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -774,13 +781,14 @@ const AI = {
   ready() { return !!(this.sample || this.key()); },
   canImages() { return this.sample ? !!(this.limits && this.limits.images) : !!this.key(); },
   maxImages() { return this.sample ? ((this.limits && this.limits.images && this.limits.images.maxCount) || 5) : 8; },
-  async json(prompt, { images = [], tier = "default", signal, maxTokens = 8000 } = {}) {
+  async json(prompt, { images = [], docs = [], tier = "default", signal, maxTokens = 8000 } = {}) {
     if (this.sample) {
       const o = { modelTier: tier }; if (signal) o.signal = signal; if (images.length) o.images = images;
       return this.sample.json(prompt, o);
     }
     const key = this.key(); if (!key) throw { code: "no_ai" };
     const content = [];
+    for (const d of docs) content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: await fileB64(d) } });
     for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } });
     content.push({ type: "text", text: prompt + "\n\nConsegna il risultato chiamando lo strumento \"risposta\" con l'oggetto JSON richiesto (se è richiesto un elenco, usa {\"items\": [...]})." });
     // uso di uno strumento obbligatorio: l'API restituisce sempre un oggetto JSON valido
@@ -803,6 +811,7 @@ const AI = {
     return v;
   }
 };
+function fileB64(f) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1]); r.onerror = () => rej({ code: "image_rejected" }); r.readAsDataURL(f); }); }
 function parseJsonLoose(t) {
   t = String(t || "").trim();
   try { return JSON.parse(t); } catch (e) {}
@@ -1720,7 +1729,10 @@ function vPiano() {
       </details>
       ${S.importMsg ? `<div class="status ${S.importErr ? "err" : ""}">${busy ? '<span class="spin"></span> ' : ""}${esc(S.importMsg)}</div>` : ""}
       ${busy ? `<button class="btn ghost" data-act="import-stop">Annulla</button>` : ""}
-      ${p ? `<div class="status ok">Trovati: ${p.workout ? p.workout.days.length + " giorni di allenamento" : ""}${p.workout && p.diet ? " e " : ""}${p.diet ? p.diet.variants.reduce((a, v) => a + v.meals.length, 0) + " pasti" : ""}.${(p.workout && days.length) || (p.diet && vars.length) ? " Sostituirà il piano attuale per la parte trovata." : ""}</div>
+      ${p ? `${p.fixes && p.fixes.length ? `<div class="status">🔍 Al secondo controllo ho corretto ${p.fixes.length} ${p.fixes.length === 1 ? "valore" : "valori"}:<br><span class="small">${p.fixes.slice(0, 12).map(esc).join("<br>")}</span></div>` : p.fixes ? `<div class="status">🔍 Secondo controllo fatto: nessun errore trovato.</div>` : ""}
+        ${p.workout ? `<details class="imp-prev" open><summary>Controlla la scheda letta</summary>${p.workout.days.map(d => `<div class="ip-day"><b>${esc(d.name)}</b>${d.exercises.map(e => `<div class="ip-ex"><span>${esc(e.name)}</span><span>${esc(e.sets)} × ${esc(e.reps || "?")}${e.rest ? ` · rec ${esc(e.rest)}s` : ""}${e.load ? ` · ${esc(e.load)}` : ""}</span></div>`).join("")}</div>`).join("")}<p class="small muted" style="margin:6px 0 0">Se qualcosa non torna, salva e correggilo in Scheda di allenamento qui sotto.</p></details>` : ""}
+        ${p.diet ? `<details class="imp-prev"><summary>Controlla la dieta letta</summary>${p.diet.variants.map(v => `<div class="ip-day"><b>${esc(v.name)}</b>${v.meals.map(m => `<div class="ip-ex"><span>${esc(m.name)}</span><span>${esc(m.items.map(x => (x.qty ? x.qty + " " : "") + x.food).join(", "))}</span></div>`).join("")}</div>`).join("")}</details>` : ""}
+        <div class="status ok">Trovati: ${p.workout ? p.workout.days.length + " giorni di allenamento" : ""}${p.workout && p.diet ? " e " : ""}${p.diet ? p.diet.variants.reduce((a, v) => a + v.meals.length, 0) + " pasti" : ""}.${(p.workout && days.length) || (p.diet && vars.length) ? " Sostituirà il piano attuale per la parte trovata." : ""}</div>
         <div class="row"><button class="btn primary" data-act="import-save" style="flex:1">Salva nel piano</button><button class="btn" data-act="import-cancel">Scarta</button></div>` : ""}
     </div>
 
@@ -1818,7 +1830,8 @@ Rispondi solo con un oggetto JSON con questa forma:
  "diet": {"targets": {"kcal": 2400, "protein": 160, "carbs": 280, "fat": 70}, "notes": "", "variants": [{"name": "Giorno di allenamento", "meals": [{"name": "Colazione", "time": "07:30", "items": [{"food": "Fiocchi d'avena", "qty": "80 g", "alt": "Pane integrale 100 g", "kcal": 300, "p": 11, "c": 54, "f": 6}], "notes": ""}]}]} oppure null se non c'è una dieta}
 Regole:
 - sets è un numero intero; reps è testo (es. "10", "8-10", "12-10-8-6", "30 sec", "max").
-- rest è il recupero in secondi come numero (2' = 120, 1'30" = 90); null se non indicato.
+- rest è il recupero in secondi come numero, copiato ESATTAMENTE dal documento: 60" o 60'' o 60 sec = 60; 1' = 60; 1'30" = 90; 2' = 120; per un intervallo (es. 60-90") usa il valore più basso. null se non indicato.
+- Copia tutti i numeri (serie, ripetizioni, recuperi, carichi, grammi) esattamente come scritti: non stimare, non arrotondare, non "correggere". Se un numero non si legge bene, rileggilo nel contesto (i recuperi sono quasi sempre multipli di 15 secondi).
 - load è il carico o l'intensità se indicati (es. "70%", "RPE 8", "20 kg"), altrimenti "".
 - Superserie, circuiti, tempo sotto tensione, tecnica o varianti vanno in notes dell'esercizio.
 - Se la dieta ha giornate diverse (allenamento/riposo, giorni della settimana) o più opzioni numerate per i pasti (Variante/Opzione 1, 2, 3), crea una variante per ciascuna, con lo stesso elenco di pasti e gli stessi nomi dei pasti (Colazione, Spuntino, Pranzo…); i pasti che non cambiano vanno ripetuti uguali. Altrimenti una sola variante chiamata "Giornata tipo".
@@ -1860,23 +1873,47 @@ async function pdfToInputs(file, maxImgs) {
   return { text: text.slice(0, 60000), imgs };
 }
 
-async function runImport({ text = "", images = [] }) {
+async function verifyImport(r, srcOpts, srcText) { // secondo controllo: confronta ogni numero con il documento originale
+  const jobs = []; const fixes = [];
+  if (r.workout && Array.isArray(r.workout.days)) {
+    const lines = []; r.workout.days.forEach((d, di) => (d.exercises || []).forEach((e, ei) => lines.push(`d${di} e${ei} [${d.name || ""}]: ${e.name} | serie ${e.sets ?? "?"} | rip ${e.reps ?? "?"} | recupero ${e.rest ?? "?"} s | carico ${e.load || "-"}`)));
+    if (lines.length) jobs.push(AI.json(`Controlla questa scheda di allenamento estratta automaticamente confrontandola con il documento originale allegato. Per OGNI esercizio verifica nome, numero di serie, ripetizioni, recupero (in secondi) e carico/intensità, e segnala SOLO i valori sbagliati.
+Regole recupero: 60" o 60'' = 60; 1' = 60; 1'30" = 90; 2' = 120; intervallo 60-90" = 60.
+ESTRAZIONE:
+${lines.join("\n")}
+Rispondi solo con JSON: {"fix":[{"d":0,"e":2,"field":"rest","value":60}]} (field tra name, sets, reps, rest, load). Lista vuota se è tutto corretto.` + srcText, { ...srcOpts, maxTokens: 4000 }).then(x => { (x && x.fix || []).forEach(f => { const d = r.workout.days[+f.d]; const e = d && d.exercises && d.exercises[+f.e]; if (!e || !["name", "sets", "reps", "rest", "load"].includes(f.field) || f.value == null) return; const was = e[f.field]; if (String(was) === String(f.value)) return; e[f.field] = f.value; fixes.push(`${e.name}: ${({ name: "nome", sets: "serie", reps: "ripetizioni", rest: "recupero", load: "carico" })[f.field]} ${was ?? "–"} → ${f.value}`); }); }).catch(() => {}));
+  }
+  if (r.diet && Array.isArray(r.diet.variants)) {
+    const lines = []; r.diet.variants.forEach((v, vi) => (v.meals || []).forEach((m, mi) => (m.items || []).forEach((it, ii) => lines.push(`v${vi} m${mi} i${ii} [${v.name || ""} · ${m.name || ""}]: ${it.qty || "?"} ${it.food}`))));
+    if (lines.length) jobs.push(AI.json(`Controlla questo piano alimentare estratto automaticamente confrontandolo con il documento originale allegato. Per OGNI alimento verifica nome e quantità (grammi, ml, pezzi) e segnala SOLO quelli sbagliati.
+ESTRAZIONE:
+${lines.slice(0, 400).join("\n")}
+Rispondi solo con JSON: {"fix":[{"v":0,"m":1,"i":2,"field":"qty","value":"80 g"}]} (field tra food, qty). Lista vuota se è tutto corretto.` + srcText, { ...srcOpts, maxTokens: 4000 }).then(x => { (x && x.fix || []).forEach(f => { const v = r.diet.variants[+f.v]; const m = v && v.meals && v.meals[+f.m]; const it = m && m.items && m.items[+f.i]; if (!it || !["food", "qty"].includes(f.field) || !f.value) return; const was = it[f.field]; if (String(was) === String(f.value)) return; it[f.field] = String(f.value); fixes.push(`${m.name}: ${was} → ${f.value}`); }); }).catch(() => {}));
+  }
+  await Promise.all(jobs);
+  return fixes;
+}
+async function runImport({ text = "", images = [], docs = [] }) {
   if (!AI.ready()) { setImport(IN_CLAUDE ? "Per leggere foto e testi serve il permesso di usare Claude. Puoi comunque inserire il piano a mano qui sotto." : aiErr({ code: "no_ai" }), true); return; }
   S.importBusy = true; S.pending = null; setImport("Sto leggendo la scheda… di solito serve meno di un minuto.");
   S.ctl = new AbortController();
   try {
-    const src = text ? "\n\nMATERIALE:\n" + text : "\n\nIl materiale è nelle immagini allegate (in ordine di pagina).";
+    const src = docs.length ? "\n\nIl materiale è nel PDF allegato: leggi il testo del documento." : text ? "\n\nMATERIALE (testo estratto dal documento: è la fonte più affidabile per i numeri" + (images.length ? "; le immagini allegate servono solo a capire la struttura" : "") + "):\n" + text : "\n\nIl materiale è nelle immagini allegate (in ordine di pagina).";
+    const srcOpts = { images, docs, signal: S.ctl.signal };
     // allenamento e dieta in due richieste parallele: risposte più corte, niente tagli sulle schede lunghe
     const parts = await Promise.allSettled([
-      AI.json(PROMPT + "\n\nIn questa risposta estrai SOLO la scheda di allenamento e metti \"diet\": null." + src, { images, signal: S.ctl.signal, maxTokens: 16000 }),
-      AI.json(PROMPT + "\n\nIn questa risposta estrai SOLO il piano alimentare e metti \"workout\": null." + src, { images, signal: S.ctl.signal, maxTokens: 32000 })
+      AI.json(PROMPT + "\n\nIn questa risposta estrai SOLO la scheda di allenamento e metti \"diet\": null." + src, { ...srcOpts, maxTokens: 16000 }),
+      AI.json(PROMPT + "\n\nIn questa risposta estrai SOLO il piano alimentare e metti \"workout\": null." + src, { ...srcOpts, maxTokens: 32000 })
     ]);
     const ok = parts.filter(x => x.status === "fulfilled").map(x => x.value || {});
     if (!ok.length) throw parts[1].reason || parts[0].reason;
     const r = { workout: (ok.find(x => x.workout) || {}).workout || null, diet: (ok.find(x => x.diet) || {}).diet || null };
     const failed = parts.map((x, i) => x.status === "rejected" && !(x.reason && x.reason.code === "cancelled") ? (i ? "la dieta" : "l'allenamento") : null).filter(Boolean);
     if (failed.length) toast("Non sono riuscito a leggere " + failed.join(" e ") + ": riprova solo con quella parte.", 6000);
-    const p = normalizePlan(r);
+    if (!r.workout && !r.diet) { S.importBusy = false; setImport("Non ho trovato né esercizi né pasti. Prova con una foto più nitida e dritta, o incolla il testo.", true); return; }
+    setImport("Ricontrollo ogni numero con il documento originale…");
+    let fixes = []; try { fixes = await verifyImport(r, srcOpts, src); } catch (e) {}
+    const p = normalizePlan(r); p.fixes = fixes;
     if (!p.workout && !p.diet) { S.importBusy = false; setImport("Non ho trovato né esercizi né pasti. Prova con una foto più nitida e dritta, o incolla il testo.", true); return; }
     S.pending = p; S.importBusy = false; setImport(null);
   } catch (e) {
@@ -1888,11 +1925,13 @@ function setImport(msg, err = false) { S.importMsg = msg; S.importErr = err; if 
 async function handleFiles(files) {
   files = Array.from(files || []); if (!files.length) return;
   const maxImgs = AI.maxImages();
-  const imgs = []; let text = "";
+  const imgs = []; let text = ""; const docs = [];
+  const nativePdf = !AI.sample && !!AI.key(); // con la chiave API il PDF viene letto direttamente, testo compreso
   try {
     S.importBusy = true; setImport("Preparo i file…");
     for (const f of files) {
       if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
+        if (nativePdf && f.size < 30 * 1024 * 1024) { docs.push(f); continue; }
         const r = await pdfToInputs(f, Math.max(0, maxImgs - imgs.length)); imgs.push(...r.imgs); text += r.text;
       } else if (f.type.startsWith("image/") || /\.(jpe?g|png|heic|webp)$/i.test(f.name)) { if (imgs.length < maxImgs) imgs.push(f); }
     }
@@ -1900,6 +1939,7 @@ async function handleFiles(files) {
     S.importBusy = false; setImport("Non riesco ad aprire questo PDF. Fai uno screenshot delle pagine e carica le immagini.", true); return;
   }
   S.importBusy = false;
+  if (docs.length) return runImport({ docs, images: imgs });
   if (!imgs.length && !text.trim()) { setImport("Formato non supportato: usa foto (JPG, PNG) o PDF.", true); return; }
   if (imgs.length && !AI.canImages()) {
     if (text.trim().length > 80) return runImport({ text });
