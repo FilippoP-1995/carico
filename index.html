@@ -533,7 +533,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "2.8 · 20 ottobre";
+const APP_VERSION = "2.9 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1558,6 +1558,7 @@ function vPiano() {
         <label class="f">Nome<input class="in" data-e="user" data-k="name" value="${esc((S.profile.user || {}).name || "")}" placeholder="Il tuo nome"></label>
         <div class="f">Obiettivo<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(GOALS).map(([k, v]) => `<button class="chip sm ${(S.profile.user || {}).goal === k ? "on-acc" : ""}" aria-pressed="${(S.profile.user || {}).goal === k}" data-act="me-goal" data-k="${k}">${GOAL_EMOJI[k]} ${esc(v)}</button>`).join("")}</div></div>
         <label class="f">Peso obiettivo (kg)<input class="in" inputmode="decimal" data-e="user" data-k="targetKg" value="${esc(fmtN(num((S.profile.user || {}).targetKg)))}" placeholder="es. 75"></label>
+        <div class="f">Tono del Coach<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(TONES).map(([k, t]) => `<button class="chip sm ${coachTone() === k ? "on-acc" : ""}" aria-pressed="${coachTone() === k}" data-act="me-tone" data-k="${k}">${esc(t.label)}</button>`).join("")}</div></div>
       </div>
     </details>
 
@@ -1924,6 +1925,7 @@ document.addEventListener("click", ev => {
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "live-open": openLive(); return;
+    case "me-tone": { S.profile.user = S.profile.user || {}; S.profile.user.tone = b.dataset.k; store.saveProfile(); render(); toast("Tono del Coach: " + TONES[b.dataset.k].label); return; }
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
     case "wk-day": S.wkSel = S.wkSel === b.dataset.d ? null : b.dataset.d; if (!wDays().length) { toast("Carica prima una scheda di allenamento"); S.wkSel = null; } render(); return;
     case "wk-close": S.wkSel = null; render(); return;
@@ -2472,7 +2474,13 @@ document.addEventListener("submit", ev => { if (ev.target.dataset.form === "onb"
 /* ---------- coach: chat con l'AI sui tuoi dati ---------- */
 const CH = { msgs: (() => { try { return JSON.parse(lsGet("carico.chat") || "[]"); } catch (e) { return []; } })(), busy: false, ctl: null, draft: "" };
 const saveChat = () => lsSet("carico.chat", JSON.stringify(CH.msgs.slice(-40)));
-const COACH_RULES = `Sei il coach dentro Carico, un'app per chi va in palestra. Parli italiano, con tono diretto, motivante ma onesto: se qualcosa non va lo dici.
+const TONES = {
+  wild: { label: "Senza filtri 🤬", txt: `TONO: parli come un amico vero che fa il personal trainer, non come un assistente. Linguaggio umano, colloquiale, da spogliatoio: frasi naturali, niente formule da robot ("Certo!", "Ottima domanda", "Spero di esserti stato utile" sono vietate). Umorismo al massimo: battute, prese in giro affettuose, iperboli, paragoni assurdi, autoironia. Puoi usare qualche parolaccia italiana quando ci sta bene per enfasi o per ridere (es. "cazzo", "porca miseria", "che palle", "una roba della madonna"), ma con misura: al massimo una o due per risposta, mai per insultare l'utente o altre persone, mai su temi delicati (dolori, infortuni, salute, peso vissuto male): lì torni serio e gentile. Le informazioni restano corrette e utili: la battuta non sostituisce il consiglio.` },
+  fun: { label: "Ironico 😄", txt: `TONO: parli come un amico che fa il personal trainer: linguaggio umano e colloquiale, niente formule da robot. Tanta ironia e qualche battuta, ma niente parolacce. Su temi delicati (dolori, infortuni, salute) torni serio e gentile.` },
+  serious: { label: "Serio 🎓", txt: `TONO: professionale, chiaro e motivante, linguaggio naturale ma senza battute né parolacce.` },
+};
+const coachTone = () => TONES[(S.profile.user || {}).tone] ? (S.profile.user || {}).tone : "wild";
+const COACH_RULES = `Sei il coach dentro Carico, un'app per chi va in palestra. Parli italiano, sei diretto, motivante ma onesto: se qualcosa non va lo dici.
 Rispondi in modo breve e pratico, adatto allo schermo di un telefono (di solito meno di 150 parole), con elenchi puntati quando aiutano. Usa **grassetto** solo per i punti chiave.
 Basati sui dati dell'utente qui sotto. Se un dato manca dillo e fai una stima ragionevole spiegando le ipotesi.
 - "Cosa faccio oggi": indica la seduta prevista, gli esercizi e i carichi da provare in base alle ultime volte (progressione graduale).
@@ -2541,7 +2549,7 @@ function md(t) {
   return out + (ul ? "</ul>" : "");
 }
 AI.chat = async function (turns, { onText, signal } = {}) {
-  const ctx = COACH_RULES + "\n\nDATI DELL'UTENTE:\n" + coachContext();
+  const ctx = COACH_RULES + "\n\n" + TONES[coachTone()].txt + "\n\nDATI DELL'UTENTE:\n" + coachContext();
   if (this.sample) {
     const input = [{ role: "user", content: ctx }, ...turns];
     const r = await this.sample(input, { cache: false, signal, onText: ({ text }) => onText && onText(text) });
@@ -2611,7 +2619,7 @@ function renderCoach() {
       <button class="cp-ic" data-act="coach-close" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
     <div class="cp-msgs" id="msgs">
-      ${empty ? `<div class="cp-hi"><div class="cp-big">${COACH_AV}</div><h3>Ciao${userName() ? " " + esc(userName()) : ""}, come posso aiutarti?</h3><p>Rispondo usando la tua scheda, la dieta e i tuoi allenamenti.</p>
+      ${empty ? `<div class="cp-hi"><div class="cp-big">${COACH_AV}</div><h3>Ciao${userName() ? " " + esc(userName()) : ""}, come posso aiutarti?</h3><p>${coachTone() === "wild" ? "Conosco la tua scheda, la dieta e quanto hai sudato. Spara pure, senza vergogna." : coachTone() === "fun" ? "Conosco scheda, dieta e allenamenti. Chiedimi pure, prometto battute pessime." : "Rispondo usando la tua scheda, la dieta e i tuoi allenamenti."}</p>
         <div class="cp-grid">${COACH_QL.map((q, i) => `<button class="cp-q" data-act="coach-q" data-i="${i}"><span>${q[0]}</span>${esc(q[1])}</button>`).join("")}</div></div>` : ""}
       ${CH.msgs.map((m, i) => m.role === "user" ? `<div class="cb u" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${esc(m.content)}</div>`
         : `<div class="cb-row"><div class="cb-av">${COACH_AV}</div><div class="cb a ${m.err ? "err" : ""}" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${m.content ? md(m.content) : '<span class="typing"><i></i><i></i><i></i></span>'}</div></div>${m.action ? actionCard(m, i) : ""}`).join("")}
