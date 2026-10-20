@@ -448,6 +448,18 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .lv-spot{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);display:grid;place-items:center;padding:0}
 .lv-spot svg,.spot-btn svg{width:26px;height:26px}
 .spot-btn{width:52px;min-width:52px;padding:0}
+.hk{display:flex;flex-direction:column;gap:12px}
+.hk-row{display:flex;align-items:center;gap:14px}
+.hk-rings{width:92px;height:92px;flex:none;background:#000;border-radius:50%;padding:4px}
+.hk-vals{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.hk-v{display:flex;align-items:baseline;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.hk-v i{width:8px;height:8px;border-radius:50%;flex:none;align-self:center}
+.hk-v b{font-family:var(--f-display);font-size:19px;color:var(--ink);font-variant-numeric:tabular-nums}
+.hk-guide{font-size:15px;line-height:1.5}
+.hk-guide p{margin:0}
+.hk-guide ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
+.hk-tpl{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.hk-tpl code{font-size:13.5px;word-break:break-word;font-family:ui-monospace,Menlo,monospace}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -558,6 +570,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 <div id="live" class="live" hidden role="dialog" aria-label="Modalità allenamento"></div>
 <div id="scan" class="sheet" hidden role="dialog" aria-label="Scanner codice a barre"></div>
 <div id="shop" class="sheet" hidden role="dialog" aria-label="Lista della spesa"></div>
+<div id="hkg" class="sheet" hidden role="dialog" aria-label="Anelli di Salute"></div>
 <input id="plateIn" type="file" accept="image/*" hidden>
 <input id="codeIn" type="file" accept="image/*" capture="environment" hidden>
 <input id="coachImg" type="file" accept="image/*" multiple hidden>
@@ -595,7 +608,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "4.0 · 20 ottobre";
+const APP_VERSION = "4.1 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1076,7 +1089,7 @@ function summaryCard() {
     </div>
     <div class="week">${strip}</div>${wkPick}
     <div class="hs-grid">
-      ${stat(lastW ? fmtN(lastW.kg) + "<small> kg</small>" : "–", "Peso", (() => { const tg = num((S.profile.user || {}).targetKg); const parts = []; if (dW != null) parts.push(`${dW > 0 ? "+" : ""}${fmtN(dW)} in 30gg`); if (tg && lastW) { const r = Math.round((lastW.kg - tg) * 10) / 10; parts.push(Math.abs(r) < 0.3 ? "🎯 raggiunto" : `🎯 ${r > 0 ? "−" : "+"}${fmtN(Math.abs(r))} kg`); } return parts.join("<br>") || "segnalo sotto"; })())}
+      ${stat(lastW ? fmtN(lastW.kg) + "<small> kg</small>" : "–", "Peso", (() => { const tg = num((S.profile.user || {}).targetKg); const parts = []; if (dW != null) parts.push(`${dW > 0 ? "+" : ""}${fmtN(dW)} in 30gg`); if (tg && lastW) { const r = Math.round((lastW.kg - tg) * 10) / 10; parts.push(Math.abs(r) < 0.3 ? "🎯 raggiunto" : `🎯 ${r > 0 ? "−" : "+"}${fmtN(Math.abs(r))} kg`); } return parts.join("<br>") || (lastW ? "ultima pesata" : "pesati e segnalo"); })())}
       ${stat(vol ? (vol >= 10000 ? fmtN(Math.round(vol / 100) / 10) + "<small> t</small>" : fmtI(vol) + "<small> kg</small>") : "–", "Volume", pvol ? `${vol >= pvol ? "+" : "−"}${fmtI(Math.abs(vol - pvol) / pvol * 100)}% vs scorsa` : "kg × rip.")}
       ${stat(hasDiet ? fmtI(t.p) + "<small> g</small>" : "–", "Proteine", hasDiet && Tg.p ? (t.p >= Tg.p * .95 ? "✅ centrate" : `mancano ${fmtI(Tg.p - t.p)}`) : "")}
       ${stat(sess.filter(d => d.slice(0, 7) === S.date.slice(0, 7)).length, "Nel mese", sess.length ? `${sess.length} totali` : "allenamenti")}
@@ -1087,7 +1100,7 @@ function summaryCard() {
 
 function vOggi() {
   if (!wDays().length && !variants().length) return `<h2>Benvenuto</h2>` + noPlan();
-  const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc);
+  const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc); out.push(hkCard());
   const day = currentDay();
   if (day) {
     const l = peekLog(); const done = l && l.w.dayId === day.id ? setsDone(l) : 0; const tot = totalSets(day);
@@ -1658,6 +1671,10 @@ function vPiano() {
         <label class="f">Nome<input class="in" data-e="user" data-k="name" value="${esc((S.profile.user || {}).name || "")}" placeholder="Il tuo nome"></label>
         <div class="f">Obiettivo<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(GOALS).map(([k, v]) => `<button class="chip sm ${(S.profile.user || {}).goal === k ? "on-acc" : ""}" aria-pressed="${(S.profile.user || {}).goal === k}" data-act="me-goal" data-k="${k}">${GOAL_EMOJI[k]} ${esc(v)}</button>`).join("")}</div></div>
         <label class="f">Peso obiettivo (kg)<input class="in" inputmode="decimal" data-e="user" data-k="targetKg" value="${esc(fmtN(num((S.profile.user || {}).targetKg)))}" placeholder="es. 75"></label>
+        <div class="f">⌚ Obiettivi anelli<div class="grid4" style="grid-template-columns:repeat(3,1fr);margin-top:4px">
+          <label class="f">Movimento kcal<input class="in" inputmode="numeric" data-e="user" data-k="moveGoal" value="${esc(HKG().kcal)}"></label>
+          <label class="f">Esercizio min<input class="in" inputmode="numeric" data-e="user" data-k="exGoal" value="${esc(HKG().ex)}"></label>
+          <label class="f">Passi<input class="in" inputmode="numeric" data-e="user" data-k="stepGoal" value="${esc(HKG().steps)}"></label></div></div>
         <label class="f">🎵 Playlist Spotify per l'allenamento<input class="in" data-e="user" data-k="playlist" value="${esc((S.profile.user || {}).playlist || "")}" placeholder="Incolla il link della playlist" inputmode="url" autocomplete="off"><span class="small muted" style="font-weight:500">${(S.profile.user || {}).playlist ? (spotifyParse((S.profile.user || {}).playlist) ? "✅ Link valido" : "⚠️ Link non riconosciuto: copialo da Spotify → ⋯ → Condividi → Copia link") : "In Spotify apri la playlist → ⋯ → Condividi → Copia link, poi incollalo qui."}</span></label>
         <div class="f">Sesso<div class="chips" style="margin-top:4px">${[["m", "Uomo"], ["f", "Donna"]].map(([k, l]) => `<button class="chip sm ${(S.profile.user || {}).sex === k || (!(S.profile.user || {}).sex && k === "m") ? "on-acc" : ""}" data-act="me-sex" data-k="${k}">${l}</button>`).join("")}</div></div>
         <div class="f">Giorno del check settimanale<div class="chips" style="flex-wrap:wrap;margin-top:4px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button class="chip sm ${checkDay() === d ? "on-acc" : ""}" data-act="me-check" data-k="${d}">${DOW[d].slice(0, 3)}</button>`).join("")}</div></div>
@@ -1969,7 +1986,7 @@ document.addEventListener("change", ev => {
     }
   }
   if (e === "diet-notes") P.diet.notes = el.value;
-  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = ["targetKg", "waterGoal"].includes(el.dataset.k) ? (num(el.value) || "") : el.value.trim().slice(0, el.dataset.k === "playlist" ? 300 : 40); store.saveProfile(); render(); return; }
+  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = ["targetKg", "waterGoal", "moveGoal", "exGoal", "stepGoal"].includes(el.dataset.k) ? (num(el.value) || "") : el.value.trim().slice(0, el.dataset.k === "playlist" ? 300 : 40); store.saveProfile(); render(); return; }
   if (e === "lvl") { const lv = (P.diet.levels || []).find(x => x.id === el.dataset.id); if (lv) { if (el.dataset.s) { lv[el.dataset.s] = lv[el.dataset.s] || {}; lv[el.dataset.s][el.dataset.k] = num(el.value) || ""; } else lv[el.dataset.k] = el.value.trim(); } store.saveProfile(); render(); return; }
   if (e === "supp") { const x = supps().find(y => y.id === el.dataset.id); if (x) x[el.dataset.k] = el.value.trim().slice(0, 40); store.saveProfile(); return; }
   store.saveProfile();
@@ -1983,6 +2000,7 @@ document.addEventListener("submit", ev => {
     ws.sort((a, b) => a.d < b.d ? -1 : 1); if (ws.length > 730) ws.splice(0, ws.length - 730);
     store.saveProfile(); toast("Peso salvato"); render();
   } else if (f.dataset.form === "food") { const k = f.dataset.key; const list = S.sug[k] || []; if (list.length && list[0].sc >= 3 * parseQuery(S.drafts[k] || "").terms.length) openPicker(k, list[0]); else addFood(k); }
+  else if (f.dataset.form === "hk") { const o = parseHK($("#hkTxt").value); if (!o) { toast("Non riconosco il testo: deve iniziare con CARICO", 4500); return; } applyHK(o); }
   else if (f.dataset.form === "supp") { const n = $("#suppName").value.trim(); if (!n) { toast("Scrivi il nome dell'integratore"); return; } S.profile.supps = [...supps(), { id: uid(), name: n.slice(0, 40), dose: $("#suppDose").value.trim().slice(0, 20) }]; store.saveProfile(); render(); }
   else if (f.dataset.form === "meas") {
     const fd = new FormData(f); const e = { d: S.date }; let any = false; MEAS.forEach(([k]) => { const v = num(fd.get(k)); if (v && v > 10 && v < 300) { e[k] = v; any = true; } });
@@ -2036,6 +2054,9 @@ document.addEventListener("click", ev => {
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "live-open": openLive(); return;
+    case "hk-import": importHK(); return;
+    case "hk-cancel": S.hkPaste = false; render(); return;
+    case "hk-guide": ovOpen("hkg"); renderHKGuide(); return;
     case "spotify": openSpotify(); return;
     case "day-prev": case "day-next": { const d = parseD(S.date); d.setDate(d.getDate() + (a === "day-next" ? 1 : -1)); const nd = dstr(d); if (nd > today()) return; S.date = nd; S.selDay = null; S.wkSel = null; S.picker = null; S.review = null; render(); return; }
     case "day-today": if (S.date === today()) return; S.date = today(); S.selDay = null; S.wkSel = null; render(); window.scrollTo(0, 0); return;
@@ -2161,7 +2182,7 @@ function applyPending() {
 
 /* ---------- overlay a tutto schermo ---------- */
 function ovOpen(id) { $("#" + id).hidden = false; $("#fab").hidden = true; document.body.style.overflow = "hidden"; }
-function ovClose(id) { $("#" + id).hidden = true; if (["live", "scan", "shop", "coach", "onb"].every(x => $("#" + x).hidden)) { $("#fab").hidden = false; document.body.style.overflow = ""; } }
+function ovClose(id) { $("#" + id).hidden = true; if (["live", "scan", "shop", "coach", "onb", "hkg"].every(x => $("#" + x).hidden)) { $("#fab").hidden = false; document.body.style.overflow = ""; } }
 
 /* ---------- mappa dei muscoli ---------- */
 const MNAMES = { pettorali: "Pettorali", delt_a: "Deltoidi anteriori", delt_l: "Deltoidi laterali", delt_p: "Deltoidi posteriori", bicipiti: "Bicipiti", tricipiti: "Tricipiti", avambracci: "Avambracci", addominali: "Addominali", dorsali: "Dorsali", trapezio: "Trapezio", lombari: "Lombari", glutei: "Glutei", quadricipiti: "Quadricipiti", femorali: "Femorali", polpacci: "Polpacci", adduttori: "Adduttori" };
@@ -2654,6 +2675,7 @@ function weekStats() {
     L.push(`Dieta: pasti segnati in ${logged.length} giorni su 7${logged.length ? `; media ${fmtI(tk / logged.length)} kcal contro obiettivo medio ${fmtI(gk / logged.length)}, proteine ${fmtI(tp / logged.length)} g contro ${fmtI(gp / logged.length)} g. Dettaglio: ${per.join("; ")}` : ""}.`);
   }
   const hd = []; let wsum = 0, wdays = 0; for (let d = new Date(st); dstr(d) <= end; d.setDate(d.getDate() + 1)) { const h = hydro(dstr(d)); if (h.w) { wsum += h.w; wdays++; } hd.push(h); }
+  { const hks = []; for (let d = new Date(st); dstr(d) <= end; d.setDate(d.getDate() + 1)) { const x = hkDay(dstr(d)); if (x) hks.push(x); } if (hks.length) { const av = k => Math.round(hks.reduce((a, x) => a + (x[k] || 0), 0) / hks.length); L.push(`Anelli di Salute (media su ${hks.length} giorni importati): ${fmtI(av("kcal"))} kcal attive su ${fmtI(HKG().kcal)}, ${av("ex")} min di esercizio su ${HKG().ex}, ${fmtI(av("steps"))} passi su ${fmtI(HKG().steps)}.`); } }
   L.push(`Acqua: ${wdays ? `media ${fmtN(Math.round(wsum / wdays / 100) / 10)} L nei ${wdays} giorni segnati (obiettivo ${fmtN(waterGoal())} L)` : "mai segnata"}.`);
   if (supps().length) L.push("Integratori presi: " + supps().map(x => `${x.name} ${hd.filter(h => h.s && h.s[x.id]).length}/7`).join(", ") + ".");
   const M = measures(); if (M.length) { const lm = M[M.length - 1], pm = M.filter(m => m.d < lm.d).pop(); L.push(`Misure (${lm.d}): ` + MEAS.filter(([k]) => num(lm[k])).map(([k, l]) => `${l} ${fmtN(num(lm[k]))} cm${pm && num(pm[k]) ? ` (prima ${fmtN(num(pm[k]))})` : ""}`).join(", ") + "."); }
@@ -2736,6 +2758,68 @@ function openSpotify() {
   else { let left = false; const onHide = () => { left = true; }; document.addEventListener("visibilitychange", onHide, { once: true }); location.href = sp ? `spotify:${sp.type}:${sp.id}` : "spotify:"; setTimeout(() => { if (!left && !document.hidden) window.open(web, "_blank"); }, 1400); }
   if (!sp) toast("Imposta la tua playlist in Piano → Il tuo profilo", 4500);
 }
+
+
+/* ---------- anelli di Salute via Comandi rapidi ---------- */
+const HKG = () => { const u = S.profile.user || {}; return { kcal: num(u.moveGoal) || 500, ex: num(u.exGoal) || 30, steps: num(u.stepGoal) || 8000 }; };
+const hkDay = (d = S.date) => (S.days[d] && S.days[d].hk) || null;
+function parseHK(t) {
+  t = String(t || ""); if (!/carico/i.test(t)) return null;
+  const g = k => { const m = t.match(new RegExp(k + "\\s*[=:]\\s*([\\d.,]+)", "i")); if (!m) return null; let v = m[1]; if (/\d\.\d{3}(,|$)/.test(v)) v = v.replace(/\./g, ""); return num(v.replace(/,(?=\d{3}\b)/g, "")); };
+  const o = { kcal: g("kcal"), ex: g("ex"), steps: g("passi"), weight: g("peso") };
+  return o.kcal == null && o.ex == null && o.steps == null && o.weight == null ? null : o;
+}
+function applyHK(o) {
+  const l = dayLog(); l.hk = { kcal: o.kcal != null ? Math.round(o.kcal) : (l.hk || {}).kcal, ex: o.ex != null ? Math.round(o.ex) : (l.hk || {}).ex, steps: o.steps != null ? Math.round(o.steps) : (l.hk || {}).steps, ts: Date.now() };
+  store.saveDay(S.date);
+  if (o.weight && o.weight > 20 && o.weight < 400) { const ws = S.profile.weights = S.profile.weights || []; const ex = ws.find(w => w.d === S.date); if (ex) ex.kg = Math.round(o.weight * 10) / 10; else ws.push({ d: S.date, kg: Math.round(o.weight * 10) / 10 }); ws.sort((a, b) => a.d < b.d ? -1 : 1); store.saveProfile(); }
+  S.hkPaste = false; render(); toast("⌚ Dati di Salute importati" + (o.weight ? " (anche il peso)" : ""));
+}
+async function importHK() {
+  try { if (navigator.clipboard && navigator.clipboard.readText) { const t = await navigator.clipboard.readText(); const o = parseHK(t); if (o) { applyHK(o); return; } } } catch (e) {}
+  S.hkPaste = true; render(); setTimeout(() => { const t = $("#hkTxt"); t && t.focus(); }, 50);
+}
+function hkRing(v, goal, col, r) { const C = 2 * Math.PI * r; const p = Math.max(0, Math.min(1, (v || 0) / goal)); return `<circle cx="40" cy="40" r="${r}" fill="none" stroke="${col}" stroke-opacity=".22" stroke-width="8"/>${p > 0.005 ? `<circle cx="40" cy="40" r="${r}" fill="none" stroke="${col}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(C * p).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 40 40)"/>` : ""}`; }
+function hkCard() {
+  const h = hkDay(); const G = HKG();
+  return `<div class="card hk">
+    <div class="hk-row">
+      <svg class="hk-rings" viewBox="0 0 80 80" aria-hidden="true">${hkRing(h && h.kcal, G.kcal, "#fa114f", 34)}${hkRing(h && h.ex, G.ex, "#92e82a", 24)}${hkRing(h && h.steps, G.steps, "#1eeaef", 14)}</svg>
+      <div class="hk-vals">
+        <span class="eyebrow">⌚ Anelli di Salute${h && h.ts ? ` · <span style="text-transform:none;letter-spacing:0">agg. ${new Date(h.ts).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}</span>` : ""}</span>
+        <div class="hk-v"><i style="background:#fa114f"></i><b>${h && h.kcal != null ? fmtI(h.kcal) : "–"}</b><span>/ ${fmtI(G.kcal)} kcal movimento</span></div>
+        <div class="hk-v"><i style="background:#92e82a"></i><b>${h && h.ex != null ? fmtI(h.ex) : "–"}</b><span>/ ${G.ex} min esercizio</span></div>
+        <div class="hk-v"><i style="background:#1eeaef"></i><b>${h && h.steps != null ? fmtI(h.steps) : "–"}</b><span>/ ${fmtI(G.steps)} passi</span></div>
+      </div>
+    </div>
+    ${S.hkPaste ? `<form class="stack" data-form="hk" style="gap:8px"><textarea class="in" id="hkTxt" style="min-height:70px" placeholder="Incolla qui il testo copiato dal Comando rapido (tieni premuto → Incolla)"></textarea><div class="row"><button class="btn primary sm" style="flex:1">Importa</button><button type="button" class="btn sm" data-act="hk-cancel">Annulla</button></div></form>`
+      : `<div class="row" style="gap:8px"><button class="btn sm" style="flex:1" data-act="hk-import">📲 Importa da Salute</button><button class="btn ghost sm" data-act="hk-guide">Come si configura?</button></div>`}
+  </div>`;
+}
+function renderHKGuide() {
+  const tpl = "CARICO kcal=[Calorie] ex=[Esercizio] passi=[Passi] peso=[Peso]";
+  $("#hkg").innerHTML = `<div class="sh-head"><div class="t"><b>Anelli di Salute</b><span>Configurazione una tantum, circa 5 minuti</span></div><button class="iconbtn" data-act="hkg-close" aria-label="Chiudi">${ICON_X}</button></div>
+  <div class="sc-body hk-guide">
+    <p>Apple non permette alle web app di leggere Salute, quindi usiamo un <b>Comando rapido</b> che legge i dati di oggi e li copia: poi in Carico tocchi <b>📲 Importa da Salute</b>.</p>
+    <ol>
+      <li>Apri l'app <b>Comandi</b> → <b>＋</b> → chiamalo <b>Carico Salute</b>.</li>
+      <li><b>Calorie</b>: aggiungi l'azione <b>Trova campioni di Salute</b>. Imposta <i>Tipo</i> = <b>Energia attiva</b>, aggiungi il filtro <i>Data di inizio</i> <b>è oggi</b>. Sotto aggiungi <b>Calcola statistiche</b> → <b>Somma</b>. Poi <b>Imposta variabile</b> → nome <b>Calorie</b>.</li>
+      <li><b>Esercizio</b>: ripeti il punto 2 con <i>Tipo</i> = <b>Minuti di allenamento</b> e variabile <b>Esercizio</b>.</li>
+      <li><b>Passi</b>: ripeti con <i>Tipo</i> = <b>Passi</b> e variabile <b>Passi</b>.</li>
+      <li><b>Peso</b> (facoltativo, se ti pesi con una bilancia collegata): <b>Trova campioni di Salute</b> con <i>Tipo</i> = <b>Peso</b>, <i>Ordina per</i> <b>Data di inizio</b>, <b>Dal più recente</b>, <i>Limite</i> <b>1</b>. Poi <b>Imposta variabile</b> → <b>Peso</b>.</li>
+      <li>Aggiungi l'azione <b>Testo</b> e scrivi esattamente il modello qui sotto, sostituendo ogni parola tra parentesi con la variabile corrispondente (tocca il punto e scegli la variabile).</li>
+      <li>Aggiungi <b>Copia negli appunti</b>. Fine: tocca ▶ per provarlo e consenti l'accesso a Salute quando te lo chiede.</li>
+    </ol>
+    <div class="hk-tpl"><code>${esc(tpl)}</code><button class="btn sm" data-act="hk-copytpl">Copia modello</button></div>
+    <p class="small muted">Se non usi il peso, togli "peso=[Peso]" dal testo.</p>
+    <p><b>Per usarlo:</b> lancia il comando (anche dal widget o chiedendo a Siri "Carico Salute"), poi apri Carico e tocca <b>📲 Importa da Salute</b>. Se vuoi, in <b>Comandi → Automazione</b> crea un'automazione <i>Ora del giorno</i> (es. ogni sera alle 21) con <b>Esegui subito</b>.</p>
+    <p class="small muted">Gli obiettivi degli anelli (movimento, esercizio, passi) li imposti in Piano → Il tuo profilo, uguali a quelli del tuo Apple Watch.</p>
+  </div>`;
+}
+document.addEventListener("click", ev => { const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#hkg")) return; ev.stopPropagation();
+  if (b.dataset.act === "hkg-close") ovClose("hkg");
+  else if (b.dataset.act === "hk-copytpl") navigator.clipboard.writeText("CARICO kcal=[Calorie] ex=[Esercizio] passi=[Passi] peso=[Peso]").then(() => toast("Modello copiato")).catch(() => toast("Tieni premuto sul testo per copiarlo"));
+}, true);
 
 /* ---------- profilo utente e registrazione ---------- */
 const GOALS = { cut: "Perdere grasso", bulk: "Mettere massa", recomp: "Ricomposizione corporea", fit: "Restare in forma" };
@@ -2830,6 +2914,7 @@ function coachContext() {
     L.push("\nALLENAMENTI RECENTI (serie fatte kg x rip):");
     sess.forEach(d => { const w = S.days[d].w; L.push(`- ${d} ${w.dayName || ""}: ` + Object.values(w.ex || {}).map(e => { const sd = (e.s || []).filter(x => x && x.done); return sd.length ? `${e.name} ${sd.map(x => (x.kg || "–") + "x" + (x.reps || "–")).join(",")}` : null; }).filter(Boolean).join("; ")); });
   } else L.push("Nessun allenamento registrato finora.");
+  { const hk = hkDay(today()); if (hk) L.push(`Anelli di Salute oggi: ${fmtI(hk.kcal)} kcal attive (obiettivo ${fmtI(HKG().kcal)}), ${fmtI(hk.ex)} min di esercizio (obiettivo ${HKG().ex}), ${fmtI(hk.steps)} passi (obiettivo ${fmtI(HKG().steps)}).`); }
   { const h = hydro(today()); L.push(`Acqua oggi: ${fmtN(Math.round((h.w || 0) / 100) / 10)} L su ${fmtN(waterGoal())} L.${supps().length ? " Integratori: " + supps().map(x => `${x.name}${x.dose ? " " + x.dose : ""} ${h.s && h.s[x.id] ? "(preso)" : "(non ancora)"}`).join(", ") + "." : ""}`); }
   { const M = measures(); if (M.length) L.push("Misure corporee (cm): " + M.slice(-4).map(m => m.d + " " + MEAS.filter(([k]) => num(m[k])).map(([k, l]) => l.toLowerCase() + " " + fmtN(num(m[k]))).join(", ")).join("; ")); }
   if ((plan().diet.levels || []).length) { const T = targetsFor(today()); L.push(`Oggi è un giorno ${T.dayType === "on" ? "ON (allenamento)" : "OFF (riposo)"}, ${T.level || ""}: obiettivo ${fmtI(T.kcal)} kcal, P ${fmtI(T.p)}, C ${fmtI(T.c)}, G ${fmtI(T.f)}.`); }
