@@ -445,6 +445,9 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .lv-tg{display:flex;flex-direction:column;gap:4px}
 .onb-sex{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .onb-sex .onb-g{align-items:center;font-size:16px;padding:14px}
+.lv-spot{width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);display:grid;place-items:center;padding:0}
+.lv-spot svg,.spot-btn svg{width:26px;height:26px}
+.spot-btn{width:52px;min-width:52px;padding:0}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -592,7 +595,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "3.9 · 20 ottobre";
+const APP_VERSION = "4.0 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1193,7 +1196,7 @@ function vAllenamento() {
     <div class="chips" role="group" aria-label="Giorno della scheda">${chips}</div>
     <div class="row between small muted" style="margin:10px 0 6px"><span>${done} di ${tot} serie fatte</span>${isThis && l.w.done ? `<span style="color:var(--ok);font-weight:700">Completato</span>` : ""}</div>
     <div class="bar" style="margin-bottom:14px"><i style="width:${tot ? Math.min(100, done / tot * 100) : 0}%"></i></div>
-    <button class="btn primary block live-cta" data-act="live-open" style="margin-bottom:12px">▶ Modalità allenamento a schermo intero</button>
+    <div class="row" style="margin-bottom:12px;gap:8px"><button class="btn primary live-cta" data-act="live-open" style="flex:1">▶ Modalità allenamento</button><button class="btn spot-btn" data-act="spotify" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button></div>
     <div class="stack">${exs}
     ${isThis && l.w.done ? `<button class="btn block" data-act="reopen">Riapri l'allenamento</button>` : `<button class="btn primary block" data-act="finish">${done ? "Termina allenamento" : "✓ Segna come fatto (senza registrare le serie)"}</button>`}
     <p class="small muted" style="margin:0;text-align:center">Per segnare un allenamento di un altro giorno della settimana, tocca il giorno nel riepilogo della Home. Tocca un esercizio per aprire le serie. Con ✓ segni la serie e parte il recupero; se lasci vuoto uso il carico dell'ultima volta.</p>
@@ -1655,6 +1658,7 @@ function vPiano() {
         <label class="f">Nome<input class="in" data-e="user" data-k="name" value="${esc((S.profile.user || {}).name || "")}" placeholder="Il tuo nome"></label>
         <div class="f">Obiettivo<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(GOALS).map(([k, v]) => `<button class="chip sm ${(S.profile.user || {}).goal === k ? "on-acc" : ""}" aria-pressed="${(S.profile.user || {}).goal === k}" data-act="me-goal" data-k="${k}">${GOAL_EMOJI[k]} ${esc(v)}</button>`).join("")}</div></div>
         <label class="f">Peso obiettivo (kg)<input class="in" inputmode="decimal" data-e="user" data-k="targetKg" value="${esc(fmtN(num((S.profile.user || {}).targetKg)))}" placeholder="es. 75"></label>
+        <label class="f">🎵 Playlist Spotify per l'allenamento<input class="in" data-e="user" data-k="playlist" value="${esc((S.profile.user || {}).playlist || "")}" placeholder="Incolla il link della playlist" inputmode="url" autocomplete="off"><span class="small muted" style="font-weight:500">${(S.profile.user || {}).playlist ? (spotifyParse((S.profile.user || {}).playlist) ? "✅ Link valido" : "⚠️ Link non riconosciuto: copialo da Spotify → ⋯ → Condividi → Copia link") : "In Spotify apri la playlist → ⋯ → Condividi → Copia link, poi incollalo qui."}</span></label>
         <div class="f">Sesso<div class="chips" style="margin-top:4px">${[["m", "Uomo"], ["f", "Donna"]].map(([k, l]) => `<button class="chip sm ${(S.profile.user || {}).sex === k || (!(S.profile.user || {}).sex && k === "m") ? "on-acc" : ""}" data-act="me-sex" data-k="${k}">${l}</button>`).join("")}</div></div>
         <div class="f">Giorno del check settimanale<div class="chips" style="flex-wrap:wrap;margin-top:4px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button class="chip sm ${checkDay() === d ? "on-acc" : ""}" data-act="me-check" data-k="${d}">${DOW[d].slice(0, 3)}</button>`).join("")}</div></div>
         <div class="f">Tono del Coach<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(TONES).map(([k, t]) => `<button class="chip sm ${coachTone() === k ? "on-acc" : ""}" aria-pressed="${coachTone() === k}" data-act="me-tone" data-k="${k}">${esc(t.label)}</button>`).join("")}</div></div>
@@ -1965,7 +1969,7 @@ document.addEventListener("change", ev => {
     }
   }
   if (e === "diet-notes") P.diet.notes = el.value;
-  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = ["targetKg", "waterGoal"].includes(el.dataset.k) ? (num(el.value) || "") : el.value.trim().slice(0, 40); store.saveProfile(); render(); return; }
+  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = ["targetKg", "waterGoal"].includes(el.dataset.k) ? (num(el.value) || "") : el.value.trim().slice(0, el.dataset.k === "playlist" ? 300 : 40); store.saveProfile(); render(); return; }
   if (e === "lvl") { const lv = (P.diet.levels || []).find(x => x.id === el.dataset.id); if (lv) { if (el.dataset.s) { lv[el.dataset.s] = lv[el.dataset.s] || {}; lv[el.dataset.s][el.dataset.k] = num(el.value) || ""; } else lv[el.dataset.k] = el.value.trim(); } store.saveProfile(); render(); return; }
   if (e === "supp") { const x = supps().find(y => y.id === el.dataset.id); if (x) x[el.dataset.k] = el.value.trim().slice(0, 40); store.saveProfile(); return; }
   store.saveProfile();
@@ -2032,6 +2036,7 @@ document.addEventListener("click", ev => {
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "live-open": openLive(); return;
+    case "spotify": openSpotify(); return;
     case "day-prev": case "day-next": { const d = parseD(S.date); d.setDate(d.getDate() + (a === "day-next" ? 1 : -1)); const nd = dstr(d); if (nd > today()) return; S.date = nd; S.selDay = null; S.wkSel = null; S.picker = null; S.review = null; render(); return; }
     case "day-today": if (S.date === today()) return; S.date = today(); S.selDay = null; S.wkSel = null; render(); window.scrollTo(0, 0); return;
     case "daytype": { const l = dayLog(); if (b.dataset.t) l.m.dayType = b.dataset.t; else delete l.m.dayType; store.saveDay(S.date); render(); const T = targetsFor(); toast(`Obiettivo ${dayTypeFor(S.date).t === "on" ? "giorno ON" : "giorno OFF"}: ${fmtI(T.kcal)} kcal`); return; }
@@ -2307,7 +2312,7 @@ function lvSummary() {
 function renderLive() {
   const el = $("#live"); const day = lvDay(); const l = dayLog(); const exs = day.exercises || [];
   const tot = totalSets(day), done = l.w.dayId === day.id ? setsDone(l) : 0;
-  const top = `<div class="lv-top"><button class="lv-x" data-act="lv-close" aria-label="Chiudi">${ICON_X}</button><div class="lv-day"><span>${esc(day.name)}</span><b id="lvClock">0:00</b></div><span class="lv-cnt">${done}/${tot}</span></div>
+  const top = `<div class="lv-top"><button class="lv-x" data-act="lv-close" aria-label="Chiudi">${ICON_X}</button><div class="lv-day"><span>${esc(day.name)}</span><b id="lvClock">0:00</b></div><button class="lv-spot" data-act="lv-spot" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button><span class="lv-cnt">${done}/${tot}</span></div>
     <div class="lv-prog"><i style="width:${tot ? done / tot * 100 : 0}%"></i></div>
     <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${i === LV.exIdx && LV.phase !== "done" ? "on" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(ex.name)}</button>`; }).join("")}</div>`;
   let body = "";
@@ -2372,6 +2377,7 @@ document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#live")) return;
   ev.stopPropagation(); const a = b.dataset.act; const day = lvDay();
   if (a === "lv-close") closeLive();
+  else if (a === "lv-spot") openSpotify();
   else if (a === "lv-done") lvSetDone();
   else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); }
   else if (a === "lv-ex") { LV.exIdx = +b.dataset.i; const ex = day.exercises[LV.exIdx]; const l = dayLog(); const e = l.w.ex[ex.id]; let j = 0; while (j < exSets(ex) - 1 && e && e.s && e.s[j] && e.s[j].done) j++; LV.setIdx = j; LV.phase = "set"; lvDefaults(); renderLive(); }
@@ -2714,6 +2720,21 @@ function levelsEditor() {
     </div>`).join("")}
     <button class="btn ghost sm" data-act="lv-add">＋ ${L.length ? "Aggiungi un livello (es. dal prossimo check)" : "Usa obiettivi diversi per giorni ON e OFF"}</button>
   </div>`;
+}
+
+
+/* ---------- Spotify: apre la playlist dell'allenamento ---------- */
+const ICON_SPOT = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#1DB954"/><path d="M6.8 9.6c3.4-1 7.3-.7 10.3 1M7.3 12.4c2.9-.8 6.1-.5 8.6.9M7.8 15c2.3-.6 4.7-.4 6.7.7" fill="none" stroke="#0b1020" stroke-width="1.6" stroke-linecap="round"/></svg>';
+function spotifyParse(u) {
+  u = String(u || "").trim(); let m = u.match(/^spotify:(playlist|album|artist|track|show):([A-Za-z0-9]+)/); if (m) return { type: m[1], id: m[2] };
+  m = u.match(/open\.spotify\.com\/(?:intl-[a-z]+\/)?(playlist|album|artist|track|show)\/([A-Za-z0-9]+)/); return m ? { type: m[1], id: m[2] } : null;
+}
+function openSpotify() {
+  const sp = spotifyParse((S.profile.user || {}).playlist);
+  const web = sp ? `https://open.spotify.com/${sp.type}/${sp.id}` : "https://open.spotify.com/";
+  if (IN_CLAUDE) { const a = document.createElement("a"); a.href = web; a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); }
+  else { let left = false; const onHide = () => { left = true; }; document.addEventListener("visibilitychange", onHide, { once: true }); location.href = sp ? `spotify:${sp.type}:${sp.id}` : "spotify:"; setTimeout(() => { if (!left && !document.hidden) window.open(web, "_blank"); }, 1400); }
+  if (!sp) toast("Imposta la tua playlist in Piano → Il tuo profilo", 4500);
 }
 
 /* ---------- profilo utente e registrazione ---------- */
