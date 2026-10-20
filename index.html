@@ -517,7 +517,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "2.6 · 20 ottobre";
+const APP_VERSION = "2.7 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2573,7 +2573,7 @@ function renderCoach() {
     </div>
     ${!empty && !CH.busy ? `<div class="cp-sugg">${COACH_QL.map((q, i) => `<button class="cp-chip" data-act="coach-q" data-i="${i}">${q[0]} ${esc(q[1])}</button>`).join("")}</div>` : ""}
     <form class="cp-comp" data-form="coach">
-      <textarea id="coachIn" rows="1" placeholder="Chiedi al tuo coach…" enterkeyhint="send" aria-label="Messaggio">${esc(CH.draft)}</textarea>
+      <textarea id="coachIn" rows="1" placeholder="Chiedi al tuo coach…" enterkeyhint="enter" aria-label="Messaggio">${esc(CH.draft)}</textarea>
       ${CH.busy ? `<button type="button" class="cp-send" data-act="coach-stop" aria-label="Ferma"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></svg></button>`
         : `<button class="cp-send" aria-label="Invia"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>`}
     </form>`;
@@ -2622,7 +2622,7 @@ async function coachSend(text) {
   place(); fab.hidden = false;
 })();
 document.addEventListener("input", ev => { if (ev.target.id === "coachIn") { CH.draft = ev.target.value; ev.target.style.height = "auto"; ev.target.style.height = Math.min(120, ev.target.scrollHeight) + "px"; } });
-document.addEventListener("keydown", ev => { if (ev.target.id === "coachIn" && ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) { ev.preventDefault(); coachSend(ev.target.value); } else if (ev.key === "Escape") { if (!$("#coach").hidden) closeCoach(); else if (!$("#scan").hidden) closeScanner(); else if (!$("#shop").hidden) ovClose("shop"); } });
+document.addEventListener("keydown", ev => { if (ev.key === "Escape") { if (!$("#coach").hidden) closeCoach(); else if (!$("#scan").hidden) closeScanner(); else if (!$("#shop").hidden) ovClose("shop"); } });
 document.addEventListener("submit", ev => { if (ev.target.dataset.form === "coach") { ev.preventDefault(); coachSend($("#coachIn").value); } }, true);
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#coach")) return;
