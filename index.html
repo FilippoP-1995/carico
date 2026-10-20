@@ -496,7 +496,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "2.3 · 20 ottobre";
+const APP_VERSION = "2.4 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1387,7 +1387,7 @@ function vDieta() {
     </div>
     ${totalsCard()}
     <button class="btn block shop-cta" data-act="shop-open">🛒 Lista della spesa</button>
-    ${plan().diet.notes ? `<div class="card"><span class="eyebrow">Note del piano</span><p class="small" style="margin:6px 0 0;white-space:pre-line">${esc(plan().diet.notes)}</p></div>` : ""}
+    ${plan().diet.notes ? `<details class="card" data-pnl="notes" ${pnlOpen("notes")}><summary><span class="eyebrow" style="font-size:12px">Note del piano</span></summary><p class="small" style="margin:10px 0 0;white-space:pre-line;line-height:1.5">${esc(plan().diet.notes)}</p></details>` : ""}
     </div>`;
 }
 
