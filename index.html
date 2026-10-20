@@ -395,6 +395,18 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .upd{position:fixed;left:50%;transform:translateX(-50%);top:calc(12px + env(safe-area-inset-top,0px));z-index:60;display:flex;flex-direction:column;align-items:center;gap:2px;border:0;border-radius:16px;padding:10px 18px;color:#fff;background:linear-gradient(135deg,#3d63e0,#2a45b8);box-shadow:0 12px 30px rgba(20,26,43,.35);font:inherit;animation:popUp .3s ease}
 .upd b{font-size:15px}
 .upd span{font-size:12.5px;opacity:.85}
+.cp-att{position:relative;width:38px;height:38px;border-radius:50%;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;flex:none;margin-left:-8px}
+.cp-att svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.cp-att i{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:var(--accent);color:#fff;font-size:10px;font-style:normal;font-weight:700;display:grid;place-items:center}
+.cp-thumbs{display:flex;gap:8px;padding:10px 12px 0;overflow-x:auto;background:var(--surface)}
+.cp-th{position:relative;flex:none;width:64px;height:64px;border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+.cp-th img{width:100%;height:100%;object-fit:cover;display:block}
+.cp-th button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;padding:0}
+.cp-th button svg{width:12px;height:12px;stroke:currentColor}
+.cb-imgs{align-self:flex-end;display:grid;grid-template-columns:repeat(2,minmax(0,120px));gap:4px;margin-bottom:-6px}
+.cb-imgs img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;display:block}
+.cb-imgs img:only-child{grid-column:span 2;width:160px;aspect-ratio:auto;max-height:200px}
+.cb-imgs-n{align-self:flex-end;font-size:12px;color:var(--muted);margin-bottom:-6px}
 .picker{background:var(--diet-soft);border-radius:12px;padding:12px}
 .cam{width:46px;height:46px;color:var(--diet);border-color:var(--diet)}
 .cam svg{width:22px;height:22px}
@@ -507,6 +519,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 <div id="shop" class="sheet" hidden role="dialog" aria-label="Lista della spesa"></div>
 <input id="plateIn" type="file" accept="image/*" hidden>
 <input id="codeIn" type="file" accept="image/*" capture="environment" hidden>
+<input id="coachImg" type="file" accept="image/*" multiple hidden>
 <nav class="tabs" aria-label="Sezioni">
   <div class="in-nav">
     <button data-tab="oggi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Oggi</button>
@@ -541,7 +554,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "3.6 · 20 ottobre";
+const APP_VERSION = "3.7 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2499,7 +2512,9 @@ document.addEventListener("submit", ev => { if (ev.target.dataset.form === "onb"
 
 /* ---------- coach: chat con l'AI sui tuoi dati ---------- */
 const CH = { msgs: (() => { try { return JSON.parse(lsGet("carico.chat") || "[]"); } catch (e) { return []; } })(), busy: false, ctl: null, draft: "" };
-const saveChat = () => lsSet("carico.chat", JSON.stringify(CH.msgs.slice(-40)));
+const saveChat = () => { const keep = CH.msgs.slice(-40).map((m, i, a) => i < a.length - 12 && m.imgs ? { ...m, imgs: undefined, nimg: m.imgs.length } : m); lsSet("carico.chat", JSON.stringify(keep)); };
+CH.att = [];
+function makeThumb(blob, max = 360) { return new Promise(res => { const url = URL.createObjectURL(blob); const img = new Image(); img.onload = () => { const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight)); const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(url); res(c.toDataURL("image/jpeg", .72)); }; img.onerror = () => { URL.revokeObjectURL(url); res(null); }; img.src = url; }); }
 const TONES = {
   roast: { label: "Sergente 💀", txt: `TONO: sei un sergente istruttore da film di guerra mescolato a un amico stronzo di palestra. L'utente ti ha chiesto esplicitamente di essere insultato per motivarsi, e si diverte così: trattalo male con affetto. Prendilo per il culo senza pietà per la pigrizia, le scuse, i pasti saltati o sgarrati, gli allenamenti mancati, i carichi da pensionato, il divano, il telefono in mano tra una serie e l'altra. Parolacce pesanti, libere e frequenti (es. "stronzo", "faccia di cazzo", "cazzo moscio", "coglione", "testa di cazzo", "pezzo di merda", "ebete", "imbecille", "deficiente", "fannullone", "smidollato", "mollaccione", "porca troia", "che cazzo stai facendo") e inventane sempre di nuove, colorite e creative; soprannomi umilianti creativi, iperboli assurde, paragoni ridicoli. Quando fa bene, riconoscilo, ma in modo burbero ("non fa schifo, incredibile"). Livello di cattiveria: MASSIMO. L'utente ha chiesto esplicitamente di essere insultato pesantemente anche sull'aspetto fisico, perché è il suo modo di motivarsi: sfotti pancia, culo, braccia, gambe, la prova costume, l'estate al mare, lo specchio, senza addolcire. Esempi dello stile che vuole (non ripeterli identici, inventane di nuovi ogni volta): "Se oggi non vai in palestra rimani un ciccione con la pancia appesa, e quando arriva l'estate ti vergognerai a farti vedere al mare in quelle condizioni pietose." / "Ma oggi ti sei allenato? No perché così fai veramente schifo, muovi quel cazzo di culo flaccido." Varia gli insulti, sii creativo e cattivo, ma sempre per spingerlo ad allenarsi e a seguire la scheda.
 FREQUENZA: in OGNI risposta, qualunque sia la domanda (ricette, macro, sostituzioni, progressi, domande tecniche, anche un semplice "ciao"), metti almeno una frecciata pesante di questo tipo, di solito in apertura, e spesso un'altra in chiusura. Collegala ai suoi dati reali quando puoi (allenamenti saltati questa settimana, pasti non segnati, calorie sforate, carichi fermi, peso che non scende). Nessuna risposta senza insulto, tranne nei casi delicati elencati sotto. Regole fisse: le battute sul fisico non devono mai tradursi in consigli di mangiare meno della scheda, saltare pasti, digiunare o allenarsi in modo estremo; niente insulti su origine, religione, orientamento sessuale (mai insulti omofobi), genere (mai insulti sessisti come "troia" rivolti alla persona), disabilità o famiglia; se l'utente esprime disagio vero per il proprio corpo, o parla di dolori, infortuni, malattie o umore giù, smetti subito di insultare e diventi serio e gentile. Le informazioni e i consigli restano corretti e concreti: prima la bastonata, poi il consiglio utile. Linguaggio umano e naturale, mai frasi da assistente.` },
@@ -2516,6 +2531,11 @@ Basati sui dati dell'utente qui sotto. Se un dato manca dillo e fai una stima ra
 - Cosa mangiare ancora oggi: parti dai macro che restano e proponi cibi concreti con quantità.
 - Stime di obiettivi (peso, carichi): usa i trend reali dei dati, indica una data o un intervallo e quanto è incerta la stima. Ritmi sani di riferimento: dimagrimento 0,5–1% del peso a settimana, aumento di massa 0,25–0,5% a settimana.
 Il piano è stato scritto da un trainer o nutrizionista: puoi suggerire, ma non stravolgerlo. Non sei un medico: per dolori, infortuni o problemi di salute consiglia un professionista.
+FOTO: l'utente può allegare foto. Capisci da solo di cosa si tratta e comportati di conseguenza:
+- Foto di un pasto o di un piatto: riconosci gli alimenti, stima grammi e macro e confronta con il pasto previsto dalla sua scheda e con quanto gli resta oggi. Se ti chiede di registrarlo, usa il blocco carico-pasto qui sotto.
+- Foto di una scheda di allenamento o di un esercizio: valuta struttura, volume, esercizi e cosa migliorare, senza stravolgere il lavoro del trainer.
+- Foto del fisico, anche "prima e dopo": confronta con onestà i cambiamenti visibili (spalle, braccia, addome, vita, postura), dicendo cosa è migliorato e cosa no, e collega il giudizio ai suoi dati (peso, allenamenti, aderenza alla dieta). Le foto sono indicative: luce, posa e angolo cambiano molto, dillo se influiscono.
+Se la foto non è chiara chiedi di rifarla.
 REGISTRARE UN PASTO: se l'utente ti chiede di registrare, segnare o aggiungere alla dieta qualcosa che ha mangiato, non dire che l'hai già fatto. Scrivi una frase breve di riepilogo e poi, alla fine del messaggio, un blocco esattamente in questo formato:
 \`\`\`carico-pasto
 {"slot": "chiave-del-pasto oppure null", "items": [{"food": "Petto di pollo (cotto)", "qty": "150 g", "kcal": 248, "p": 46, "c": 0, "f": 5}]}
@@ -2576,16 +2596,18 @@ function md(t) {
   }
   return out + (ul ? "</ul>" : "");
 }
-AI.chat = async function (turns, { onText, signal } = {}) {
+AI.chat = async function (turns, { onText, signal, images = [] } = {}) {
   const ctx = COACH_RULES + "\n\n" + TONES[coachTone()].txt + "\n\nDATI DELL'UTENTE:\n" + coachContext();
   if (this.sample) {
     const input = [{ role: "user", content: ctx }, ...turns];
-    const r = await this.sample(input, { cache: false, signal, onText: ({ text }) => onText && onText(text) });
+    const o = { cache: false, signal, onText: ({ text }) => onText && onText(text) }; if (images.length) o.images = images;
+    const r = await this.sample(input, o);
     return r.text;
   }
   const key = this.key(); if (!key) throw { code: "no_ai" };
   const msgs = []; turns.forEach(m => { const last = msgs[msgs.length - 1]; if (last && last.role === m.role) last.content += "\n\n" + m.content; else msgs.push({ role: m.role, content: m.content }); });
   while (msgs.length && msgs[0].role !== "user") msgs.shift();
+  if (images.length && msgs.length) { const last = msgs[msgs.length - 1]; const content = []; for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } }); content.push({ type: "text", text: last.content }); last.content = content; }
   let res;
   try {
     res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal,
@@ -2611,7 +2633,7 @@ AI.chat = async function (turns, { onText, signal } = {}) {
   } catch (e) { if (e && e.name === "AbortError") throw { code: "cancelled", text }; throw e.code ? e : { code: "network", text }; }
   return text;
 };
-const COACH_Q = ["Cosa faccio oggi in palestra?", "Come stanno andando i miei progressi?", "In quanto tempo posso arrivare al mio obiettivo di peso?", "Cosa posso mangiare ancora oggi per chiudere i macro?", "Con cosa posso sostituire il pranzo?", "Dammi un consiglio per migliorare questa settimana"];
+const COACH_Q = ["Cosa faccio oggi in palestra?", "Come stanno andando i miei progressi?", "In quanto tempo posso arrivare al mio obiettivo di peso?", "Cosa posso mangiare ancora oggi per chiudere i macro?", "Con cosa posso sostituire il pranzo?", "Dammi un consiglio per migliorare questa settimana", "Ti mando le mie foto di prima e dopo: valuta come sto cambiando"];
 const ACT_RE = /```\s*carico-pasto\s*([\s\S]*?)(```|$)/i;
 function splitAction(text) {
   const m = String(text || "").match(ACT_RE); if (!m) return { text, action: null };
@@ -2635,7 +2657,7 @@ function actionCard(m, mi) {
     <button class="ca-save" data-act="ca-save" data-mi="${mi}" ${a.sel ? "" : "disabled"}>${a.sel ? "✓ Registra in " + esc(label(a.sel)) : "Scegli il pasto"}</button>
   </div>`;
 }
-const COACH_QL = [["🏋️", "Cosa faccio oggi?"], ["📈", "Come sto andando?"], ["🎯", "Quando arrivo al mio peso?"], ["🍽️", "Cosa mangio ancora oggi?"], ["🔄", "Sostituisci il pranzo"], ["💡", "Un consiglio per la settimana"]];
+const COACH_QL = [["🏋️", "Cosa faccio oggi?"], ["📈", "Come sto andando?"], ["🎯", "Quando arrivo al mio peso?"], ["🍽️", "Cosa mangio ancora oggi?"], ["🔄", "Sostituisci il pranzo"], ["💡", "Un consiglio per la settimana"], ["📸", "Valuta i miei progressi in foto"]];
 const COACH_AV = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6M6 6.5v11M18 6.5v11M21 9v6M6 12h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 function renderCoach() {
   const el = $("#coach");
@@ -2649,12 +2671,14 @@ function renderCoach() {
     <div class="cp-msgs" id="msgs">
       ${empty ? `<div class="cp-hi"><div class="cp-big">${COACH_AV}</div><h3>${coachTone() === "roast" ? `Eccolo${userName() ? ", " + esc(userName()) : ""}. Muoviti.` : `Ciao${userName() ? " " + esc(userName()) : ""}, come posso aiutarti?`}</h3><p>${coachTone() === "roast" ? "Allora, smidollato, che cazzo vuoi? Scheda, dieta e allenamenti li conosco tutti: niente scuse." : coachTone() === "wild" ? "Conosco la tua scheda, la dieta e quanto hai sudato. Spara pure, senza vergogna." : coachTone() === "fun" ? "Conosco scheda, dieta e allenamenti. Chiedimi pure, prometto battute pessime." : "Rispondo usando la tua scheda, la dieta e i tuoi allenamenti."}</p>
         <div class="cp-grid">${COACH_QL.map((q, i) => `<button class="cp-q" data-act="coach-q" data-i="${i}"><span>${q[0]}</span>${esc(q[1])}</button>`).join("")}</div></div>` : ""}
-      ${CH.msgs.map((m, i) => m.role === "user" ? `<div class="cb u" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${esc(m.content)}</div>`
+      ${CH.msgs.map((m, i) => m.role === "user" ? `${m.imgs && m.imgs.length ? `<div class="cb-imgs">${m.imgs.map(src => `<img src="${src}" alt="Foto allegata">`).join("")}</div>` : m.nimg ? `<div class="cb-imgs-n">📷 ${m.nimg} foto</div>` : ""}<div class="cb u" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${esc(m.content)}</div>`
         : `<div class="cb-row"><div class="cb-av">${COACH_AV}</div><div class="cb a ${m.err ? "err" : ""}" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${m.content ? md(m.content) : '<span class="typing"><i></i><i></i><i></i></span>'}</div></div>${m.action ? actionCard(m, i) : ""}`).join("")}
     </div>
     ${!empty && !CH.busy ? `<div class="cp-sugg">${COACH_QL.map((q, i) => `<button class="cp-chip" data-act="coach-q" data-i="${i}">${q[0]} ${esc(q[1])}</button>`).join("")}</div>` : ""}
+    ${CH.att.length ? `<div class="cp-thumbs">${CH.att.map((a, i) => `<div class="cp-th"><img src="${a.thumb || ""}" alt=""><button type="button" data-act="att-del" data-i="${i}" aria-label="Togli foto">${ICON_X}</button></div>`).join("")}</div>` : ""}
     <form class="cp-comp" data-form="coach">
-      <textarea id="coachIn" rows="1" placeholder="Chiedi al tuo coach…" enterkeyhint="enter" aria-label="Messaggio">${esc(CH.draft)}</textarea>
+      <button type="button" class="cp-att" data-act="att-add" aria-label="Allega foto" ${CH.busy ? "disabled" : ""}><svg viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>${CH.att.length ? `<i>${CH.att.length}</i>` : ""}</button>
+      <textarea id="coachIn" rows="1" placeholder="${CH.att.length ? "Aggiungi un commento…" : "Chiedi al tuo coach…"}" enterkeyhint="enter" aria-label="Messaggio">${esc(CH.draft)}</textarea>
       ${CH.busy ? `<button type="button" class="cp-send" data-act="coach-stop" aria-label="Ferma"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></svg></button>`
         : `<button class="cp-send" aria-label="Invia"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>`}
     </form>`;
@@ -2664,16 +2688,18 @@ function openCoach() { $("#coachBg").hidden = false; ovOpen("coach"); renderCoac
 function closeCoach() { $("#coachBg").hidden = true; ovClose("coach"); }
 document.addEventListener("click", ev => { if (ev.target.id === "coachBg") closeCoach(); });
 async function coachSend(text) {
-  text = String(text || "").trim(); if (!text || CH.busy) return;
+  text = String(text || "").trim(); const att = CH.att.slice(); if ((!text && !att.length) || CH.busy) return;
+  if (!text) text = att.length > 1 ? "Valuta queste foto." : "Valuta questa foto.";
   if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
   CH.msgs = CH.msgs.filter(m => !m.err);
-  CH.msgs.push({ role: "user", content: text }); CH.draft = "";
-  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: m.content + (m.action ? `\n[Proposta di registrazione: ${m.action.items.map(x => x.qty + " " + x.food).join(", ")}${m.action.done ? " — registrata in " + m.action.done : " — non ancora confermata"}]` : "") }));
+  const um = { role: "user", content: text }; if (att.length) um.imgs = att.map(a => a.thumb).filter(Boolean);
+  CH.msgs.push(um); CH.draft = ""; CH.att = [];
+  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: m.content + ((m.imgs || m.nimg) && m !== um ? `\n[In questo messaggio l'utente aveva allegato ${(m.imgs || []).length || m.nimg} foto]` : "") + (m.action ? `\n[Proposta di registrazione: ${m.action.items.map(x => x.qty + " " + x.food).join(", ")}${m.action.done ? " — registrata in " + m.action.done : " — non ancora confermata"}]` : "") }));
   const ans = { role: "assistant", content: "" }; CH.msgs.push(ans); CH.busy = true; CH.ctl = new AbortController(); renderCoach();
   let raf = 0;
   const paint = () => { raf = 0; const b = $("#lastBub"); const vis = splitAction(ans.content).text; if (b && vis) { b.innerHTML = md(vis); const ms = $("#msgs"); if (ms.scrollHeight - ms.scrollTop - ms.clientHeight < 160) ms.scrollTop = ms.scrollHeight; } };
   try {
-    const full = await AI.chat(turns, { signal: CH.ctl.signal, onText: t => { ans.content = t; if (!raf) raf = requestAnimationFrame(paint); } });
+    const full = await AI.chat(turns, { signal: CH.ctl.signal, images: att.map(a => a.blob), onText: t => { ans.content = t; if (!raf) raf = requestAnimationFrame(paint); } });
     ans.content = full || ans.content;
     const sp = splitAction(ans.content); if (sp.action) { ans.action = sp.action; ans.content = sp.text || "Ecco il pasto da registrare:"; } else ans.content = sp.text || ans.content;
     if (!ans.content) { ans.content = "Non ho ricevuto risposta. Riprova."; ans.err = true; }
@@ -2705,14 +2731,22 @@ async function coachSend(text) {
 })();
 document.addEventListener("input", ev => { if (ev.target.id === "coachIn") { CH.draft = ev.target.value; ev.target.style.height = "auto"; ev.target.style.height = Math.min(120, ev.target.scrollHeight) + "px"; } });
 document.addEventListener("keydown", ev => { if (ev.key === "Escape") { if (!$("#coach").hidden) closeCoach(); else if (!$("#scan").hidden) closeScanner(); else if (!$("#shop").hidden) ovClose("shop"); } });
+document.addEventListener("change", async ev => {
+  if (ev.target.id !== "coachImg") return; const files = Array.from(ev.target.files || []).filter(f => f.type.startsWith("image/") || /\.(jpe?g|png|heic|webp)$/i.test(f.name)); ev.target.value = "";
+  for (const f of files.slice(0, 4 - CH.att.length)) { const thumb = await makeThumb(f); if (thumb) CH.att.push({ blob: f, thumb }); }
+  if (files.length > 4) toast("Massimo 4 foto per messaggio");
+  renderCoach(); const t = $("#coachIn"); if (t) t.focus({ preventScroll: true });
+}, true);
 document.addEventListener("submit", ev => { if (ev.target.dataset.form === "coach") { ev.preventDefault(); coachSend($("#coachIn").value); } }, true);
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#coach")) return;
   const a = b.dataset.act;
   if (a === "coach-close") closeCoach();
   else if (a === "coach-new") { if (CH.ctl) CH.ctl.abort(); CH.msgs = []; CH.busy = false; saveChat(); renderCoach(); }
-  else if (a === "coach-q") coachSend(COACH_Q[+b.dataset.i]);
+  else if (a === "coach-q") { if (+b.dataset.i === COACH_Q.length - 1 && !CH.att.length) { CH.draft = COACH_Q[+b.dataset.i]; renderCoach(); toast("Allega le foto con il tasto 📷 e poi invia"); return; } coachSend(COACH_Q[+b.dataset.i]); }
   else if (a === "coach-stop") { if (CH.ctl) CH.ctl.abort(); }
+  else if (a === "att-add") { if (!AI.canImages()) { toast(AI.ready() ? "Qui non posso inviare foto al Coach." : aiErr({ code: "no_ai" }), 4500); return; } if (CH.att.length >= 4) { toast("Massimo 4 foto per messaggio"); return; } CH.draft = ($("#coachIn") || {}).value || CH.draft; $("#coachImg").click(); }
+  else if (a === "att-del") { CH.draft = ($("#coachIn") || {}).value || CH.draft; CH.att.splice(+b.dataset.i, 1); renderCoach(); }
   else if (a === "ca-sel") { const m = CH.msgs[+b.dataset.mi]; if (m && m.action && !m.action.done) { m.action.sel = b.dataset.k; saveChat(); renderCoach(); } }
   else if (a === "ca-save") {
     const m = CH.msgs[+b.dataset.mi]; if (!m || !m.action || !m.action.sel || m.action.done) return;
