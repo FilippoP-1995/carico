@@ -644,7 +644,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "4.8 · 20 ottobre";
+const APP_VERSION = "4.9 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1943,8 +1943,11 @@ function setField(el) {
   if (l.w.dayId !== day.id) { l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false }; }
   const e = l.w.ex[exId] = l.w.ex[exId] || { name: ex.name, s: [] };
   e.name = ex.name; e.s[i] = e.s[i] || { kg: "", reps: "", done: false };
-  e.s[i][el.dataset.f] = el.value.replace(",", ".").trim();
+  const f = el.dataset.f, old = e.s[i][f], nv = el.value.replace(",", ".").trim();
+  e.s[i][f] = nv;
   for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
+  // le serie successive ancora da fare che avevano lo stesso valore (copiato) seguono la modifica
+  if (old !== "" && old != null) for (let k = i + 1; k < e.s.length; k++) { const sk = e.s[k]; if (!sk.done && sk[f] === old) { sk[f] = nv; const inp = document.querySelector(`.set[data-ex="${exId}"][data-i="${k}"] input[data-f="${f}"]`); if (inp) inp.value = nv; } }
   store.saveDay(S.date);
   const cr = document.querySelector(`[data-copy="${exId}"]`); if (cr) cr.hidden = !copyVisible(exId);
 }
@@ -2463,7 +2466,10 @@ function lvSetDone() {
   const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] }; e.name = ex.name;
   for (let k = 0; k <= LV.setIdx; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
   const kg = LV.kg === "null" ? "" : LV.kg;
+  const prevS = e.s[LV.setIdx] || {};
   e.s[LV.setIdx] = { kg, reps: LV.reps, done: true };
+  // se avevi copiato i valori su tutte le serie e poi li cambi, le serie successive ancora da fare si aggiornano
+  ["kg", "reps"].forEach(f => { const old = prevS[f], nv = f === "kg" ? kg : LV.reps; if (old === "" || old == null || old === nv) return; for (let k = LV.setIdx + 1; k < e.s.length; k++) { const sk = e.s[k]; if (sk && !sk.done && sk[f] === old) sk[f] = nv; } });
   store.saveDay(S.date);
   LV.feelEx = e.s.filter(x => x && x.done).length >= exSets(ex) && !e.feel ? ex.id : null;
   const b = bestBefore(ex.name); LV.flash = num(kg) && b && num(kg) > b ? `🏆 Nuovo record su ${ex.name}: ${fmtN(num(kg))} kg` : "";
