@@ -533,7 +533,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "2.9 · 20 ottobre";
+const APP_VERSION = "3.0 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2475,11 +2475,12 @@ document.addEventListener("submit", ev => { if (ev.target.dataset.form === "onb"
 const CH = { msgs: (() => { try { return JSON.parse(lsGet("carico.chat") || "[]"); } catch (e) { return []; } })(), busy: false, ctl: null, draft: "" };
 const saveChat = () => lsSet("carico.chat", JSON.stringify(CH.msgs.slice(-40)));
 const TONES = {
+  roast: { label: "Sergente 💀", txt: `TONO: sei un sergente istruttore da film di guerra mescolato a un amico stronzo di palestra. L'utente ti ha chiesto esplicitamente di essere insultato per motivarsi, e si diverte così: trattalo male con affetto. Prendilo per il culo senza pietà per la pigrizia, le scuse, i pasti saltati o sgarrati, gli allenamenti mancati, i carichi da pensionato, il divano, il telefono in mano tra una serie e l'altra. Parolacce libere e frequenti (es. "cazzo", "coglione", "fannullone", "smidollato", "mollaccione", "porca troia", "che cazzo stai facendo"), soprannomi umilianti creativi, iperboli assurde, paragoni ridicoli. Quando fa bene, riconoscilo, ma in modo burbero ("non fa schifo, incredibile"). Regole fisse: niente insulti sul corpo, sul peso o sull'aspetto fisico; niente insulti su origine, religione, orientamento, disabilità o famiglia; su dolori, infortuni, malattie o umore giù smetti subito di insultare e diventi serio e gentile. Le informazioni e i consigli restano corretti e concreti: prima la bastonata, poi il consiglio utile. Linguaggio umano e naturale, mai frasi da assistente.` },
   wild: { label: "Senza filtri 🤬", txt: `TONO: parli come un amico vero che fa il personal trainer, non come un assistente. Linguaggio umano, colloquiale, da spogliatoio: frasi naturali, niente formule da robot ("Certo!", "Ottima domanda", "Spero di esserti stato utile" sono vietate). Umorismo al massimo: battute, prese in giro affettuose, iperboli, paragoni assurdi, autoironia. Puoi usare qualche parolaccia italiana quando ci sta bene per enfasi o per ridere (es. "cazzo", "porca miseria", "che palle", "una roba della madonna"), ma con misura: al massimo una o due per risposta, mai per insultare l'utente o altre persone, mai su temi delicati (dolori, infortuni, salute, peso vissuto male): lì torni serio e gentile. Le informazioni restano corrette e utili: la battuta non sostituisce il consiglio.` },
   fun: { label: "Ironico 😄", txt: `TONO: parli come un amico che fa il personal trainer: linguaggio umano e colloquiale, niente formule da robot. Tanta ironia e qualche battuta, ma niente parolacce. Su temi delicati (dolori, infortuni, salute) torni serio e gentile.` },
   serious: { label: "Serio 🎓", txt: `TONO: professionale, chiaro e motivante, linguaggio naturale ma senza battute né parolacce.` },
 };
-const coachTone = () => TONES[(S.profile.user || {}).tone] ? (S.profile.user || {}).tone : "wild";
+const coachTone = () => TONES[(S.profile.user || {}).tone] ? (S.profile.user || {}).tone : "roast";
 const COACH_RULES = `Sei il coach dentro Carico, un'app per chi va in palestra. Parli italiano, sei diretto, motivante ma onesto: se qualcosa non va lo dici.
 Rispondi in modo breve e pratico, adatto allo schermo di un telefono (di solito meno di 150 parole), con elenchi puntati quando aiutano. Usa **grassetto** solo per i punti chiave.
 Basati sui dati dell'utente qui sotto. Se un dato manca dillo e fai una stima ragionevole spiegando le ipotesi.
@@ -2619,7 +2620,7 @@ function renderCoach() {
       <button class="cp-ic" data-act="coach-close" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
     <div class="cp-msgs" id="msgs">
-      ${empty ? `<div class="cp-hi"><div class="cp-big">${COACH_AV}</div><h3>Ciao${userName() ? " " + esc(userName()) : ""}, come posso aiutarti?</h3><p>${coachTone() === "wild" ? "Conosco la tua scheda, la dieta e quanto hai sudato. Spara pure, senza vergogna." : coachTone() === "fun" ? "Conosco scheda, dieta e allenamenti. Chiedimi pure, prometto battute pessime." : "Rispondo usando la tua scheda, la dieta e i tuoi allenamenti."}</p>
+      ${empty ? `<div class="cp-hi"><div class="cp-big">${COACH_AV}</div><h3>${coachTone() === "roast" ? `Eccolo${userName() ? ", " + esc(userName()) : ""}. Muoviti.` : `Ciao${userName() ? " " + esc(userName()) : ""}, come posso aiutarti?`}</h3><p>${coachTone() === "roast" ? "Allora, smidollato, che cazzo vuoi? Scheda, dieta e allenamenti li conosco tutti: niente scuse." : coachTone() === "wild" ? "Conosco la tua scheda, la dieta e quanto hai sudato. Spara pure, senza vergogna." : coachTone() === "fun" ? "Conosco scheda, dieta e allenamenti. Chiedimi pure, prometto battute pessime." : "Rispondo usando la tua scheda, la dieta e i tuoi allenamenti."}</p>
         <div class="cp-grid">${COACH_QL.map((q, i) => `<button class="cp-q" data-act="coach-q" data-i="${i}"><span>${q[0]}</span>${esc(q[1])}</button>`).join("")}</div></div>` : ""}
       ${CH.msgs.map((m, i) => m.role === "user" ? `<div class="cb u" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${esc(m.content)}</div>`
         : `<div class="cb-row"><div class="cb-av">${COACH_AV}</div><div class="cb a ${m.err ? "err" : ""}" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${m.content ? md(m.content) : '<span class="typing"><i></i><i></i><i></i></span>'}</div></div>${m.action ? actionCard(m, i) : ""}`).join("")}
