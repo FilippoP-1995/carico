@@ -496,7 +496,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "2.2 · 20 ottobre";
+const APP_VERSION = "2.3 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1032,7 +1032,6 @@ function vAllenamento() {
   const lw = isThis ? l : null;
   if (S.exInit !== day.id + S.date) {
     S.exInit = day.id + S.date; S.openEx = new Set();
-    const first = (day.exercises || []).find(ex => exDone(lw, ex) < exSets(ex)); if (first) S.openEx.add(first.id);
   }
   const chips = wDays().map(d => `<button class="chip" aria-pressed="${d.id === day.id}" data-act="sel-day" data-id="${d.id}">${esc(d.name)}</button>`).join("");
   const exs = (day.exercises || []).map(ex => {
