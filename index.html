@@ -608,7 +608,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "4.1 · 20 ottobre";
+const APP_VERSION = "4.2 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2802,9 +2802,9 @@ function renderHKGuide() {
   <div class="sc-body hk-guide">
     <p>Apple non permette alle web app di leggere Salute, quindi usiamo un <b>Comando rapido</b> che legge i dati di oggi e li copia: poi in Carico tocchi <b>📲 Importa da Salute</b>.</p>
     <ol>
-      <li>Apri l'app <b>Comandi</b> → <b>＋</b> → chiamalo <b>Carico Salute</b>.</li>
-      <li><b>Calorie</b>: aggiungi l'azione <b>Trova campioni di Salute</b>. Imposta <i>Tipo</i> = <b>Energia attiva</b>, aggiungi il filtro <i>Data di inizio</i> <b>è oggi</b>. Sotto aggiungi <b>Calcola statistiche</b> → <b>Somma</b>. Poi <b>Imposta variabile</b> → nome <b>Calorie</b>.</li>
-      <li><b>Esercizio</b>: ripeti il punto 2 con <i>Tipo</i> = <b>Minuti di allenamento</b> e variabile <b>Esercizio</b>.</li>
+      <li>Apri l'app <b>Comandi</b> → <b>＋</b> → chiamalo <b>Carico Salute</b>. Usa sempre l'azione <b>Trova campioni di Salute</b> (non "Registra campione").</li>
+      <li><b>Calorie</b>: aggiungi l'azione <b>Trova campioni di Salute</b>. Tocca <i>Tipo</i> e nella ricerca in alto scrivi <b>attiv</b> o <b>calorie</b>: scegli <b>Energia attiva</b> (in alcune versioni si chiama <b>Calorie attive</b>). Aggiungi il filtro <i>Data di inizio</i> <b>è oggi</b>. Sotto aggiungi <b>Calcola statistiche</b> → <b>Somma</b>. Poi <b>Imposta variabile</b> → nome <b>Calorie</b>.</li>
+      <li><b>Esercizio</b>: ripeti il punto 2 cercando <b>esercizio</b>: scegli <b>Minuti di esercizio</b> (o <b>Minuti di allenamento</b>) e variabile <b>Esercizio</b>.</li>
       <li><b>Passi</b>: ripeti con <i>Tipo</i> = <b>Passi</b> e variabile <b>Passi</b>.</li>
       <li><b>Peso</b> (facoltativo, se ti pesi con una bilancia collegata): <b>Trova campioni di Salute</b> con <i>Tipo</i> = <b>Peso</b>, <i>Ordina per</i> <b>Data di inizio</b>, <b>Dal più recente</b>, <i>Limite</i> <b>1</b>. Poi <b>Imposta variabile</b> → <b>Peso</b>.</li>
       <li>Aggiungi l'azione <b>Testo</b> e scrivi esattamente il modello qui sotto, sostituendo ogni parola tra parentesi con la variabile corrispondente (tocca il punto e scegli la variabile).</li>
