@@ -609,7 +609,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "4.4 · 20 ottobre";
+const APP_VERSION = "4.5 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1101,7 +1101,7 @@ function summaryCard() {
 
 function vOggi() {
   if (!wDays().length && !variants().length) return `<h2>Benvenuto</h2>` + noPlan();
-  const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc); out.push(hkCard());
+  const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc); if ((S.profile.user || {}).hkOn) out.push(hkCard());
   const day = currentDay();
   if (day) {
     const l = peekLog(); const done = l && l.w.dayId === day.id ? setsDone(l) : 0; const tot = totalSets(day);
@@ -1672,10 +1672,11 @@ function vPiano() {
         <label class="f">Nome<input class="in" data-e="user" data-k="name" value="${esc((S.profile.user || {}).name || "")}" placeholder="Il tuo nome"></label>
         <div class="f">Obiettivo<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(GOALS).map(([k, v]) => `<button class="chip sm ${(S.profile.user || {}).goal === k ? "on-acc" : ""}" aria-pressed="${(S.profile.user || {}).goal === k}" data-act="me-goal" data-k="${k}">${GOAL_EMOJI[k]} ${esc(v)}</button>`).join("")}</div></div>
         <label class="f">Peso obiettivo (kg)<input class="in" inputmode="decimal" data-e="user" data-k="targetKg" value="${esc(fmtN(num((S.profile.user || {}).targetKg)))}" placeholder="es. 75"></label>
-        <div class="f">⌚ Obiettivi anelli<div class="grid4" style="grid-template-columns:repeat(3,1fr);margin-top:4px">
+        <div class="f">⌚ Anelli di Salute (tramite Comandi rapidi)<div class="chips" style="margin-top:4px"><button class="chip sm ${(S.profile.user || {}).hkOn ? "on-acc" : ""}" data-act="me-hk" data-k="1">Attivi</button><button class="chip sm ${(S.profile.user || {}).hkOn ? "" : "on-acc"}" data-act="me-hk" data-k="">Disattivati</button></div></div>
+        ${(S.profile.user || {}).hkOn ? `<div class="f">⌚ Obiettivi anelli<div class="grid4" style="grid-template-columns:repeat(3,1fr);margin-top:4px">
           <label class="f">Movimento kcal<input class="in" inputmode="numeric" data-e="user" data-k="moveGoal" value="${esc(HKG().kcal)}"></label>
           <label class="f">Esercizio min<input class="in" inputmode="numeric" data-e="user" data-k="exGoal" value="${esc(HKG().ex)}"></label>
-          <label class="f">Passi<input class="in" inputmode="numeric" data-e="user" data-k="stepGoal" value="${esc(HKG().steps)}"></label></div></div>
+          <label class="f">Passi<input class="in" inputmode="numeric" data-e="user" data-k="stepGoal" value="${esc(HKG().steps)}"></label></div></div>` : ""}
         <label class="f">🎵 Playlist Spotify per l'allenamento<input class="in" data-e="user" data-k="playlist" value="${esc((S.profile.user || {}).playlist || "")}" placeholder="Incolla il link della playlist" inputmode="url" autocomplete="off"><span class="small muted" style="font-weight:500">${(S.profile.user || {}).playlist ? (spotifyParse((S.profile.user || {}).playlist) ? "✅ Link valido" : "⚠️ Link non riconosciuto: copialo da Spotify → ⋯ → Condividi → Copia link") : "In Spotify apri la playlist → ⋯ → Condividi → Copia link, poi incollalo qui."}</span></label>
         <div class="f">Sesso<div class="chips" style="margin-top:4px">${[["m", "Uomo"], ["f", "Donna"]].map(([k, l]) => `<button class="chip sm ${(S.profile.user || {}).sex === k || (!(S.profile.user || {}).sex && k === "m") ? "on-acc" : ""}" data-act="me-sex" data-k="${k}">${l}</button>`).join("")}</div></div>
         <div class="f">Giorno del check settimanale<div class="chips" style="flex-wrap:wrap;margin-top:4px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button class="chip sm ${checkDay() === d ? "on-acc" : ""}" data-act="me-check" data-k="${d}">${DOW[d].slice(0, 3)}</button>`).join("")}</div></div>
@@ -2056,6 +2057,7 @@ document.addEventListener("click", ev => {
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "live-open": openLive(); return;
     case "hk-import": importHK(); return;
+    case "me-hk": { S.profile.user = S.profile.user || {}; S.profile.user.hkOn = !!b.dataset.k; store.saveProfile(); render(); return; }
     case "hk-cancel": S.hkPaste = false; render(); return;
     case "hk-guide": ovOpen("hkg"); renderHKGuide(); return;
     case "spotify": openSpotify(); return;
