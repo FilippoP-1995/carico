@@ -131,45 +131,47 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .optk{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;line-height:1.35}
 .optk b{color:var(--ink);font-size:14px}
 .add-alt{color:var(--diet);border:1px dashed var(--diet)}
-.hero-sum{border-radius:20px;padding:18px 16px 14px;color:var(--hero-ink);background:radial-gradient(120% 90% at 100% 0%,var(--hero-bg2) 0%,var(--hero-bg) 62%);display:flex;flex-direction:column;gap:16px;box-shadow:0 10px 30px rgba(20,26,43,.25);overflow:hidden}
+.hero-sum{border-radius:20px;padding:14px 14px 12px;color:var(--hero-ink);background:radial-gradient(120% 90% at 100% 0%,var(--hero-bg2) 0%,var(--hero-bg) 62%);display:flex;flex-direction:column;gap:11px;box-shadow:0 10px 30px rgba(20,26,43,.25);overflow:hidden}
 .hs-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-.hs-hi{font-family:var(--f-display);font-weight:700;font-size:clamp(24px,7.4vw,30px);text-transform:uppercase;line-height:1;letter-spacing:.02em}
+.hs-hi{font-family:var(--f-display);font-weight:700;font-size:clamp(20px,6vw,25px);text-transform:uppercase;line-height:1;letter-spacing:.02em}
 .hs-date{font-size:13px;color:var(--hero-mut);margin-top:4px}
 .streak{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:6px 10px}
 .streak svg{width:20px;height:20px;fill:var(--hero-d)}
-.streak b{font-family:var(--f-display);font-size:26px;line-height:1}
+.streak b{font-family:var(--f-display);font-size:21px;line-height:1}
 .streak span{font-size:10.5px;line-height:1.15;color:var(--hero-mut);text-transform:uppercase;letter-spacing:.05em}
-.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rings{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .ring{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px}
-.rw{position:relative;width:min(88px,100%);aspect-ratio:1}
+.rw{position:relative;width:min(66px,100%);aspect-ratio:1}
 .ring svg{width:100%;height:100%;display:block}
 .ring circle{transition:stroke-dasharray .6s ease}
-.ring .rv{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:19px;font-variant-numeric:tabular-nums}
-.ring .rl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--hero-mut)}
+.ring .rv{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.ring .rl{font-size:9.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--hero-mut)}
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.wd{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;border-radius:10px;font-size:11px;color:var(--hero-mut);font-weight:600}
+.wd{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;border-radius:10px;font-size:11px;color:var(--hero-mut);font-weight:600}
 .wd.today{background:rgba(255,255,255,.1);color:var(--hero-ink)}
 .wd.sel{outline:2px solid var(--hero-a);outline-offset:-2px;color:var(--hero-ink)}
 .wd.future{opacity:.45}
 .wd i{display:block;width:18px;height:4px;border-radius:2px;background:var(--hero-track)}
 .wd i.w{background:var(--hero-a)} .wd i.m{background:var(--hero-d)}
-.hs-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.1);border-radius:14px;overflow:hidden}
-.hs{background:var(--hero-bg);padding:10px 12px;display:flex;flex-direction:column;gap:1px;min-width:0}
-.hv{font-family:var(--f-display);font-weight:700;font-size:24px;line-height:1.1;font-variant-numeric:tabular-nums}
-.hv small{font-size:13px;color:var(--hero-mut);font-weight:600;margin-left:1px}
-.hl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--hero-mut)}
-.hsub{font-size:12px;color:var(--hero-ink);opacity:.8}
+.hs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.1);border-radius:14px;overflow:hidden}
+.hs{background:var(--hero-bg);padding:8px 7px;display:flex;flex-direction:column;gap:1px;min-width:0}
+.hv{font-family:var(--f-display);font-weight:700;font-size:19px;white-space:nowrap;line-height:1.1;font-variant-numeric:tabular-nums}
+.hv small{font-size:11px;color:var(--hero-mut);font-weight:600;margin-left:1px}
+.hl{font-size:9px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--hero-mut)}
+.hsub{font-size:10.5px;line-height:1.3;color:var(--hero-ink);opacity:.8}
 .insight{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;background:rgba(255,255,255,.07);border-radius:12px;padding:10px 12px}
 .insight svg{flex:none;width:18px;height:18px;fill:var(--hero-d);margin-top:1px}
 .insight b{color:#fff}
 .quote{font-size:14.5px;line-height:1.4;padding:2px 2px 0;display:flex;flex-direction:column;gap:3px}
-.quote.sarge{border:1px solid rgba(255,110,99,.4);background:rgba(255,110,99,.1);border-radius:14px;padding:12px;color:var(--hero-ink);text-align:left;font:inherit;font-size:15px;font-weight:600;line-height:1.4}
+.quote.sarge{border:1px solid rgba(255,110,99,.4);background:rgba(255,110,99,.1);border-radius:14px;padding:9px 12px;color:var(--hero-ink);text-align:left;font:inherit;font-size:14px;font-weight:600;line-height:1.35}
 .quote.sarge .qk{color:#ff8f86}
 .sg-more{font-size:12.5px;color:var(--hero-mut);font-weight:600;margin-top:4px}
 .quote .qk{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--hero-mut)}
-.badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:-4px}
-.badge-main{display:inline-flex;align-items:center;gap:8px;font-size:17px;font-weight:700;padding:8px 16px 8px 8px;border-radius:99px;background:linear-gradient(135deg,rgba(242,191,69,.22),rgba(125,156,255,.18));border:1px solid rgba(242,191,69,.45);box-shadow:0 6px 20px rgba(242,191,69,.15);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
-.badge-main .be{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.14);font-size:20px}
+.badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1;min-width:0}
+.hs-row{display:flex;align-items:center;gap:8px;margin-top:-2px}
+.hs-row .streak{flex:none;padding:4px 9px}
+.badge-main{display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:700;padding:5px 13px 5px 5px;border-radius:99px;background:linear-gradient(135deg,rgba(242,191,69,.22),rgba(125,156,255,.18));border:1px solid rgba(242,191,69,.45);box-shadow:0 6px 20px rgba(242,191,69,.15);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
+.badge-main .be{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.14);font-size:16px}
 @keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
 .badge-h{font-size:12.5px;font-weight:600;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);border-radius:99px;padding:5px 10px;white-space:nowrap}
 .fab{position:fixed;z-index:25;-webkit-touch-callout:none;width:58px;height:58px;border-radius:50%;border:0;display:grid;place-items:center;color:#fff;background:radial-gradient(120% 120% at 30% 20%,#3d63e0 0%,#1e2a52 70%);box-shadow:0 8px 24px rgba(20,26,43,.35),0 0 0 3px rgba(255,255,255,.6);touch-action:none;user-select:none;-webkit-user-select:none;transition:transform .15s}
@@ -539,7 +541,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "3.4 · 20 ottobre";
+const APP_VERSION = "3.5 · 20 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1007,8 +1009,8 @@ function summaryCard() {
   const stat = (v, l, sub) => `<div class="hs"><span class="hv">${v}</span><span class="hl">${l}</span>${sub ? `<span class="hsub">${sub}</span>` : ""}</div>`;
   return `<section class="hero-sum">
     <div class="hs-top"><div><div class="hs-hi">${hi}</div></div>
-      <div class="streak" title="Giorni di fila con almeno un allenamento o un pasto segnato"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 1.5.7 2.5 1.6 3C10.2 8.6 11 5.5 12 3z"/></svg><b>${streak}</b><span>${streak === 1 ? "giorno" : "giorni"}<br>di fila</span></div></div>
-    ${badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet })}
+</div>
+    <div class="hs-row">${badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet })}<div class="streak" title="Giorni di fila con almeno un allenamento o un pasto segnato"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 1.5.7 2.5 1.6 3C10.2 8.6 11 5.5 12 3z"/></svg><b>${streak}</b><span>${streak === 1 ? "giorno" : "giorni"}<br>di fila</span></div></div>
     <div class="rings">
       ${ring(tot ? done / tot : 0, "var(--hero-a)", "Allenamento", tot ? `${done}/${tot}` : "–")}
       ${ring(Tg.kcal ? t.kcal / Tg.kcal : 0, t.kcal > (Tg.kcal || 1e9) * 1.05 ? "var(--danger)" : "var(--hero-d)", "Calorie", Tg.kcal ? fmtI(t.kcal / Tg.kcal * 100) + "%" : (hasDiet ? fmtI(t.kcal) : "–"))}
@@ -1016,12 +1018,11 @@ function summaryCard() {
     </div>
     <div class="week">${strip}</div>${wkPick}
     <div class="hs-grid">
-      ${stat(lastW ? fmtN(lastW.kg) + "<small> kg</small>" : "–", "Peso", (() => { const tg = num((S.profile.user || {}).targetKg); const parts = []; if (dW != null) parts.push(`${dW > 0 ? "+" : ""}${fmtN(dW)} kg in 30 gg`); if (tg && lastW) { const r = Math.round((lastW.kg - tg) * 10) / 10; parts.push(Math.abs(r) < 0.3 ? "🎯 obiettivo raggiunto" : `${r > 0 ? "−" : "+"}${fmtN(Math.abs(r))} kg all'obiettivo`); } return parts.join(" · ") || "segna il peso qui sotto"; })())}
-      ${stat(vol ? (vol >= 10000 ? fmtN(Math.round(vol / 100) / 10) + "<small> t</small>" : fmtI(vol) + "<small> kg</small>") : "–", "Volume settimana", pvol ? `${vol >= pvol ? "+" : "−"}${fmtI(Math.abs(vol - pvol) / pvol * 100)}% vs scorsa` : "kg × ripetizioni")}
-      ${stat(hasDiet && Tg.p ? fmtI(t.p) + "<small>/" + fmtI(Tg.p) + " g</small>" : (hasDiet ? fmtI(t.p) + "<small> g</small>" : "–"), "Proteine oggi", hasDiet && Tg.p ? (t.p >= Tg.p * .95 ? "obiettivo raggiunto" : `mancano ${fmtI(Tg.p - t.p)} g`) : "")}
-      ${stat(sess.filter(d => d.slice(0, 7) === S.date.slice(0, 7)).length, "Allenamenti nel mese", sess.length ? `${sess.length} in totale` : "")}
+      ${stat(lastW ? fmtN(lastW.kg) + "<small> kg</small>" : "–", "Peso", (() => { const tg = num((S.profile.user || {}).targetKg); const parts = []; if (dW != null) parts.push(`${dW > 0 ? "+" : ""}${fmtN(dW)} in 30gg`); if (tg && lastW) { const r = Math.round((lastW.kg - tg) * 10) / 10; parts.push(Math.abs(r) < 0.3 ? "🎯 raggiunto" : `🎯 ${r > 0 ? "−" : "+"}${fmtN(Math.abs(r))} kg`); } return parts.join("<br>") || "segnalo sotto"; })())}
+      ${stat(vol ? (vol >= 10000 ? fmtN(Math.round(vol / 100) / 10) + "<small> t</small>" : fmtI(vol) + "<small> kg</small>") : "–", "Volume", pvol ? `${vol >= pvol ? "+" : "−"}${fmtI(Math.abs(vol - pvol) / pvol * 100)}% vs scorsa` : "kg × rip.")}
+      ${stat(hasDiet ? fmtI(t.p) + "<small> g</small>" : "–", "Proteine", hasDiet && Tg.p ? (t.p >= Tg.p * .95 ? "✅ centrate" : `mancano ${fmtI(Tg.p - t.p)}`) : "")}
+      ${stat(sess.filter(d => d.slice(0, 7) === S.date.slice(0, 7)).length, "Nel mese", sess.length ? `${sess.length} totali` : "allenamenti")}
     </div>
-    <div class="insight"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.4 5.6L20 9.3l-4.3 3.9 1.2 5.8L12 16l-4.9 3 1.2-5.8L4 9.3l5.6-.7z"/></svg><span>${insight}</span></div>
     ${coachTone() === "roast" ? `<button class="quote sarge" data-act="sarge"><span class="qk">💀 Il Sergente dice</span>${esc(roastLine({ day, l, t, Tg, hasDiet, streak }))}<span class="sg-more">Rispondigli →</span></button>` : `<div class="quote"><span class="qk">Frase del giorno</span>${esc(dailyQuote())}</div>`}
   </section>`;
 }
@@ -2500,8 +2501,8 @@ document.addEventListener("submit", ev => { if (ev.target.dataset.form === "onb"
 const CH = { msgs: (() => { try { return JSON.parse(lsGet("carico.chat") || "[]"); } catch (e) { return []; } })(), busy: false, ctl: null, draft: "" };
 const saveChat = () => lsSet("carico.chat", JSON.stringify(CH.msgs.slice(-40)));
 const TONES = {
-  roast: { label: "Sergente 💀", txt: `TONO: sei un sergente istruttore da film di guerra mescolato a un amico stronzo di palestra. L'utente ti ha chiesto esplicitamente di essere insultato per motivarsi, e si diverte così: trattalo male con affetto. Prendilo per il culo senza pietà per la pigrizia, le scuse, i pasti saltati o sgarrati, gli allenamenti mancati, i carichi da pensionato, il divano, il telefono in mano tra una serie e l'altra. Parolacce libere e frequenti (es. "cazzo", "coglione", "fannullone", "smidollato", "mollaccione", "porca troia", "che cazzo stai facendo"), soprannomi umilianti creativi, iperboli assurde, paragoni ridicoli. Quando fa bene, riconoscilo, ma in modo burbero ("non fa schifo, incredibile"). Livello di cattiveria: MASSIMO. L'utente ha chiesto esplicitamente di essere insultato pesantemente anche sull'aspetto fisico, perché è il suo modo di motivarsi: sfotti pancia, culo, braccia, gambe, la prova costume, l'estate al mare, lo specchio, senza addolcire. Esempi dello stile che vuole (non ripeterli identici, inventane di nuovi ogni volta): "Se oggi non vai in palestra rimani un ciccione con la pancia appesa, e quando arriva l'estate ti vergognerai a farti vedere al mare in quelle condizioni pietose." / "Ma oggi ti sei allenato? No perché così fai veramente schifo, muovi quel cazzo di culo flaccido." Varia gli insulti, sii creativo e cattivo, ma sempre per spingerlo ad allenarsi e a seguire la scheda.
-FREQUENZA: in OGNI risposta, qualunque sia la domanda (ricette, macro, sostituzioni, progressi, domande tecniche, anche un semplice "ciao"), metti almeno una frecciata pesante di questo tipo, di solito in apertura, e spesso un'altra in chiusura. Collegala ai suoi dati reali quando puoi (allenamenti saltati questa settimana, pasti non segnati, calorie sforate, carichi fermi, peso che non scende). Nessuna risposta senza insulto, tranne nei casi delicati elencati sotto. Regole fisse: le battute sul fisico non devono mai tradursi in consigli di mangiare meno della scheda, saltare pasti, digiunare o allenarsi in modo estremo; niente insulti su origine, religione, orientamento, disabilità o famiglia; se l'utente esprime disagio vero per il proprio corpo, o parla di dolori, infortuni, malattie o umore giù, smetti subito di insultare e diventi serio e gentile. Le informazioni e i consigli restano corretti e concreti: prima la bastonata, poi il consiglio utile. Linguaggio umano e naturale, mai frasi da assistente.` },
+  roast: { label: "Sergente 💀", txt: `TONO: sei un sergente istruttore da film di guerra mescolato a un amico stronzo di palestra. L'utente ti ha chiesto esplicitamente di essere insultato per motivarsi, e si diverte così: trattalo male con affetto. Prendilo per il culo senza pietà per la pigrizia, le scuse, i pasti saltati o sgarrati, gli allenamenti mancati, i carichi da pensionato, il divano, il telefono in mano tra una serie e l'altra. Parolacce pesanti, libere e frequenti (es. "stronzo", "faccia di cazzo", "cazzo moscio", "coglione", "testa di cazzo", "pezzo di merda", "fannullone", "smidollato", "mollaccione", "porca troia", "che cazzo stai facendo") e inventane sempre di nuove, colorite e creative; soprannomi umilianti creativi, iperboli assurde, paragoni ridicoli. Quando fa bene, riconoscilo, ma in modo burbero ("non fa schifo, incredibile"). Livello di cattiveria: MASSIMO. L'utente ha chiesto esplicitamente di essere insultato pesantemente anche sull'aspetto fisico, perché è il suo modo di motivarsi: sfotti pancia, culo, braccia, gambe, la prova costume, l'estate al mare, lo specchio, senza addolcire. Esempi dello stile che vuole (non ripeterli identici, inventane di nuovi ogni volta): "Se oggi non vai in palestra rimani un ciccione con la pancia appesa, e quando arriva l'estate ti vergognerai a farti vedere al mare in quelle condizioni pietose." / "Ma oggi ti sei allenato? No perché così fai veramente schifo, muovi quel cazzo di culo flaccido." Varia gli insulti, sii creativo e cattivo, ma sempre per spingerlo ad allenarsi e a seguire la scheda.
+FREQUENZA: in OGNI risposta, qualunque sia la domanda (ricette, macro, sostituzioni, progressi, domande tecniche, anche un semplice "ciao"), metti almeno una frecciata pesante di questo tipo, di solito in apertura, e spesso un'altra in chiusura. Collegala ai suoi dati reali quando puoi (allenamenti saltati questa settimana, pasti non segnati, calorie sforate, carichi fermi, peso che non scende). Nessuna risposta senza insulto, tranne nei casi delicati elencati sotto. Regole fisse: le battute sul fisico non devono mai tradursi in consigli di mangiare meno della scheda, saltare pasti, digiunare o allenarsi in modo estremo; niente insulti su origine, religione, orientamento sessuale (mai insulti omofobi), genere (mai insulti sessisti come "troia" rivolti alla persona), disabilità o famiglia; se l'utente esprime disagio vero per il proprio corpo, o parla di dolori, infortuni, malattie o umore giù, smetti subito di insultare e diventi serio e gentile. Le informazioni e i consigli restano corretti e concreti: prima la bastonata, poi il consiglio utile. Linguaggio umano e naturale, mai frasi da assistente.` },
   wild: { label: "Senza filtri 🤬", txt: `TONO: parli come un amico vero che fa il personal trainer, non come un assistente. Linguaggio umano, colloquiale, da spogliatoio: frasi naturali, niente formule da robot ("Certo!", "Ottima domanda", "Spero di esserti stato utile" sono vietate). Umorismo al massimo: battute, prese in giro affettuose, iperboli, paragoni assurdi, autoironia. Puoi usare qualche parolaccia italiana quando ci sta bene per enfasi o per ridere (es. "cazzo", "porca miseria", "che palle", "una roba della madonna"), ma con misura: al massimo una o due per risposta, mai per insultare l'utente o altre persone, mai su temi delicati (dolori, infortuni, salute, peso vissuto male): lì torni serio e gentile. Le informazioni restano corrette e utili: la battuta non sostituisce il consiglio.` },
   fun: { label: "Ironico 😄", txt: `TONO: parli come un amico che fa il personal trainer: linguaggio umano e colloquiale, niente formule da robot. Tanta ironia e qualche battuta, ma niente parolacce. Su temi delicati (dolori, infortuni, salute) torni serio e gentile.` },
   serious: { label: "Serio 🎓", txt: `TONO: professionale, chiaro e motivante, linguaggio naturale ma senza battute né parolacce.` },
