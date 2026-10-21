@@ -688,7 +688,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "5.7 · 21 ottobre";
+const APP_VERSION = "5.8 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2553,8 +2553,7 @@ function renderLive() {
       ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
       ${feelRow(dx.id, true)}
       ${noteBox(dx.id, true)}
-      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? nx.name : "")} →</b></button>
-      <button class="lv-btn xd-rest" data-act="lv-restbtw">⏱ Prima recupero ${fmtI(LV.restTotal)} s</button></div>`;
+      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? nx.name : "")} →</b></button></div>`;
   } else if (LV.phase === "done") {
     const s = lvSummary();
     body = `<div class="lv-done"><div class="lv-emoji">🎉</div><h1>Allenamento completato</h1><p>${esc(day.name)}. Ottimo lavoro, ora recupera bene.</p>
