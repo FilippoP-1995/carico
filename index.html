@@ -674,7 +674,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "5.5 · 21 ottobre";
+const APP_VERSION = "5.6 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1138,6 +1138,17 @@ function roastLine({ day, l, t, Tg, hasDiet, streak }) {
   return pick(ROAST_.base);
 }
 function dailyQuote() { const d = parseD(S.date); const n = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5); return QUOTES[n % QUOTES.length]; }
+const HEADLINES = {
+  base: ["👊 Oggi si spinge", "🔥 Giornata da carico", "🏋️ Oggi si suda", "⚡ Testa bassa e lavora", "💥 Oggi si alza il livello", "🎯 Un passo in più", "🦾 Si costruisce oggi", "🚀 Si parte forte", "🧱 Mattone dopo mattone", "🥇 Oggi fai la differenza", "⏱️ Niente scuse oggi", "💪 Ancora una serie", "🌅 Nuovo giorno, nuovo carico", "🔋 Batterie cariche, si va"],
+  cazzaro: ["🍻 Oggi si spacca, coglione", "😎 Oggi si fa i fighi", "🔥 Oggi si suda, porca troia", "💪 Muovi il culo, campione", "🤘 Oggi si spinge di brutto", "🐂 Modalità bestione", "😂 Oggi niente cazzate", "🍗 Pollo e bilanciere"],
+  roast: ["🔥 Fai il lavoro, cazzo", "⚔️ Oggi niente scuse", "🧠 Disciplina, non voglia", "💀 La fatica è il prezzo", "🎯 Il massimo, sempre", "🥊 Vinci contro te stesso", "⛓️ Rompi la pigrizia"],
+};
+function dayHeadline() { // cambia ogni giorno alle 6:00
+  const now = new Date(); const ref = S.date === today() ? new Date(now.getTime() - 6 * 3600e3) : parseD(S.date);
+  const key = ref.getFullYear() * 400 + ref.getMonth() * 31 + ref.getDate();
+  const tone = coachTone(); const pool = [...HEADLINES.base, ...(HEADLINES[tone] || []), ...(HEADLINES[tone] || [])];
+  return femTxt(pool[(key * 7919) % pool.length]);
+}
 function badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet }) {
   const b = [];
   if (day && l && l.w.dayId === day.id && l.w.done) b.push("💪 Allenamento di oggi fatto");
@@ -1148,7 +1159,7 @@ function badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet })
   if (hasDiet && Tg.kcal && Math.abs(t.kcal - Tg.kcal) <= Tg.kcal * 0.05) b.push("🎯 Calorie in target");
   if (hydro(S.date).w >= waterGoal() * 1000) b.push("💧 Acqua centrata");
   if (sess.length >= 10) b.push(`🎖️ ${sess.length} allenamenti`);
-  if (!b.length) b.push(sess.length ? "👊 Oggi si spinge" : "🚀 Pronto a partire");
+  if (!b.length) b.push(sess.length ? dayHeadline() : "🚀 Pronto a partire");
   const [first, ...rest] = b; const sp = first.indexOf(" ");
   return `<div class="badges"><span class="badge-main"><span class="be">${esc(first.slice(0, sp))}</span>${esc(first.slice(sp + 1))}</span>${rest.map(x => `<span class="badge-h">${esc(x)}</span>`).join("")}</div>`;
 }
