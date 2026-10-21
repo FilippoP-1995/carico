@@ -822,7 +822,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "8.0 · 22 ottobre";
+const APP_VERSION = "8.1 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1325,7 +1325,7 @@ function render() {
   if (neo && S.viewEnter && S.tab !== "oggi") { v.classList.remove("view-in"); void v.offsetWidth; v.classList.add("view-in"); setTimeout(() => v.classList.remove("view-in"), 700); }
   S.viewEnter = false;
 }
-function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; if (tab !== S.tab) S.viewEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
+function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; if (S.tab === "oggi" && tab !== "oggi") { S.wkClosed = new Set(); S.wkSel = null; } if (tab !== S.tab) S.viewEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
 
 function noPlan(kind) {
   return `<div class="card empty">
@@ -1468,7 +1468,8 @@ function summaryCard() {
     const ex = {}; ss.forEach(x => Object.assign(ex, x.ex));
     const detail = ad ? (ad.exercises || []).map(e => { const sd = ((ex[e.id] || {}).s || []).filter(z => z && z.done); return sd.length ? `<div class="wk-x"><span>${esc(e.name)}</span><b>${sd.map(z => `${esc(z.kg || "–")}×${esc(z.reps || "–")}`).join(" · ")}</b></div>` : ""; }).join("") : "";
     wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: quale allenamento hai fatto?</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
-      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${asg === d.id ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${asg === d.id ? "✓ " : ""}${esc(d.name)}</button>`).join("")}</div>
+      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${asg === d.id ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${asg === d.id ? "✓ " : ""}${esc(d.name)}</button>`).join("")}<button class="wk-o rm ${!asg ? "on" : ""}" data-act="wk-mark" data-id="">${!asg ? "✓ " : ""}Nessun allenamento</button></div>
+      ${!asg && L && L.hidden ? `<span class="small" style="opacity:.75">Le serie di questo giorno sono conservate: riassegnando la seduta tornano.</span>` : ""}
       ${detail ? `<div class="wk-s">${detail}</div>` : ""}
     </div>`; }
   // frase del giorno
@@ -2664,15 +2665,21 @@ document.addEventListener("click", ev => {
     case "me-tone": { S.profile.user = S.profile.user || {}; S.profile.user.tone = b.dataset.k; store.saveProfile(); render(); toast("Tono del Coach: " + TONES[b.dataset.k].label); return; }
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
     case "wk-day": { const d = b.dataset.d; if (d > today()) return;
-      if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; S.wkSel = wDays().length ? d : null; }
-      else S.wkSel = S.wkSel ? null : (wDays().length ? d : null);
+      S.wkClosed = S.wkClosed || new Set();
+      if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; S.wkSel = wDays().length && !S.wkClosed.has(d) ? d : null; }
+      else if (S.wkSel) { S.wkClosed.add(d); S.wkSel = null; }
+      else { S.wkClosed.delete(d); S.wkSel = wDays().length ? d : null; }
       render(); return; }
-    case "wk-close": S.wkSel = null; S.wkAdd = false; render(); return;
+    case "wk-close": (S.wkClosed = S.wkClosed || new Set()).add(S.wkSel); S.wkSel = null; S.wkAdd = false; render(); return;
     case "wk-add": S.wkAdd = true; render(); return;
     case "wk-mark": {
       const d = S.wkSel; if (!d) return; const l = dayLog(d); const id = b.dataset.id; const wd = wDays().find(x => x.id === id);
-      if (!wd) return;
+      if (!wd) { // il giorno non conta come allenamento, ma le serie restano conservate e tornano riassegnando la seduta
+        if (setsDone(l) > 0 || l.w.done || (l.runs || []).length || l.w.also) { l.hidden = { w: JSON.parse(JSON.stringify(l.w)), runs: l.runs ? JSON.parse(JSON.stringify(l.runs)) : undefined }; }
+        l.w = { dayId: null, ex: {}, done: false }; delete l.runs; toast("Giorno senza allenamento (le serie restano conservate)");
+      }
       else {
+        if (l.hidden) { const h = l.hidden; l.w = h.w; if (h.runs) l.runs = h.runs; delete l.hidden; }
         const prev = l.w.dayId; useSession(l, wd); l.w.done = true;
         if (prev && prev !== wd.id) { // la seduta di prima non è più quella del giorno, ma le sue serie restano salvate
           l.w.doneAlso = (l.w.doneAlso || []).filter(x => x !== prev);
