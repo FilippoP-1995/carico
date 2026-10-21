@@ -713,7 +713,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.4 · 21 ottobre";
+const APP_VERSION = "6.5 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2631,7 +2631,10 @@ function openLive() {
   { const l0 = dayLog(); useSession(l0, day); if (setsFor(l0, day) === 0 && !l0.w.done && (l0.w.start || l0.w.end)) { const prev = (l0.w.also || []).slice(-1)[0]; if (prev && l0.w.end) { l0.w.times = l0.w.times || {}; if (!l0.w.times[prev]) l0.w.times[prev] = { start: l0.w.start || 0, end: l0.w.end }; } delete l0.w.start; delete l0.w.end; } }
   LV.ask = null; LV.keepShort = false;
   lvLog(); const f = lvFirstOpen();
-  if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; } else { LV.phase = "done"; const l = dayLog(); if (!l.w.end) { l.w.end = lastSetAt(l, day) || Date.now(); store.saveDay(S.date); } }
+  if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; }
+  else { // seduta già finita: si riapre dal primo esercizio, con le serie fatte e i carichi segnati, pronta da rivedere o modificare
+    LV.exIdx = 0; LV.setIdx = 0; LV.phase = "set"; LV.doneGroup = null;
+    const l = dayLog(); if (!l.w.end) { l.w.end = lastSetAt(l, day) || Date.now(); store.saveDay(S.date); } }
   lvDefaults(); ovOpen("live"); renderLive();
   try { navigator.wakeLock && navigator.wakeLock.request("screen").then(w => LV.wake = w).catch(() => {}); } catch (e) {}
   clearInterval(LV.iv); LV.iv = setInterval(lvTick, 250);
