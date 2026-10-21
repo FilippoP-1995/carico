@@ -710,7 +710,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.2 · 21 ottobre";
+const APP_VERSION = "6.3 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2369,8 +2369,8 @@ document.addEventListener("click", ev => {
     case "copy-first": {
       const day = currentDay(); const ex = day.exercises.find(e => e.id === b.dataset.ex); const l = dayLog(); const e = l.w.ex[ex.id]; if (!e || !e.s[0]) return;
       const s0 = e.s[0]; const sets = Math.max(parseInt(ex.sets) || 3, e.s.length); let n = 0;
-      for (let i = 1; i < sets; i++) { const s = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; const empty = (s.kg === "" || s.kg == null) && (s.reps === "" || s.reps == null); if (!s.done || empty) { s.kg = s0.kg; s.reps = s0.reps; n++; } }
-      store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su ${n} serie`); return;
+      for (let i = 1; i < sets; i++) { const s = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; s.kg = s0.kg; s.reps = s0.reps; n++; }
+      store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su tutte le ${n + 1} serie`); return;
     }
     case "add-set": { const day = currentDay(); const ex = day.exercises.find(e => e.id === b.dataset.ex); ex.sets = (parseInt(ex.sets) || 3) + 1; store.saveProfile(); render(); return; }
     case "finish": { const l = dayLog(); const fd = currentDay(); if (fd && l.w.dayId !== fd.id && setsDone(l) === 0) { l.w = { dayId: fd.id, dayName: fd.name, ex: {}, done: false }; } l.w.done = true; store.saveDay(S.date); stopRest(); toast("Allenamento salvato. Ottimo lavoro!"); render(); return; }
@@ -2570,6 +2570,7 @@ Rispondi solo con JSON: {"e0":{"p":["pettorali"],"s":["tricipiti"]}, ...}`, { ti
 /* ---------- modalità allenamento a schermo intero ---------- */
 const LV = { exIdx: 0, setIdx: 0, phase: "set", restEnd: 0, restTotal: 0, iv: null, kg: "", reps: "", wake: null, flash: "" };
 function lvDay() { return currentDay(); }
+function lastSetAt(l) { let t = 0; for (const k in (l.w.ex || {})) (l.w.ex[k].s || []).forEach(s => { if (s && s.done && s.at > t) t = s.at; }); return t; }
 function lvLog() { const day = lvDay(); const l = dayLog(); useSession(l, day); if (!l.w.start) l.w.start = Date.now(); return l; }
 function exDefaultsFor(ex, j) {
   const l = dayLog(); const e = l.w.ex[ex.id]; const s = e && e.s && e.s[j];
@@ -2600,7 +2601,7 @@ function lvFirstOpen() {
 function openLive() {
   const day = lvDay(); if (!day || !(day.exercises || []).length) { toast("Carica prima una scheda di allenamento"); return; }
   lvLog(); const f = lvFirstOpen();
-  if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; } else LV.phase = "done";
+  if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; } else { LV.phase = "done"; const l = dayLog(); if (!l.w.end) { l.w.end = lastSetAt(l) || Date.now(); store.saveDay(S.date); } }
   lvDefaults(); ovOpen("live"); renderLive();
   try { navigator.wakeLock && navigator.wakeLock.request("screen").then(w => LV.wake = w).catch(() => {}); } catch (e) {}
   clearInterval(LV.iv); LV.iv = setInterval(lvTick, 250);
@@ -2611,7 +2612,7 @@ function closeLive() { stopAlarm(); LV.resting = false; LV.over = false; clearIn
 function bestBefore(name) { const key = norm(name); let b = 0; for (const d of sortedDates()) { if (d >= S.date) break; const ex = (S.days[d].w && S.days[d].w.ex) || {}; for (const k in ex) if (norm(ex[k].name) === key) (ex[k].s || []).forEach(s => { if (s && s.done) b = Math.max(b, num(s.kg) || 0); }); } return b; }
 function lvTick() {
   const c = $("#lvClock"); const l = peekLog();
-  if (c && l && l.w.start) { const s = Math.floor((Date.now() - l.w.start) / 1000); c.textContent = (s >= 3600 ? Math.floor(s / 3600) + ":" + pad(Math.floor(s / 60) % 60) : Math.floor(s / 60)) + ":" + pad(s % 60); }
+  if (c && l && l.w.start) { const s = Math.max(0, Math.floor(((l.w.end || (LV.phase === "done" ? lastSetAt(l) : 0) || Date.now()) - l.w.start) / 1000)); c.textContent = (s >= 3600 ? Math.floor(s / 3600) + ":" + pad(Math.floor(s / 60) % 60) : Math.floor(s / 60)) + ":" + pad(s % 60); }
   if (LV.resting) {
     const left = Math.max(0, Math.ceil((LV.restEnd - Date.now()) / 1000));
     const n = $("#lvRestN"), r = $("#lvRestArc");
@@ -2628,7 +2629,7 @@ function lvTick() {
 function lvSummary() {
   const l = peekLog(); const day = lvDay(); let sets = 0, vol = 0; const prs = [];
   (day.exercises || []).forEach(ex => { const e = l && l.w.ex[ex.id]; if (!e) return; const done = (e.s || []).filter(s => s && s.done); sets += done.length; done.forEach(s => vol += (num(s.kg) || 0) * (num(s.reps) || 0)); const top = Math.max(0, ...done.map(s => num(s.kg) || 0)); const b = bestBefore(ex.name); if (top && b && top > b) prs.push(`${ex.name}: ${fmtN(top)} kg (prima ${fmtN(b)})`); });
-  const mins = l && l.w.start ? Math.round(((l.w.end || Date.now()) - l.w.start) / 60000) : 0;
+  const mins = l && l.w.start ? Math.max(1, Math.round(((l.w.end || lastSetAt(l) || Date.now()) - l.w.start) / 60000)) : 0;
   return { sets, vol, prs, mins };
 }
 function renderLive() {
@@ -2691,7 +2692,7 @@ function renderLive() {
         <div class="lv-step"><span>ripetizioni</span><div><button data-act="lv-adj" data-f="reps" data-d="-1" aria-label="Una ripetizione in meno">−</button><input id="lvReps" inputmode="numeric" value="${esc(LV.reps)}" aria-label="Ripetizioni"><button data-act="lv-adj" data-f="reps" data-d="1" aria-label="Una ripetizione in più">+</button></div></div>
       </div>
       <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}</div>
-      ${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte le serie da fare</button>` : ""}
+      ${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte le serie</button>` : ""}
       <button class="lv-go" data-act="lv-done">✓ Serie fatta</button>
       <div class="lv-row"><button class="lv-btn" data-act="lv-prev" ${LV.exIdx ? "" : "disabled"}>← Precedente</button><button class="lv-btn" data-act="lv-next" ${LV.exIdx < exs.length - 1 ? "" : "disabled"}>Prossimo →</button></div>`;
   }
@@ -2731,7 +2732,7 @@ function lvSetDone() {
   for (let k = 0; k <= LV.setIdx; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
   const kg = LV.kg === "null" ? "" : LV.kg;
   const prevS = e.s[LV.setIdx] || {};
-  e.s[LV.setIdx] = { kg, reps: LV.reps, done: true };
+  e.s[LV.setIdx] = { kg, reps: LV.reps, done: true, at: Date.now() }; delete l.w.end;
   // se avevi copiato i valori su tutte le serie e poi li cambi, le serie successive ancora da fare si aggiornano
   ["kg", "reps"].forEach(f => { const old = prevS[f], nv = f === "kg" ? kg : LV.reps; if (old === "" || old == null || old === nv) return; for (let k = LV.setIdx + 1; k < e.s.length; k++) { const sk = e.s[k]; if (sk && !sk.done && sk[f] === old) sk[f] = nv; } });
   store.saveDay(S.date);
@@ -2757,7 +2758,7 @@ function lvSsDone() {
     const v = LV.ssv[x.id] || {}; const kg = v.kg && v.kg !== "null" ? v.kg : ""; const reps = v.reps || "";
     const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: x.name, s: [] }; e.name = x.name;
     for (let k = 0; k <= j; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
-    const prevS = e.s[j] || {}; e.s[j] = { kg, reps, done: true };
+    const prevS = e.s[j] || {}; e.s[j] = { kg, reps, done: true, at: Date.now() }; delete l.w.end;
     [["kg", kg], ["reps", reps]].forEach(([f, nv]) => { const old = prevS[f]; if (old === "" || old == null || old === nv) return; for (let k = j + 1; k < e.s.length; k++) { const sk = e.s[k]; if (sk && !sk.done && sk[f] === old) sk[f] = nv; } });
     const b = bestBefore(x.name); if (num(kg) && b && num(kg) > b) flash = `🏆 Nuovo record su ${x.name}: ${fmtN(num(kg))} kg`;
   });
@@ -2790,7 +2791,7 @@ function ssBody(day, l) {
     <div class="lv-set"><span>Giro <b>${j + 1}</b> di ${n}</span></div>
     ${cards}
     <div class="lv-sets">${Array.from({ length: n }, (_, k) => `<button class="lv-s ${roundDone(k) ? "ok" : ""} ${k === j ? "on" : ""}" data-act="lv-set" data-i="${k}">${k + 1}</button>`).join("")}</div>
-    ${n > 1 ? `<button class="lv-copy" data-act="ss-copy">⤵ Stessi kg e rip. su tutti i giri da fare</button>` : ""}
+    ${n > 1 ? `<button class="lv-copy" data-act="ss-copy">⤵ Stessi kg e rip. su tutti i giri</button>` : ""}
     <button class="lv-go" data-act="ss-done">✓ Super serie fatta</button>
     <div class="lv-row"><button class="lv-btn" data-act="lv-prev" ${g[0] ? "" : "disabled"}>← Precedente</button><button class="lv-btn" data-act="lv-next" ${g[g.length - 1] < exs.length - 1 ? "" : "disabled"}>Prossimo →</button></div>`;
 }
@@ -2808,9 +2809,8 @@ document.addEventListener("click", ev => {
     const kg = kgI ? String(num(kgI.value) ?? "") : LV.kg, reps = rI ? String(parseInt(rI.value) || "") : LV.reps;
     if (!kg && !reps) { toast("Imposta prima kg e ripetizioni"); return; }
     const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] }; const n = exSets(ex); let c = 0;
-    for (let i = 0; i < n; i++) { const s0 = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; const empty = (s0.kg === "" || s0.kg == null) && (s0.reps === "" || s0.reps == null);
-      if (i === LV.setIdx || !s0.done || empty) { s0.kg = kg; s0.reps = reps; c++; } }
-    LV.kg = kg; LV.reps = reps; store.saveDay(S.date); renderLive(); toast(`${fmtN(num(kg))} kg × ${reps} su ${c} ${c === 1 ? "serie" : "serie"}`);
+    for (let i = 0; i < n; i++) { const s0 = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; s0.kg = kg; s0.reps = reps; c++; }
+    LV.kg = kg; LV.reps = reps; store.saveDay(S.date); renderLive(); toast(`${fmtN(num(kg))} kg × ${reps} su tutte le ${c} serie`);
   }
   else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); }
   else if (a === "lv-ex") { const r = lvOpenAt(day, +b.dataset.i); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
@@ -2818,7 +2818,7 @@ document.addEventListener("click", ev => {
   else if (a === "lv-prev" || a === "lv-next") { const g = ssGroup(day, LV.exIdx); const t = Math.max(0, Math.min(day.exercises.length - 1, a === "lv-next" ? g[g.length - 1] + 1 : g[0] - 1)); const r = lvOpenAt(day, t); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "ss-done") lvSsDone();
   else if (a === "ss-adj") { const v = LV.ssv[b.dataset.x] = LV.ssv[b.dataset.x] || {}; const f = b.dataset.f; const cur = f === "kg" ? (num(v.kg) || 0) : (parseInt(v.reps) || 0); const nv = Math.max(0, Math.round((cur + +b.dataset.d) * 100) / 100); v[f] = String(nv); const inp = document.querySelector(`[data-ssx="${b.dataset.x}"][data-ssf="${f}"]`); if (inp) inp.value = f === "kg" ? fmtN(nv) : String(nv); }
-  else if (a === "ss-copy") { const l = lvLog(); ssGroup(day, LV.exIdx).forEach(i => { const x = day.exercises[i]; const v = LV.ssv[x.id] || {}; const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: x.name, s: [] }; e.name = x.name; for (let k = 0; k < exSets(x); k++) { const sk = e.s[k]; const empty = !sk || ((sk.kg === "" || sk.kg == null) && (sk.reps === "" || sk.reps == null)); if (k === LV.setIdx && sk) { sk.kg = v.kg || ""; sk.reps = v.reps || ""; continue; } if (sk && sk.done && !empty) continue; e.s[k] = { kg: v.kg || "", reps: v.reps || "", done: !!(sk && sk.done) }; } for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false }; }); store.saveDay(S.date); toast("Valori copiati su tutte le serie da fare"); renderLive(); }
+  else if (a === "ss-copy") { const l = lvLog(); ssGroup(day, LV.exIdx).forEach(i => { const x = day.exercises[i]; const v = LV.ssv[x.id] || {}; const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: x.name, s: [] }; e.name = x.name; for (let k = 0; k < exSets(x); k++) { const sk = e.s[k]; e.s[k] = { ...(sk || {}), kg: v.kg || "", reps: v.reps || "", done: !!(sk && sk.done) }; } for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false }; }); store.saveDay(S.date); toast("Valori copiati su tutti i giri"); renderLive(); }
   else if (a === "lv-rest") { if (LV.over || !LV.resting) return; LV.restEnd += +b.dataset.d * 1000; LV.restTotal = Math.max(LV.restTotal, Math.ceil((LV.restEnd - Date.now()) / 1000)); lvTick(); }
   else if (a === "lv-nextex") { LV.phase = "set"; LV.flash = ""; LV.doneEx = null; LV.doneGroup = null; lvDefaults(); renderLive(); window.scrollTo(0, 0); $("#live").scrollTop = 0; }
   else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (nx ? nx.name : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
