@@ -702,7 +702,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "5.9 · 21 ottobre";
+const APP_VERSION = "6.0 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -993,6 +993,16 @@ function toastStatus() { const s = statusMsg(dayTotals(), targetsFor()); if (s) 
 
 const sortedDates = () => Object.keys(S.days).sort();
 function setsDone(l) { let n = 0; if (!l || !l.w) return 0; for (const k in l.w.ex) n += (l.w.ex[k].s || []).filter(s => s && s.done).length; return n; }
+function useSession(l, day) { // porta la seduta "day" in primo piano su questa data senza perdere quella già segnata
+  if (!day || l.w.dayId === day.id) return l.w;
+  if (setsDone(l) > 0 || l.w.done || l.w.also) {
+    const also = (l.w.also || []).filter(x => x !== day.id); const doneA = (l.w.doneAlso || []).filter(x => x !== day.id);
+    if (l.w.dayId) { also.push(l.w.dayId); if (l.w.done) doneA.push(l.w.dayId); }
+    l.w.done = (l.w.doneAlso || []).includes(day.id); l.w.also = also; l.w.doneAlso = doneA; l.w.dayId = day.id; l.w.dayName = day.name;
+  } else l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false };
+  return l.w;
+}
+function setsFor(l, day) { if (!l || !l.w || !day) return 0; return (day.exercises || []).reduce((n, ex) => n + exDone(l, ex), 0); }
 const isSession = l => !!(l && l.w && (setsDone(l) > 0 || (l.w.done && l.w.dayId)));
 function sessionDates() { return sortedDates().filter(d => isSession(S.days[d])); }
 function suggestedDay() {
@@ -1219,7 +1229,7 @@ function summaryCard() {
   const h = new Date().getHours(); const uname = userName(); const hi = (h < 12 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera") + (uname ? ", " + uname : "") + "\u00a0" + (h < 12 ? "☀️" : h < 18 ? "💪" : "🌙");
   // allenamento di oggi
   const day = currentDay(); const l = peekLog();
-  const done = day && l && l.w.dayId === day.id ? setsDone(l) : 0; const tot = day ? totalSets(day) : 0;
+  const done = day && l && l.w.dayId === day.id ? setsFor(l, day) : 0; const tot = day ? totalSets(day) : 0;
   // alimentazione
   const hasDiet = variants().length > 0; const t = hasDiet ? dayTotals() : zeroT(); const Tg = hasDiet ? targetsFor() : {};
   // settimana
@@ -1280,7 +1290,7 @@ function vOggi() {
   const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc); if ((S.profile.user || {}).hkOn) out.push(hkCard());
   const day = currentDay();
   if (day) {
-    const l = peekLog(); const done = l && l.w.dayId === day.id ? setsDone(l) : 0; const tot = totalSets(day);
+    const l = peekLog(); const done = l && l.w.dayId === day.id ? setsFor(l, day) : 0; const tot = totalSets(day);
     const finished = l && l.w.dayId === day.id && l.w.done;
     out.push(`<div class="card hero">
       <div class="row between"><span class="eyebrow">Allenamento di oggi</span>${finished ? `<span class="tag" style="background:var(--ok-soft);color:var(--ok)">Fatto</span>` : `<span class="tag b">${(day.exercises || []).length} ${(day.exercises || []).length === 1 ? "esercizio" : "esercizi"}</span>`}</div>
@@ -1357,7 +1367,7 @@ function autoSuperset() { // una volta sola: riconosce le super serie già scrit
 function vAllenamento() {
   if (!wDays().length) return `<h2>Allenamento</h2>` + noPlan("workout");
   const day = currentDay(); const l = peekLog();
-  const isThis = l && l.w.dayId === day.id;
+  const isThis = l && (l.w.dayId === day.id || (l.w.also || []).includes(day.id));
   const lw = isThis ? l : null;
   if (S.exInit !== day.id + S.date) {
     S.exInit = day.id + S.date; S.openEx = new Set();
@@ -1401,13 +1411,13 @@ function vAllenamento() {
       ${inner}
     </div>`;
   }).join("");
-  const done = isThis ? setsDone(l) : 0, tot = totalSets(day);
+  const done = isThis ? setsFor(l, day) : 0, tot = totalSets(day);
   if (wDays().some(d => (d.exercises || []).some(ex => !ex.muscles && !ex.muscleTried))) setTimeout(tagMuscles, 50);
   return `<h2>Allenamento</h2>
     <div class="chips" role="group" aria-label="Giorno della scheda">${chips}</div>
     <div class="row between small muted" style="margin:10px 0 6px"><span>${done} di ${tot} serie fatte</span>${isThis && l.w.done ? `<span style="color:var(--ok);font-weight:700">Completato</span>` : ""}</div>
     <div class="bar" style="margin-bottom:14px"><i style="width:${tot ? Math.min(100, done / tot * 100) : 0}%"></i></div>
-    <div class="row" style="margin-bottom:12px;gap:8px"><button class="btn primary live-cta" data-act="live-open" style="flex:1">▶ Modalità allenamento</button><button class="btn spot-btn" data-act="spotify" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button></div>
+    <div class="row" style="margin-bottom:12px;gap:8px"><button class="btn primary live-cta" data-act="live-open" style="flex:1">▶ Modalità allenamento · ${esc(day.name.length > 22 ? day.name.slice(0, 22) + "…" : day.name)}</button><button class="btn spot-btn" data-act="spotify" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button></div>
     <div class="stack">${exs}
     ${isThis && l.w.done ? `<button class="btn block" data-act="reopen">Riapri l'allenamento</button>` : `<button class="btn primary block" data-act="finish">${done ? "Termina allenamento" : "✓ Segna come fatto (senza registrare le serie)"}</button>`}
     <p class="small muted" style="margin:0;text-align:center">Per segnare un allenamento di un altro giorno della settimana, tocca il giorno nel riepilogo della Home. Tocca un esercizio per aprire le serie. Con ✓ segni la serie e parte il recupero; se lasci vuoto uso il carico dell'ultima volta.</p>
@@ -2113,7 +2123,7 @@ function setField(el) {
   const l = dayLog(); const card = el.closest(".set"); if (!card) return;
   const exId = card.dataset.ex, i = +card.dataset.i;
   const day = currentDay(); const ex = (day.exercises || []).find(e => e.id === exId); if (!ex) return;
-  if (l.w.dayId !== day.id) { l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false }; }
+  useSession(l, day);
   const e = l.w.ex[exId] = l.w.ex[exId] || { name: ex.name, s: [] };
   e.name = ex.name; e.s[i] = e.s[i] || { kg: "", reps: "", done: false };
   const f = el.dataset.f, old = e.s[i][f], nv = el.value.replace(",", ".").trim();
@@ -2261,7 +2271,7 @@ document.addEventListener("click", ev => {
     case "sel-day": S.selDay = b.dataset.id; render(); return;
     case "set": { unlockAlarm();
       const row = b.closest(".set"); const day = currentDay(); const ex = day.exercises.find(e => e.id === row.dataset.ex); const i = +row.dataset.i;
-      const l = dayLog(); if (l.w.dayId !== day.id) l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false };
+      const l = dayLog(); useSession(l, day);
       const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] };
       for (let k = 0; k <= i; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
       const s = e.s[i];
@@ -2529,7 +2539,7 @@ Rispondi solo con JSON: {"e0":{"p":["pettorali"],"s":["tricipiti"]}, ...}`, { ti
 /* ---------- modalità allenamento a schermo intero ---------- */
 const LV = { exIdx: 0, setIdx: 0, phase: "set", restEnd: 0, restTotal: 0, iv: null, kg: "", reps: "", wake: null, flash: "" };
 function lvDay() { return currentDay(); }
-function lvLog() { const day = lvDay(); const l = dayLog(); if (l.w.dayId !== day.id) { if (setsDone(l) > 0) { S.selDay = l.w.dayId; return dayLog(); } l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false }; } if (!l.w.start) l.w.start = Date.now(); return l; }
+function lvLog() { const day = lvDay(); const l = dayLog(); useSession(l, day); if (!l.w.start) l.w.start = Date.now(); return l; }
 function exDefaultsFor(ex, j) {
   const l = dayLog(); const e = l.w.ex[ex.id]; const s = e && e.s && e.s[j];
   const prev = e && e.s && e.s[j - 1];
@@ -2592,7 +2602,7 @@ function lvSummary() {
 }
 function renderLive() {
   const el = $("#live"); const day = lvDay(); const l = dayLog(); const exs = day.exercises || [];
-  const tot = totalSets(day), done = l.w.dayId === day.id ? setsDone(l) : 0;
+  const tot = totalSets(day), done = l.w.dayId === day.id ? setsFor(l, day) : 0;
   const top = `<div class="lv-top"><button class="lv-x" data-act="lv-close" aria-label="Chiudi">${ICON_X}</button><div class="lv-day"><span>${esc(day.name)}</span><b id="lvClock">0:00</b></div><button class="lv-spot" data-act="lv-spot" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button><span class="lv-cnt">${done}/${tot}</span></div>
     <div class="lv-prog"><i style="width:${tot ? done / tot * 100 : 0}%"></i></div>
     <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(ex.name)}</button>`; }).join("")}</div>`;
