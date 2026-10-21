@@ -540,6 +540,18 @@ html.neo-home nav.tabs button[aria-current="page"] svg{filter:drop-shadow(0 0 5p
 .neo-home .home-in>*:nth-child(2){animation-delay:.08s}.neo-home .home-in>*:nth-child(3){animation-delay:.16s}.neo-home .home-in>*:nth-child(4){animation-delay:.24s}.neo-home .home-in>*:nth-child(5){animation-delay:.32s}.neo-home .home-in>*:nth-child(n+6){animation-delay:.4s}
 @keyframes neoRise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
 html.neo-home header.top{background:color-mix(in srgb,var(--bg) 78%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.neo-home h2{background:linear-gradient(90deg,var(--ink) 30%,#3c63e0 78%,#7b4fe0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.neo-home .chip[aria-pressed="true"],.neo-home .chip.on-acc{background:linear-gradient(100deg,#3f7bff,#7a5cff);color:#fff;border-color:transparent;box-shadow:0 6px 18px -8px rgba(90,110,255,.8)}
+.neo-home .set.done{background:linear-gradient(90deg,rgba(34,211,183,.15),rgba(77,141,255,.05))}
+.neo-home .set.done .chk{background:linear-gradient(135deg,#22d3b7,#4d8dff);border-color:transparent;box-shadow:0 0 10px rgba(34,211,183,.5)}
+.neo-home .set.next{box-shadow:inset 4px 0 0 var(--neo-a),inset 0 0 0 1px rgba(77,141,255,.18)}
+.neo-home .card.ex.complete{box-shadow:0 0 0 1px rgba(34,211,183,.35),0 16px 40px -26px rgba(34,211,183,.55)}
+.neo-home .card.ex.ss{border-left:3px solid var(--neo-b)}
+.neo-home .ss-k{background:linear-gradient(135deg,var(--neo-a),var(--neo-b))}
+.neo-home .meal.eaten{box-shadow:0 0 0 1px rgba(255,190,90,.5),0 14px 34px -24px rgba(255,170,60,.65)}
+.neo-home .mchk{transition:box-shadow .2s}.neo-home .meal.eaten .mchk{box-shadow:0 0 12px rgba(255,180,70,.6)}
+.neo-home .live-cta{background:linear-gradient(100deg,#3f7bff,#7a5cff);box-shadow:0 12px 30px -12px rgba(90,110,255,.9)}
+.neo-home #view.view-in{animation:neoRise .5s cubic-bezier(.2,.8,.2,1) both}
 .home-style{align-self:center;border:1px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;border-radius:99px;padding:7px 14px;margin:2px auto 0}
 @media (prefers-reduced-motion:reduce){.neo-home *,.neo-home *::before,.neo-home *::after,html.neo-home body::before{animation:none!important}}
 .lv-ask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,8,16,.7);backdrop-filter:blur(6px)}
@@ -772,7 +784,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "7.2 · 21 ottobre";
+const APP_VERSION = "7.3 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1249,11 +1261,13 @@ function render() {
   const y = window.scrollY;
   v.innerHTML = (S.date !== today() && S.tab !== "piano" ? `<div class="pastbar"><span>📅 Stai registrando <b>${esc(fmtDay(S.date))}</b></span><button data-act="day-today">Torna a oggi</button></div>` : "") + ({ oggi: vOggi, allenamento: vAllenamento, dieta: vDieta, progressi: vProgressi, piano: vPiano }[S.tab])();
   window.scrollTo(0, y);
-  const neo = S.tab === "oggi" && homeStyle() === "neo";
+  const neo = homeStyle() === "neo"; // stile futuristico su tutta l'app
   document.documentElement.classList.toggle("neo-home", neo);
-  if (neo && S.homeEnter) { const hs = v.querySelector(".hero-sum"); if (hs) countUp(hs); S.homeEnter = false; }
+  if (neo && S.homeEnter && S.tab === "oggi") { const hs = v.querySelector(".hero-sum"); if (hs) countUp(hs); S.homeEnter = false; }
+  if (neo && S.viewEnter && S.tab !== "oggi") { v.classList.remove("view-in"); void v.offsetWidth; v.classList.add("view-in"); setTimeout(() => v.classList.remove("view-in"), 700); }
+  S.viewEnter = false;
 }
-function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
+function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; if (tab !== S.tab) S.viewEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
 
 function noPlan(kind) {
   return `<div class="card empty">
@@ -1471,7 +1485,7 @@ function vOggi() {
   </div>`);
   if (!day) out.push(noPlan("workout"));
   if (!v) out.push(noPlan("diet"));
-  out.push(`<button class="home-style" data-act="home-style">🎨 ${homeStyle() === "neo" ? "Home futuristica · torna alla classica" : "Prova la Home futuristica"}</button>`);
+  out.push(`<button class="home-style" data-act="home-style">🎨 ${homeStyle() === "neo" ? "Stile futuristico · torna al classico" : "Prova lo stile futuristico"}</button>`);
   return `<div class="stack ${homeStyle() === "neo" && S.homeEnter ? "home-in" : ""}" style="margin-top:6px">${out.join("")}</div>`;
 }
 
@@ -2061,7 +2075,7 @@ function vPiano() {
         <label class="f">🎵 Playlist Spotify per l'allenamento<input class="in" data-e="user" data-k="playlist" value="${esc((S.profile.user || {}).playlist || "")}" placeholder="Incolla il link della playlist" inputmode="url" autocomplete="off"><span class="small muted" style="font-weight:500">${(S.profile.user || {}).playlist ? (spotifyParse((S.profile.user || {}).playlist) ? "✅ Link valido" : "⚠️ Link non riconosciuto: copialo da Spotify → ⋯ → Condividi → Copia link") : "In Spotify apri la playlist → ⋯ → Condividi → Copia link, poi incollalo qui."}</span></label>
         <div class="f">Sesso<div class="chips" style="margin-top:4px">${[["m", "Uomo"], ["f", "Donna"]].map(([k, l]) => `<button class="chip sm ${(S.profile.user || {}).sex === k || (!(S.profile.user || {}).sex && k === "m") ? "on-acc" : ""}" data-act="me-sex" data-k="${k}">${l}</button>`).join("")}</div></div>
         <div class="f">Giorno del check settimanale<div class="chips" style="flex-wrap:wrap;margin-top:4px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button class="chip sm ${checkDay() === d ? "on-acc" : ""}" data-act="me-check" data-k="${d}">${DOW[d].slice(0, 3)}</button>`).join("")}</div></div>
-        <div class="f">Stile della Home<div class="chips" style="margin-top:4px">${[["classic", "Classica"], ["neo", "Futuristica ✨"]].map(([k, lb]) => `<button class="chip sm ${homeStyle() === k ? "on-acc" : ""}" data-act="home-style-set" data-k="${k}">${lb}</button>`).join("")}</div></div>
+        <div class="f">Stile dell'app<div class="chips" style="margin-top:4px">${[["classic", "Classica"], ["neo", "Futuristica ✨"]].map(([k, lb]) => `<button class="chip sm ${homeStyle() === k ? "on-acc" : ""}" data-act="home-style-set" data-k="${k}">${lb}</button>`).join("")}</div></div>
         <div class="f">Tono del Coach<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(TONES).map(([k, t]) => `<button class="chip sm ${coachTone() === k ? "on-acc" : ""}" aria-pressed="${coachTone() === k}" data-act="me-tone" data-k="${k}">${esc(t.label)}</button>`).join("")}</div></div>
       </div>
     </details>
@@ -2473,7 +2487,7 @@ document.addEventListener("click", ev => {
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "home-style-set": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = b.dataset.k; store.saveProfile(); render(); return; }
-    case "home-style": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = homeStyle() === "neo" ? "classic" : "neo"; store.saveProfile(); S.homeEnter = true; render(); window.scrollTo(0, 0); toast(homeStyle() === "neo" ? "Home futuristica ✨" : "Home classica"); return; }
+    case "home-style": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = homeStyle() === "neo" ? "classic" : "neo"; store.saveProfile(); S.homeEnter = true; render(); window.scrollTo(0, 0); toast(homeStyle() === "neo" ? "Stile futuristico ✨" : "Stile classico"); return; }
     case "live-open": if (b.dataset.day && wDays().find(d => d.id === b.dataset.day)) S.selDay = b.dataset.day; openLive(); return;
     case "feel": setFeel(b.dataset.ex, b.dataset.f); render(); return;
     case "note": S.noteOpen = S.noteOpen === b.dataset.ex ? null : b.dataset.ex; render(); if (S.noteOpen) setTimeout(() => { const t = document.getElementById("note-" + S.noteOpen); t && t.focus(); }, 30); return;
