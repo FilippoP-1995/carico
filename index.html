@@ -154,6 +154,7 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .wd.today{background:rgba(255,255,255,.1);color:var(--hero-ink)}
 .wd.sel{outline:2px solid var(--hero-a);outline-offset:-2px;color:var(--hero-ink)}
 .wd.future{opacity:.45}
+.wd.now span{text-decoration:underline;text-underline-offset:3px}
 .wd i{display:block;width:18px;height:4px;border-radius:2px;background:var(--hero-track)}
 .wd i.w{background:var(--hero-a)} .wd i.m{background:var(--hero-d)}
 .hs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.1);border-radius:14px;overflow:hidden}
@@ -816,7 +817,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "7.7 · 22 ottobre";
+const APP_VERSION = "7.8 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1439,11 +1440,11 @@ function summaryCard() {
   const names = ["L", "M", "M", "G", "V", "S", "D"];
   const strip = names.map((n, i) => { const d = new Date(ws); d.setDate(ws.getDate() + i); const ds = dstr(d); const L = S.days[ds];
     const w = isSession(L); const m = L && L.m && Object.keys(L.m.eaten || {}).length > 0;
-    return `<button class="wd ${ds === S.date ? "today" : ""} ${ds > S.date ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > S.date ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span><i class="${w ? "w" : ""}"></i><i class="${m ? "m" : ""}"></i></button>`; }).join("");
+    return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span><i class="${w ? "w" : ""}"></i><i class="${m ? "m" : ""}"></i></button>`; }).join("");
   let wkPick = "";
-  if (S.wkSel && wDays().length) { const L = S.days[S.wkSel]; const cur = isSession(L) ? L.w.dayId : null;
+  if (S.wkSel && wDays().length) { const L = S.days[S.wkSel]; const doneIds = sessionsOn(S.wkSel).filter(x => x.finished || x.sets).map(x => x.day.id); const cur = doneIds.length ? doneIds[0] : null; const isOn = id => doneIds.includes(id);
     wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: quale allenamento hai fatto?</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
-      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${cur === d.id ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${cur === d.id ? "✓ " : ""}${esc(d.name)}</button>`).join("")}${cur ? `<button class="wk-o rm" data-act="wk-mark" data-id="">Nessun allenamento${setsDone(L) ? ` (cancella ${setsDone(L)} ${setsDone(L) === 1 ? "serie" : "serie"})` : ""}</button>` : ""}</div></div>`; }
+      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${isOn(d.id) ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${isOn(d.id) ? "✓ " : ""}${esc(d.name)}</button>`).join("")}${cur ? `<button class="wk-o rm" data-act="wk-mark" data-id="">Nessun allenamento${setsDone(L) ? ` (cancella ${setsDone(L)} ${setsDone(L) === 1 ? "serie" : "serie"})` : ""}</button>` : ""}</div></div>`; }
   // frase del giorno
   let insight = "";
   if (pr) insight = `Nuovo record: <b>${esc(pr.name)}</b> ${fmtN(pr.kg)} kg (prima ${fmtN(pr.prev)} kg)`;
@@ -2616,13 +2617,17 @@ document.addEventListener("click", ev => {
     case "sarge": openCoach(); return;
     case "me-tone": { S.profile.user = S.profile.user || {}; S.profile.user.tone = b.dataset.k; store.saveProfile(); render(); toast("Tono del Coach: " + TONES[b.dataset.k].label); return; }
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
-    case "wk-day": S.wkSel = S.wkSel === b.dataset.d ? null : b.dataset.d; if (!wDays().length) { toast("Carica prima una scheda di allenamento"); S.wkSel = null; } render(); return;
+    case "wk-day": { const d = b.dataset.d; if (d > today()) return;
+      if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; S.homeEnter = true; S.wkSel = wDays().length ? d : null; }
+      else S.wkSel = S.wkSel ? null : (wDays().length ? d : null);
+      render(); return; }
     case "wk-close": S.wkSel = null; render(); return;
     case "wk-mark": {
       const d = S.wkSel; if (!d) return; const l = dayLog(d); const id = b.dataset.id; const wd = wDays().find(x => x.id === id);
-      if (!wd) { const n = setsDone(l); l.w = { dayId: null, ex: {}, done: false }; toast(n ? `Tolto: cancellate ${n} ${n === 1 ? "serie registrata" : "serie registrate"}` : "Tolto"); }
-      else { if (l.w.dayId !== wd.id && setsDone(l) > 0) { toast("Quel giorno hai serie registrate di un'altra seduta: tocca prima \"Nessun allenamento\"", 4500); return; } l.w.dayId = wd.id; l.w.dayName = wd.name; l.w.done = true; toast("✅ " + wd.name + " segnato come fatto"); }
-      store.saveDay(d); S.wkSel = null; if (d === S.date) S.selDay = null; render(); return;
+      if (!wd) { const n = setsDone(l) + (l.runs || []).reduce((a, r) => a + Object.values(r.ex || {}).reduce((x, e) => x + (e.s || []).filter(s => s && s.done).length, 0), 0); l.w = { dayId: null, ex: {}, done: false }; delete l.runs; toast(n ? `Tolto: cancellate ${n} ${n === 1 ? "serie registrata" : "serie registrate"}` : "Tolto"); }
+      else if (sessionsOn(d).some(x => x.day.id === wd.id && (x.finished || x.sets))) { toast(wd.name + " è già segnato in questo giorno"); return; }
+      else { useSession(l, wd); l.w.done = true; toast("✅ " + wd.name + " segnato come fatto"); }
+      store.saveDay(d); S.wkSel = null; S.selDay = null; render(); return;
     }
     case "shop-open": openShop(); return;
     case "copy-first": {
