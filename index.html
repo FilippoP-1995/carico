@@ -154,6 +154,10 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .wd.today{background:rgba(255,255,255,.1);color:var(--hero-ink)}
 .wd.sel{outline:2px solid var(--hero-a);outline-offset:-2px;color:var(--hero-ink)}
 .wd.future{opacity:.45}
+.wk-s{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:9px 11px;display:flex;flex-direction:column;gap:4px}
+.wk-sh{font-weight:700;font-size:14px;display:flex;justify-content:space-between;gap:8px}.wk-sh small{font-weight:500;opacity:.7}
+.wk-x{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;opacity:.9}.wk-x b{font-variant-numeric:tabular-nums;text-align:right}
+.wk-add{border:1px dashed rgba(255,255,255,.25);background:none;color:inherit;font:inherit;font-size:13px;font-weight:600;border-radius:99px;padding:7px 12px;align-self:flex-start;opacity:.85}
 .wd.now span{text-decoration:underline;text-underline-offset:3px}
 .wd i{display:block;width:18px;height:4px;border-radius:2px;background:var(--hero-track)}
 .wd i.w{background:var(--hero-a)} .wd i.m{background:var(--hero-d)}
@@ -509,7 +513,8 @@ html.neo-home nav.tabs button[aria-current="page"] svg{filter:drop-shadow(0 0 5p
 @keyframes neoSheen{0%,100%{background-position:120% 0}50%{background-position:-20% 0}}
 .neo-home .hs-hi{background:linear-gradient(90deg,#fff 0%,#a9c6ff 40%,#c7a6ff 70%,#fff 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:neoText 6s linear infinite;letter-spacing:.04em}
 @keyframes neoText{to{background-position:-200% 0}}
-.neo-home .ring .rp{filter:drop-shadow(0 0 5px var(--neo-glow));animation:neoRing 1.2s cubic-bezier(.2,.8,.2,1) both}
+.neo-home .ring .rp{filter:drop-shadow(0 0 5px var(--neo-glow))}
+.neo-home .home-in .ring .rp{animation:neoRing 1.2s cubic-bezier(.2,.8,.2,1) both}
 @keyframes neoRing{from{stroke-dasharray:0 200}}
 .neo-home .ring .rv{text-shadow:0 0 14px rgba(140,180,255,.7);font-size:16px}
 .neo-home .rw::after{content:"";position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle,rgba(120,160,255,.18),transparent 70%);z-index:-1}
@@ -817,7 +822,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "7.8 · 22 ottobre";
+const APP_VERSION = "7.9 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1399,10 +1404,10 @@ function ring(pct, color, label, val) {
 function sessionsOn(date) { // sedute segnate in un giorno (chiuse, affiancate e in corso)
   const l = S.days[date]; if (!l) return []; const out = []; const byId = id => wDays().find(d => d.id === id);
   const cnt = (ex, d) => (d.exercises || []).reduce((n, x) => n + (((ex[x.id] || {}).s) || []).filter(s => s && s.done).length, 0);
-  (l.runs || []).forEach(r => { const d = byId(r.dayId); if (d) out.push({ day: d, sets: cnt(r.ex || {}, d), finished: true }); });
+  (l.runs || []).forEach(r => { const d = byId(r.dayId); if (d) out.push({ day: d, sets: cnt(r.ex || {}, d), finished: true, ex: r.ex || {} }); });
   const w = l.w || {};
-  (w.also || []).forEach(id => { const d = byId(id); if (!d) return; const n = cnt(w.ex || {}, d); const f = (w.doneAlso || []).includes(id); if (n || f) out.push({ day: d, sets: n, finished: f }); });
-  const d = byId(w.dayId); if (d) { const n = cnt(w.ex || {}, d); if (n || w.done) out.push({ day: d, sets: n, finished: !!w.done, active: true }); }
+  (w.also || []).forEach(id => { const d = byId(id); if (!d) return; const n = cnt(w.ex || {}, d); const f = (w.doneAlso || []).includes(id); if (n || f) out.push({ day: d, sets: n, finished: f, ex: w.ex || {} }); });
+  const d = byId(w.dayId); if (d) { const n = cnt(w.ex || {}, d); if (n || w.done) out.push({ day: d, sets: n, finished: !!w.done, active: true, ex: w.ex || {} }); }
   return out;
 }
 function homeSession() { // la seduta da mostrare in Home: quella in corso, altrimenti l'ultima fatta oggi, altrimenti quella prevista
@@ -1442,9 +1447,14 @@ function summaryCard() {
     const w = isSession(L); const m = L && L.m && Object.keys(L.m.eaten || {}).length > 0;
     return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span><i class="${w ? "w" : ""}"></i><i class="${m ? "m" : ""}"></i></button>`; }).join("");
   let wkPick = "";
-  if (S.wkSel && wDays().length) { const L = S.days[S.wkSel]; const doneIds = sessionsOn(S.wkSel).filter(x => x.finished || x.sets).map(x => x.day.id); const cur = doneIds.length ? doneIds[0] : null; const isOn = id => doneIds.includes(id);
-    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: quale allenamento hai fatto?</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
-      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${isOn(d.id) ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${isOn(d.id) ? "✓ " : ""}${esc(d.name)}</button>`).join("")}${cur ? `<button class="wk-o rm" data-act="wk-mark" data-id="">Nessun allenamento${setsDone(L) ? ` (cancella ${setsDone(L)} ${setsDone(L) === 1 ? "serie" : "serie"})` : ""}</button>` : ""}</div></div>`; }
+  if (S.wkSel && wDays().length) { // solo consultazione: mostra cosa hai fatto quel giorno, non cancella niente
+    const SS = sessionsOn(S.wkSel).filter(x => x.finished || x.sets); const seen = new Set(); const list = SS.filter(x => !seen.has(x.day.id) && seen.add(x.day.id));
+    const detail = x => (x.day.exercises || []).map(e => { const sd = ((x.ex[e.id] || {}).s || []).filter(z => z && z.done); return sd.length ? `<div class="wk-x"><span>${esc(e.name)}</span><b>${sd.map(z => `${esc(z.kg || "–")}×${esc(z.reps || "–")}`).join(" · ")}</b></div>` : ""; }).join("");
+    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>${list.length ? "" : ": nessun allenamento registrato"}</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
+      ${list.map(x => `<div class="wk-s"><div class="wk-sh">✓ ${esc(x.day.name)}<small>${x.sets ? x.sets + " serie" : "segnata come fatta"}</small></div>${detail(x)}</div>`).join("")}
+      ${S.wkAdd ? `<div class="wk-opts"><span class="small" style="opacity:.8;width:100%">Segna come fatta (non tocca quello che hai già registrato):</span>${wDays().filter(d => !list.some(x => x.day.id === d.id)).map(d => `<button class="wk-o" data-act="wk-mark" data-id="${d.id}">${esc(d.name)}</button>`).join("")}</div>`
+        : `<button class="wk-add" data-act="wk-add">＋ Segna una seduta come fatta</button>`}
+    </div>`; }
   // frase del giorno
   let insight = "";
   if (pr) insight = `Nuovo record: <b>${esc(pr.name)}</b> ${fmtN(pr.kg)} kg (prima ${fmtN(pr.prev)} kg)`;
@@ -2186,6 +2196,7 @@ function vPiano() {
 
     <div class="card stack">
       <span class="eyebrow">AI e dati</span>
+      ${snapsList().length ? `<details><summary class="small" style="cursor:pointer;font-weight:600">🛟 Recupera allenamenti cancellati per errore</summary><div class="stack" style="margin-top:8px;gap:6px"><span class="small muted">L'app salva da sola una copia degli allenamenti ogni giorno (ultimi 7). Il recupero rimette solo quello che manca, senza toccare il resto.</span>${snapsList().map((sn, i) => `<button class="btn sm" data-act="snap-rec" data-i="${i}">Copia di ${esc(fmtDay(sn.d, { weekday: "long", day: "numeric", month: "short" }))}</button>`).join("")}</div></details>` : ""}
       ${AI.sample ? `<p class="small muted" style="margin:0">Lettura delle schede, macro e varianti usano il tuo account Claude.</p>`
       : `<p class="small muted" style="margin:0">Fuori da Claude l'AI funziona con una chiave API Anthropic personale (si paga a consumo, pochi centesimi a scheda letta). La chiave resta solo su questo dispositivo.</p>
         <form class="row" data-form="apikey"><input class="in" id="keyIn" type="password" autocomplete="off" placeholder="${key ? "Chiave salvata ••••" + esc(key.slice(-4)) : "sk-ant-…"}" aria-label="Chiave API Anthropic"><button class="btn">Salva</button></form>
@@ -2381,6 +2392,18 @@ const EXAMPLE = {
 };
 
 /* ---------- backup ---------- */
+function autoSnapshot() { // all'apertura del giorno salvo una copia degli allenamenti: serve a recuperare dati cancellati per errore
+  try { const k = "carico.snaps"; const arr = JSON.parse(lsGet(k) || "[]"); const t = today(); if (arr[0] && arr[0].d === t) return;
+    const days = {}; for (const d in S.days) { const l = S.days[d]; if (isSession(l)) days[d] = { w: l.w, runs: l.runs }; }
+    arr.unshift({ d: t, days }); lsSet(k, JSON.stringify(arr.slice(0, 7))); } catch (e) {}
+}
+function snapsList() { try { return JSON.parse(lsGet("carico.snaps") || "[]"); } catch (e) { return []; } }
+function recoverFrom(i) { // rimette gli allenamenti che nella copia c'erano e ora mancano (non tocca il resto)
+  const sn = snapsList()[i]; if (!sn) return 0; let n = 0;
+  const cnt = l => l ? setsDone({ w: l.w || { ex: {} } }) + (l.runs || []).reduce((a, r) => a + setsDone({ w: { ex: r.ex || {} } }), 0) : 0;
+  for (const d in sn.days) { const cur = S.days[d]; const old = sn.days[d]; if (cnt(old) > cnt(cur)) { const l = dayLog(d); l.w = JSON.parse(JSON.stringify(old.w)); if (old.runs) l.runs = JSON.parse(JSON.stringify(old.runs)); else delete l.runs; store.saveDay(d); n++; } }
+  return n;
+}
 async function exportBackup() {
   const data = JSON.stringify({ app: "carico", v: 2, exported: new Date().toISOString(), profile: S.profile, days: S.days });
   const filename = "carico-backup-" + today() + ".json";
@@ -2618,16 +2641,17 @@ document.addEventListener("click", ev => {
     case "me-tone": { S.profile.user = S.profile.user || {}; S.profile.user.tone = b.dataset.k; store.saveProfile(); render(); toast("Tono del Coach: " + TONES[b.dataset.k].label); return; }
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
     case "wk-day": { const d = b.dataset.d; if (d > today()) return;
-      if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; S.homeEnter = true; S.wkSel = wDays().length ? d : null; }
+      if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; S.wkSel = wDays().length ? d : null; }
       else S.wkSel = S.wkSel ? null : (wDays().length ? d : null);
       render(); return; }
-    case "wk-close": S.wkSel = null; render(); return;
+    case "wk-close": S.wkSel = null; S.wkAdd = false; render(); return;
+    case "wk-add": S.wkAdd = true; render(); return;
     case "wk-mark": {
       const d = S.wkSel; if (!d) return; const l = dayLog(d); const id = b.dataset.id; const wd = wDays().find(x => x.id === id);
-      if (!wd) { const n = setsDone(l) + (l.runs || []).reduce((a, r) => a + Object.values(r.ex || {}).reduce((x, e) => x + (e.s || []).filter(s => s && s.done).length, 0), 0); l.w = { dayId: null, ex: {}, done: false }; delete l.runs; toast(n ? `Tolto: cancellate ${n} ${n === 1 ? "serie registrata" : "serie registrate"}` : "Tolto"); }
+      if (!wd) return;
       else if (sessionsOn(d).some(x => x.day.id === wd.id && (x.finished || x.sets))) { toast(wd.name + " è già segnato in questo giorno"); return; }
       else { useSession(l, wd); l.w.done = true; toast("✅ " + wd.name + " segnato come fatto"); }
-      store.saveDay(d); S.wkSel = null; S.selDay = null; render(); return;
+      store.saveDay(d); S.wkAdd = false; S.selDay = null; render(); return;
     }
     case "shop-open": openShop(); return;
     case "copy-first": {
@@ -2747,6 +2771,7 @@ document.addEventListener("click", ev => {
     case "import-cancel": S.pending = null; S.confirmRepl = false; render(); return;
     case "key-del": lsSet("carico.apikey", null); toast("Chiave rimossa"); render(); return;
     case "backup-out": exportBackup(); return;
+    case "snap-rec": { const n = recoverFrom(+b.dataset.i); toast(n ? `Recuperati gli allenamenti di ${n} ${n === 1 ? "giorno" : "giorni"}` : "In questa copia non c'è niente in più da recuperare", 4000); render(); return; }
     case "backup-in": $("#backupIn").click(); return;
     case "day-add": P.workout.days.push({ id: uid(), name: "Giorno " + String.fromCharCode(65 + P.workout.days.length), exercises: [{ id: uid(), name: "", sets: 3, reps: "10", rest: 90, load: "", notes: "" }] }); break;
     case "day-del": P.workout.days = P.workout.days.filter(d => d.id !== b.dataset.d); break;
@@ -4216,6 +4241,7 @@ if (ntSupported()) {
     if (S.tab === "piano") render();
   }
   setTimeout(autoExtract, 1200);
+  setTimeout(autoSnapshot, 2500);
   setTimeout(() => { try { autoSplit(); autoSuperset(); render(); } catch (e) { console.warn(e); } }, 900);
   document.addEventListener("click", function wl() { try { navigator.wakeLock && navigator.wakeLock.request("screen").catch(() => {}); } catch (e) {} }, { once: true });
 })();
