@@ -710,7 +710,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.1 · 21 ottobre";
+const APP_VERSION = "6.2 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1357,6 +1357,27 @@ function ssGroup(day, i) { // indici degli esercizi in super serie con i (eserci
   let a = i, b = i; while (a > 0 && X[a - 1].ss === g) a--; while (b < X.length - 1 && X[b + 1].ss === g) b++;
   const r = []; for (let k = a; k <= b; k++) r.push(k); return r;
 }
+function splitCombined(X) { // "Curl machine + Estensioni machine" → due esercizi collegati in super serie
+  const out = []; let n = 0;
+  (X || []).forEach(ex => {
+    const parts = String(ex.name || "").split(/\s+\+\s+|\s*\+\s*(?=[A-ZÀ-Ú])/).map(x => x.trim()).filter(Boolean);
+    const ok = parts.length >= 2 && parts.length <= 4 && parts.every(x => x.length >= 4 && /[a-zà-ú]{3}/i.test(x) && !/^\d/.test(x));
+    if (!ok) { out.push(ex); return; }
+    const reps = String(ex.reps || "").split(/\s*\+\s*/); const g = ex.ss || uid().slice(0, 6);
+    parts.forEach((nm, k) => {
+      const x = { ...ex, id: k ? uid() : ex.id, name: nm, reps: reps.length === parts.length ? reps[k] : ex.reps, ss: g, notes: k ? "" : ex.notes, rest: k === parts.length - 1 ? ex.rest : "" };
+      delete x.muscles; x.muscleTried = false; out.push(x);
+    });
+    n++;
+  });
+  return { list: out, n };
+}
+function autoSplit() { // una volta sola sulle schede già caricate
+  const P = plan(); if (!P.workout || P.workout.ssSplit) return; P.workout.ssSplit = true; let n = 0;
+  (P.workout.days || []).forEach(d => { const r = splitCombined(d.exercises); d.exercises = r.list; n += r.n; });
+  if (n) { toast(`🔗 Ho diviso ${n === 1 ? "una super serie" : n + " super serie"} in esercizi separati: ora segni il peso di ognuno`, 5000); setTimeout(tagMuscles, 300); }
+  store.saveProfile();
+}
 function autoSuperset() { // una volta sola: riconosce le super serie già scritte nelle note o nei nomi (A1/A2)
   const P = plan(); if (!P.workout || P.workout.ssAuto) return; P.workout.ssAuto = true; let n = 0;
   const RX = /super\s?-?seri|superset|\bss\b|in serie con|abbinat/i;
@@ -1933,7 +1954,7 @@ Regole:
 - rest è il recupero in secondi come numero, copiato ESATTAMENTE dal documento: 60" o 60'' o 60 sec = 60; 1' = 60; 1'30" = 90; 2' = 120; per un intervallo (es. 60-90") usa il valore più basso. null se non indicato.
 - Copia tutti i numeri (serie, ripetizioni, recuperi, carichi, grammi) esattamente come scritti: non stimare, non arrotondare, non "correggere". Se un numero non si legge bene, rileggilo nel contesto (i recuperi sono quasi sempre multipli di 15 secondi).
 - load è il carico o l'intensità se indicati (es. "70%", "RPE 8", "20 kg"), altrimenti "".
-- SUPER SERIE: se più esercizi vanno fatti di fila senza recupero tra loro (superserie, "SS", "+", A1/A2, giant set, circuito, esercizi uniti da una graffa), dai a tutti lo stesso valore "ss" ("A" per la prima super serie del giorno, "B" per la seconda…), nell'ordine in cui vanno eseguiti. Gli esercizi singoli hanno "ss": "". Il recupero indicato dopo il giro va sull'ultimo esercizio del gruppo.
+- SUPER SERIE: se più esercizi vanno fatti di fila senza recupero tra loro (superserie, "SS", "+", A1/A2, giant set, circuito, esercizi uniti da una graffa), dai a tutti lo stesso valore "ss" ("A" per la prima super serie del giorno, "B" per la seconda…), nell'ordine in cui vanno eseguiti. Gli esercizi singoli hanno "ss": "". Ogni esercizio della super serie è un elemento separato con il suo nome, le sue serie e ripetizioni: non unire due esercizi in uno solo con "+". Il recupero indicato dopo il giro va sull'ultimo esercizio del gruppo.
 - Tempo sotto tensione, tecnica o varianti vanno in notes dell'esercizio.
 - Se la dieta ha giornate diverse (allenamento/riposo, giorni della settimana) o più opzioni numerate per i pasti (Variante/Opzione 1, 2, 3), crea una variante per ciascuna, con lo stesso elenco di pasti e gli stessi nomi dei pasti (Colazione, Spuntino, Pranzo…); i pasti che non cambiano vanno ripetuti uguali. Altrimenti una sola variante chiamata "Giornata tipo".
 - Alternative tra alimenti ("oppure", "in alternativa") vanno in alt.
@@ -1945,6 +1966,7 @@ function normalizePlan(r) {
   const out = {};
   if (r && r.workout && Array.isArray(r.workout.days) && r.workout.days.length) {
     out.workout = { days: r.workout.days.map((d, i) => ({ id: uid(), name: String(d.name || "Giorno " + String.fromCharCode(65 + i)), exercises: (d.exercises || []).filter(e => e && e.name).map(e => ({ id: uid(), name: String(e.name), sets: parseInt(e.sets) || 3, reps: e.reps == null ? "" : String(e.reps), rest: parseInt(e.rest) || "", load: e.load ? String(e.load) : "", ss: e.ss ? String(e.ss).slice(0, 12) : "", notes: e.notes ? String(e.notes) : "" })) })) };
+    out.workout.days.forEach(d => { d.exercises = splitCombined(d.exercises).list; }); out.workout.ssSplit = true;
   }
   if (r && r.diet && Array.isArray(r.diet.variants) && r.diet.variants.length) {
     const t = r.diet.targets || {};
@@ -3745,7 +3767,7 @@ if (ntSupported()) {
     if (S.tab === "piano") render();
   }
   setTimeout(autoExtract, 1200);
-  setTimeout(() => { try { autoSuperset(); render(); } catch (e) {} }, 900);
+  setTimeout(() => { try { autoSplit(); autoSuperset(); render(); } catch (e) { console.warn(e); } }, 900);
   document.addEventListener("click", function wl() { try { navigator.wakeLock && navigator.wakeLock.request("screen").catch(() => {}); } catch (e) {} }, { once: true });
 })();
 })();
