@@ -723,7 +723,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.8 · 21 ottobre";
+const APP_VERSION = "6.9 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3430,6 +3430,7 @@ function coachContext() {
   const U = S.profile.user || {};
   L.push(U.sex === "f" ? "L'utente è una DONNA: rivolgiti a lei al femminile, accordando aggettivi, participi e insulti al femminile (es. \"sei pronta\", \"smidollata\", \"mollacciona\")." : "L'utente è un uomo: rivolgiti a lui al maschile.");
   if (U.name || U.goal || U.targetKg) L.push(`Utente: ${U.name || "senza nome"}${U.goal ? ". Obiettivo: " + (GOALS[U.goal] || U.goal) : ""}${num(U.targetKg) ? ". Peso obiettivo: " + fmtN(num(U.targetKg)) + " kg" : ""}. Chiamalo per nome ogni tanto, senza esagerare.`);
+  { const F = (S.profile.foods || []).filter(f => f.per100).slice(0, 60); if (F.length) L.push("ALIMENTI SALVATI DALL'UTENTE (da etichette e codici a barre, valori per 100 g: kcal/proteine/carboidrati/grassi; usali quando ne parla, senza chiedergli di rimandare l'etichetta):\n" + F.map(f => `- ${f.name}: ${fmtN(f.per100.kcal)} kcal, P ${fmtN(f.per100.p)} g, C ${fmtN(f.per100.c)} g, G ${fmtN(f.per100.f)} g${f.unit ? ` (1 ${f.unit.n} = ${fmtN(f.unit.g)} g)` : ""}`).join("\n")); }
   { const MEM = S.profile.mem || []; if (MEM.length) L.push("MEMORIA DEL COACH (cose che l'utente ti ha detto nelle chat precedenti: tienine conto quando servono, senza elencarle ogni volta):\n" + MEM.map(m => "- " + m.t + " (" + m.d + ")").join("\n")); }
   L.push("Data e ora: " + now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ", " + pad(now.getHours()) + ":" + pad(now.getMinutes()));
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
@@ -3588,6 +3589,28 @@ function memViewHtml() {
 function openCoach() { $("#coachBg").hidden = false; ovOpen("coach"); renderCoach(); }
 function closeCoach() { $("#coachBg").hidden = true; ovClose("coach"); }
 document.addEventListener("click", ev => { if (ev.target.id === "coachBg") closeCoach(); });
+function labelsFromPhotos(blobs) { // etichette nutrizionali mandate in chat: salvate tra i miei alimenti, così il coach le ricorda
+  if (!blobs.length || !AI.ready() || !AI.canImages()) return;
+  MEM_BUSY = MEM_BUSY.then(async () => {
+    const r = await AI.json(`Guarda queste foto. Per OGNI foto che mostra un'etichetta nutrizionale (tabella "Valori nutrizionali") di un prodotto, leggi i valori PER 100 g (o 100 ml): kcal (non kJ), proteine, carboidrati totali, grassi totali. Se c'è solo il valore per porzione, calcolalo per 100 g. Per il nome usa marca e prodotto se si vedono, altrimenti una descrizione breve. Se è indicata una porzione riportala.
+Ignora le foto che non sono etichette nutrizionali (piatti, fisico, schede…).
+Rispondi solo con JSON: {"labels":[{"name":"...","kcal":0,"p":0,"c":0,"f":0,"portion_name":null,"portion_g":null}]} (lista vuota se non ci sono etichette).`, { images: blobs, maxTokens: 1500 }).catch(() => null);
+    const L = (r && Array.isArray(r.labels) ? r.labels : []).filter(x => x && x.name && num(x.kcal) != null);
+    if (!L.length) return;
+    const names = [];
+    L.forEach(x => {
+      const food = { id: uid(), name: String(x.name).slice(0, 80), from: "label", per100: {} };
+      MK.forEach(k => food.per100[k] = num(x[k]) || 0);
+      if (num(x.portion_g)) food.unit = { n: String(x.portion_name || "porzione").slice(0, 30), g: num(x.portion_g) };
+      const ex = (S.profile.foods || []).find(f => norm(f.name) === norm(food.name));
+      if (ex) { ex.per100 = food.per100; if (food.unit) ex.unit = food.unit; }
+      else S.profile.foods = [food, ...(S.profile.foods || [])].slice(0, 300);
+      names.push(food.name);
+    });
+    store.saveProfile();
+    toast("🏷️ Salvato tra i tuoi alimenti: " + names.join(", ").slice(0, 70), 3500);
+  });
+}
 let MEM_BUSY = Promise.resolve();
 function memUpdate(userText, answer) { // dopo ogni scambio: il coach decide cosa ricordare (modello veloce, in background)
   if (!AI.ready() || !userText || userText.length < 4) return;
@@ -3646,6 +3669,7 @@ async function coachSend(text, opts = {}) {
   if (opts.check && !ans.err && ans.content && ans.content.length > 80) { S.profile.checks = [{ date: today(), text: ans.content }, ...(S.profile.checks || []).filter(c => c.date !== today())].slice(0, 30); store.saveProfile(); render(); }
   saveChat(); if (!$("#coach").hidden) renderCoach();
   if (!ans.err && ans.content && !opts.check) memUpdate(opts.label ? "" : text, ans.content);
+  if (!ans.err && att.length) labelsFromPhotos(att.map(a => a.blob).filter(Boolean));
 }
 // icona fluttuante trascinabile: un tocco apre il coach, trascinando la sposti (posizione ricordata)
 (function initFab() {
