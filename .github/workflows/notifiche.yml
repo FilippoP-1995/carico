@@ -13,6 +13,8 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CARICO_CODE: ${{ secrets.CARICO_CODE }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -51,6 +53,16 @@ jobs:
           URL=$(grep -o 'https://[a-z0-9.-]*\.workers\.dev' ../deploy.log | head -1)
           if [ -z "$URL" ]; then echo "::error::Nessun indirizzo workers.dev: apri una volta Workers & Pages su dash.cloudflare.com per scegliere il sottodominio, poi rilancia"; exit 1; fi
           echo "URL=$URL" >> $GITHUB_ENV
+      - name: Chiave AI condivisa
+        if: steps.chk.outputs.ok == '1'
+        working-directory: worker
+        run: |
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || unset CLOUDFLARE_ACCOUNT_ID
+          if [ -n "$ANTHROPIC_API_KEY" ] && [ -n "$CARICO_CODE" ]; then
+            printf "%s" "$ANTHROPIC_API_KEY" | npx --yes wrangler@4 secret put ANTHROPIC_KEY
+            printf "%s" "$CARICO_CODE" | npx --yes wrangler@4 secret put CARICO_CODE
+            echo "Chiave AI condivisa attiva"
+          else echo "::notice::Per condividere il coach aggiungi i secret ANTHROPIC_API_KEY e CARICO_CODE"; fi
       - name: Collega l'app
         if: steps.chk.outputs.ok == '1'
         run: |

@@ -822,7 +822,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "7.9 · 22 ottobre";
+const APP_VERSION = "8.0 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -929,15 +929,26 @@ function showMode() {
 const AI = {
   sample: null, limits: null,
   key() { return lsGet("carico.apikey") || ""; },
-  ready() { return !!(this.sample || this.key()); },
-  canImages() { return this.sample ? !!(this.limits && this.limits.images) : !!this.key(); },
+  code() { return lsGet("carico.code") || ""; }, // codice invito: l'AI passa dal server di chi ha condiviso la chiave
+  devId() { let d = lsGet("carico.dev"); if (!d) { d = Array.from(crypto.getRandomValues(new Uint8Array(10)), b => "abcdefghijklmnopqrstuvwxyz0123456789"[b % 36]).join(""); lsSet("carico.dev", d); } return d; },
+  ready() { return !!(this.sample || this.key() || this.code()); },
+  canImages() { return this.sample ? !!(this.limits && this.limits.images) : !!(this.key() || this.code()); },
+  async post(body, signal) { // chiave personale → Anthropic diretto; altrimenti codice invito → server condiviso
+    const key = this.key();
+    if (key) return fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal, headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }, body: JSON.stringify(body) });
+    const url = await ntUrl(); if (!url) throw { code: "no_server" };
+    return fetch(url + "/ai", { method: "POST", signal, headers: { "content-type": "application/json", "X-Carico-Code": this.code(), "X-Carico-Id": this.devId() }, body: JSON.stringify(body) });
+  },
+  async errOf(res) { let detail = "", ej = {}; try { ej = await res.json(); detail = (ej.error && ej.error.message) || (typeof ej.error === "string" ? ej.error : ""); } catch (e) {}
+    if (!this.key()) { if (ej.error === "bad_code") return { code: "bad_code" }; if (ej.error === "daily_limit" || ej.error === "daily_limit_total") return { code: "daily_limit" }; if (ej.error === "not_configured") return { code: "not_configured" }; }
+    return null; },
   maxImages() { return this.sample ? ((this.limits && this.limits.images && this.limits.images.maxCount) || 5) : 8; },
   async json(prompt, { images = [], docs = [], tier = "default", signal, maxTokens = 8000 } = {}) {
     if (this.sample) {
       const o = { modelTier: tier }; if (signal) o.signal = signal; if (images.length) o.images = images;
       return this.sample.json(prompt, o);
     }
-    const key = this.key(); if (!key) throw { code: "no_ai" };
+    if (!this.key() && !this.code()) throw { code: "no_ai" };
     const content = [];
     for (const d of docs) content.push({ type: "document", source: { type: "base64", media_type: "application/pdf", data: await fileB64(d) } });
     for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } });
@@ -946,11 +957,9 @@ const AI = {
     const tool = { name: "risposta", description: "Restituisce il risultato strutturato richiesto.", input_schema: { type: "object", additionalProperties: true } };
     let res;
     try {
-      res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal,
-        headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-        body: JSON.stringify({ model: tier === "quick" ? "claude-haiku-5-5" : "claude-sonnet-5-5", max_tokens: maxTokens, tools: [tool], tool_choice: { type: "auto" }, messages: [{ role: "user", content }] }) });
-    } catch (e) { throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
-    if (!res.ok) {
+      res = await this.post({ model: tier === "quick" ? "claude-haiku-5-5" : "claude-sonnet-5-5", max_tokens: maxTokens, tools: [tool], tool_choice: { type: "auto" }, messages: [{ role: "user", content }] }, signal);
+    } catch (e) { if (e && e.code) throw e; throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
+    if (!res.ok) { const pe = await this.errOf(res.clone()); if (pe) throw pe;
       let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {}
       throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : res.status === 413 ? "prompt_too_large" : res.status === 400 && /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail };
     }
@@ -990,6 +999,10 @@ function aiErr(e) {
   const m = { cancelled: null,
     no_ai: "Per usare l'AI fuori da Claude inserisci la tua chiave API in Piano → AI e dati.",
     bad_key: "La chiave API non è valida. Controllala in Piano → AI e dati.",
+    bad_code: "Codice invito non valido. Controllalo in Piano → AI e dati.",
+    daily_limit: "Per oggi hai finito le richieste al coach condiviso. Riprova domani.",
+    not_configured: "Il coach condiviso non è ancora attivo: chiedi a chi ti ha dato il codice.",
+    no_server: "Il server non è raggiungibile. Riprova tra poco.",
     network: "Nessuna connessione. Riprova.",
     not_granted: "Hai negato l'accesso a Claude per questa app.",
     rate_limited: "Troppe richieste o limite di utilizzo raggiunto. Riprova tra poco.",
@@ -1447,13 +1460,16 @@ function summaryCard() {
     const w = isSession(L); const m = L && L.m && Object.keys(L.m.eaten || {}).length > 0;
     return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span><i class="${w ? "w" : ""}"></i><i class="${m ? "m" : ""}"></i></button>`; }).join("");
   let wkPick = "";
-  if (S.wkSel && wDays().length) { // solo consultazione: mostra cosa hai fatto quel giorno, non cancella niente
-    const SS = sessionsOn(S.wkSel).filter(x => x.finished || x.sets); const seen = new Set(); const list = SS.filter(x => !seen.has(x.day.id) && seen.add(x.day.id));
-    const detail = x => (x.day.exercises || []).map(e => { const sd = ((x.ex[e.id] || {}).s || []).filter(z => z && z.done); return sd.length ? `<div class="wk-x"><span>${esc(e.name)}</span><b>${sd.map(z => `${esc(z.kg || "–")}×${esc(z.reps || "–")}`).join(" · ")}</b></div>` : ""; }).join("");
-    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>${list.length ? "" : ": nessun allenamento registrato"}</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
-      ${list.map(x => `<div class="wk-s"><div class="wk-sh">✓ ${esc(x.day.name)}<small>${x.sets ? x.sets + " serie" : "segnata come fatta"}</small></div>${detail(x)}</div>`).join("")}
-      ${S.wkAdd ? `<div class="wk-opts"><span class="small" style="opacity:.8;width:100%">Segna come fatta (non tocca quello che hai già registrato):</span>${wDays().filter(d => !list.some(x => x.day.id === d.id)).map(d => `<button class="wk-o" data-act="wk-mark" data-id="${d.id}">${esc(d.name)}</button>`).join("")}</div>`
-        : `<button class="wk-add" data-act="wk-add">＋ Segna una seduta come fatta</button>`}
+  if (S.wkSel && wDays().length) { // tocco una seduta = la assegno a quel giorno; le serie registrate restano tutte salvate
+    const L = S.days[S.wkSel]; const w = (L && L.w) || {};
+    const asg = (w.dayId && (w.done || setsFor(L, wDays().find(d => d.id === w.dayId)) > 0)) ? w.dayId : ((sessionsOn(S.wkSel).filter(x => x.finished || x.sets).slice(-1)[0] || {}).day || {}).id || null;
+    const ad = asg && wDays().find(d => d.id === asg);
+    const ss = asg ? sessionsOn(S.wkSel).filter(x => x.day.id === asg) : [];
+    const ex = {}; ss.forEach(x => Object.assign(ex, x.ex));
+    const detail = ad ? (ad.exercises || []).map(e => { const sd = ((ex[e.id] || {}).s || []).filter(z => z && z.done); return sd.length ? `<div class="wk-x"><span>${esc(e.name)}</span><b>${sd.map(z => `${esc(z.kg || "–")}×${esc(z.reps || "–")}`).join(" · ")}</b></div>` : ""; }).join("") : "";
+    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: quale allenamento hai fatto?</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
+      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${asg === d.id ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${asg === d.id ? "✓ " : ""}${esc(d.name)}</button>`).join("")}</div>
+      ${detail ? `<div class="wk-s">${detail}</div>` : ""}
     </div>`; }
   // frase del giorno
   let insight = "";
@@ -2200,7 +2216,10 @@ function vPiano() {
       ${AI.sample ? `<p class="small muted" style="margin:0">Lettura delle schede, macro e varianti usano il tuo account Claude.</p>`
       : `<p class="small muted" style="margin:0">Fuori da Claude l'AI funziona con una chiave API Anthropic personale (si paga a consumo, pochi centesimi a scheda letta). La chiave resta solo su questo dispositivo.</p>
         <form class="row" data-form="apikey"><input class="in" id="keyIn" type="password" autocomplete="off" placeholder="${key ? "Chiave salvata ••••" + esc(key.slice(-4)) : "sk-ant-…"}" aria-label="Chiave API Anthropic"><button class="btn">Salva</button></form>
-        ${key ? `<button class="btn ghost sm" data-act="key-del">Rimuovi chiave</button>` : `<a class="small" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--accent)">Crea una chiave su console.anthropic.com</a>`}`}
+        ${key ? `<button class="btn ghost sm" data-act="key-del">Rimuovi chiave</button>` : `<a class="small" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--accent)">Crea una chiave su console.anthropic.com</a>`}
+        ${key ? "" : `<div class="stack" style="gap:6px;border-top:1px solid var(--line);padding-top:10px"><span class="small" style="font-weight:700">🤝 Hai un codice invito?</span><span class="small muted">Se un amico ti ha dato il suo codice, puoi usare il suo coach senza chiave tua.</span>
+          <form class="row" data-form="invite"><input class="in" id="inviteIn" autocomplete="off" autocapitalize="off" placeholder="${AI.code() ? "Codice salvato ✓" : "Codice invito"}" aria-label="Codice invito"><button class="btn">Salva</button></form>
+          ${AI.code() ? `<button class="btn ghost sm" data-act="code-del">Togli il codice</button>` : ""}</div>`}`}
       <p class="small muted" style="margin:0">${store.mode === "cloud" ? "Piano e allenamenti sono salvati nel tuo account Claude: li ritrovi da qualsiasi dispositivo. Sono privati." : "I dati sono salvati su questo dispositivo. Aggiungi l'app alla schermata Home e fai ogni tanto un backup."}</p>
       <p class="small muted" style="margin:0">Versione dell'app: <b>${APP_VERSION}</b></p>
       <div class="row"><button class="btn sm" style="flex:1" data-act="backup-out">Esporta backup</button><button class="btn sm" style="flex:1" data-act="backup-in">Importa backup</button></div>
@@ -2317,7 +2336,7 @@ async function handleFiles(files) {
   files = Array.from(files || []); if (!files.length) return;
   const maxImgs = AI.maxImages();
   const imgs = []; let text = ""; const docs = [];
-  const nativePdf = !AI.sample && !!AI.key(); // con la chiave API il PDF viene letto direttamente, testo compreso
+  const nativePdf = !AI.sample && !!(AI.key() || AI.code()); // con la chiave API il PDF viene letto direttamente, testo compreso
   try {
     S.importBusy = true; setImport("Preparo i file…");
     for (const f of files) {
@@ -2565,6 +2584,10 @@ document.addEventListener("submit", ev => {
     if (!any) { toast("Inserisci almeno una misura in cm"); return; }
     S.profile.measures = (S.profile.measures || []).filter(m => m.d !== S.date).concat(e); store.saveProfile(); S.measOpen = false; render(); toast("📏 Misure salvate");
   }
+  else if (f.dataset.form === "invite") {
+    const c = $("#inviteIn", f).value.trim(); if (c.length < 4) { toast("Scrivi il codice invito"); return; }
+    lsSet("carico.code", c); toast("Codice salvato: il coach è attivo 🤝"); render(); setTimeout(autoExtract, 500);
+  }
   else if (f.dataset.form === "apikey") {
     const k = $("#keyIn", f).value.trim();
     if (!/^sk-ant-/.test(k)) { toast("La chiave inizia con sk-ant-"); return; }
@@ -2649,8 +2672,14 @@ document.addEventListener("click", ev => {
     case "wk-mark": {
       const d = S.wkSel; if (!d) return; const l = dayLog(d); const id = b.dataset.id; const wd = wDays().find(x => x.id === id);
       if (!wd) return;
-      else if (sessionsOn(d).some(x => x.day.id === wd.id && (x.finished || x.sets))) { toast(wd.name + " è già segnato in questo giorno"); return; }
-      else { useSession(l, wd); l.w.done = true; toast("✅ " + wd.name + " segnato come fatto"); }
+      else {
+        const prev = l.w.dayId; useSession(l, wd); l.w.done = true;
+        if (prev && prev !== wd.id) { // la seduta di prima non è più quella del giorno, ma le sue serie restano salvate
+          l.w.doneAlso = (l.w.doneAlso || []).filter(x => x !== prev);
+          const pd = wDays().find(x => x.id === prev); if (!pd || setsFor({ w: { ex: l.w.ex } }, pd) === 0) l.w.also = (l.w.also || []).filter(x => x !== prev);
+        }
+        toast("✅ " + wd.name + " assegnata a " + fmtDay(d, { weekday: "long" }));
+      }
       store.saveDay(d); S.wkAdd = false; S.selDay = null; render(); return;
     }
     case "shop-open": openShop(); return;
@@ -2769,6 +2798,7 @@ document.addEventListener("click", ev => {
     }
     case "arch-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per eliminare"; return; } S.profile.archive = (S.profile.archive || []).filter(x => x.id !== b.dataset.id); store.saveProfile(); render(); return; }
     case "import-cancel": S.pending = null; S.confirmRepl = false; render(); return;
+    case "code-del": lsSet("carico.code", null); toast("Codice tolto"); render(); return;
     case "key-del": lsSet("carico.apikey", null); toast("Chiave rimossa"); render(); return;
     case "backup-out": exportBackup(); return;
     case "snap-rec": { const n = recoverFrom(+b.dataset.i); toast(n ? `Recuperati gli allenamenti di ${n} ${n === 1 ? "giorno" : "giorni"}` : "In questa copia non c'è niente in più da recuperare", 4000); render(); return; }
@@ -3799,17 +3829,15 @@ AI.chat = async function (turns, { onText, signal, images = [] } = {}) {
     const r = await this.sample(input, o);
     return r.text;
   }
-  const key = this.key(); if (!key) throw { code: "no_ai" };
+  if (!this.key() && !this.code()) throw { code: "no_ai" };
   const msgs = []; turns.forEach(m => { const last = msgs[msgs.length - 1]; if (last && last.role === m.role) last.content += "\n\n" + m.content; else msgs.push({ role: m.role, content: m.content }); });
   while (msgs.length && msgs[0].role !== "user") msgs.shift();
   if (images.length && msgs.length) { const last = msgs[msgs.length - 1]; const content = []; for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } }); content.push({ type: "text", text: last.content }); last.content = content; }
   let res;
   try {
-    res = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal,
-      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
-      body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 2000, stream: true, system: ctx, messages: msgs }) });
-  } catch (e) { throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
-  if (!res.ok) { let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {} throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail }; }
+    res = await this.post({ model: "claude-sonnet-5-5", max_tokens: 2000, stream: true, system: ctx, messages: msgs }, signal);
+  } catch (e) { if (e && e.code) throw e; throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
+  if (!res.ok) { const pe = await this.errOf(res.clone()); if (pe) throw pe; let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {} throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail }; }
   let text = "";
   if (!res.body || !res.body.getReader) { const j = await res.json(); text = (j.content || []).filter(x => x.type === "text").map(x => x.text).join(""); onText && onText(text); return text; }
   const rd = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
@@ -4233,6 +4261,7 @@ if (ntSupported()) {
   showMode();
   S.homeEnter = true; render();
   showOnboarding();
+  try { const inv = new URLSearchParams(location.search).get("invito"); if (inv && inv.length >= 4) { lsSet("carico.code", inv); setTimeout(() => toast("Codice invito salvato: il coach è attivo 🤝", 4000), 800); } } catch (e) {}
   try { const q = new URLSearchParams(location.search).get("go"); if (q && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(q)) { go(q); history.replaceState(null, "", location.pathname); } } catch (e) {}
   if (((S.profile.user || {}).notif || {}).on && ntSupported()) { navigator.serviceWorker.register("./sw.js").catch(() => {}); pushSync(); }
   document.addEventListener("visibilitychange", () => { if (!document.hidden) pushSync(); });

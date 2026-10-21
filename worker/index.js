@@ -116,7 +116,28 @@ export function dueMessages(u, now) {
 }
 
 // ---------- HTTP ----------
-const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" };
+const CORS = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type, X-Carico-Code, X-Carico-Id" };
+const MODELS = ["claude-sonnet-5-5", "claude-haiku-5-5"];
+
+// ---------- AI condivisa: la chiave del proprietario resta qui, gli amici entrano con il codice invito ----------
+async function aiProxy(req, env) {
+  if (!env.ANTHROPIC_KEY || !env.CARICO_CODE) return json({ error: "not_configured" }, 503);
+  const code = req.headers.get("X-Carico-Code") || "";
+  if (code !== env.CARICO_CODE) return json({ error: "bad_code" }, 401);
+  const id = (req.headers.get("X-Carico-Id") || "anon").replace(/[^a-z0-9]/gi, "").slice(0, 40) || "anon";
+  const day = new Date().toISOString().slice(0, 10);
+  const perDev = +(env.DAILY_LIMIT || 60), total = +(env.TOTAL_LIMIT || 500);
+  const kd = `rl:${id}:${day}`, kt = `rl:all:${day}`;
+  const [nd, nt] = await Promise.all([env.KV.get(kd), env.KV.get(kt)]);
+  if (+(nd || 0) >= perDev) return json({ error: "daily_limit", limit: perDev }, 429);
+  if (+(nt || 0) >= total) return json({ error: "daily_limit_total" }, 429);
+  let body; try { body = await req.json(); } catch (e) { return json({ error: "bad_body" }, 400); }
+  if (!MODELS.includes(body.model)) body.model = MODELS[0];
+  body.max_tokens = Math.min(+body.max_tokens || 2000, 32000);
+  await Promise.all([env.KV.put(kd, String(+(nd || 0) + 1), { expirationTtl: 172800 }), env.KV.put(kt, String(+(nt || 0) + 1), { expirationTtl: 172800 })]);
+  const up = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" }, body: JSON.stringify(body) });
+  return new Response(up.body, { status: up.status, headers: { ...CORS, "Content-Type": up.headers.get("content-type") || "application/json", "Cache-Control": "no-cache" } });
+}
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 const validId = id => typeof id === "string" && /^[a-z0-9]{8,40}$/i.test(id);
 
@@ -137,6 +158,8 @@ export default {
     try {
       if (url.pathname === "/vapid") return json({ key: (await vapidKeys(env)).pub });
       if (url.pathname === "/" ) return json({ ok: true, app: "carico-push" });
+      if (url.pathname === "/ai/status") return json({ enabled: !!(env.ANTHROPIC_KEY && env.CARICO_CODE) });
+      if (url.pathname === "/ai" && req.method === "POST") return aiProxy(req, env);
       if (req.method !== "POST") return json({ error: "method" }, 405);
       const body = await req.json();
       if (!validId(body.id)) return json({ error: "id" }, 400);
