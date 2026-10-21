@@ -553,6 +553,10 @@ html.neo-home header.top{background:color-mix(in srgb,var(--bg) 78%,transparent)
 .neo-home .live-cta{background:linear-gradient(100deg,#3f7bff,#7a5cff);box-shadow:0 12px 30px -12px rgba(90,110,255,.9)}
 .neo-home #view.view-in{animation:neoRise .5s cubic-bezier(.2,.8,.2,1) both}
 .mv{border:0;background:none;color:var(--muted);font-size:16px;font-weight:700;padding:2px 6px;margin-left:4px}
+.mv-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mv-x{border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;border-radius:99px;padding:5px 10px;flex:none}
+.items .q{display:inline-flex;align-items:center;gap:2px}
+.items .mv,.items .rm{line-height:1;min-width:30px;min-height:30px;display:inline-grid;place-items:center}
 .mv-pick{display:flex;flex-direction:column;gap:6px;background:var(--diet-soft,var(--surface-2));border-radius:12px;padding:10px 12px;font-size:13.5px;margin:4px 0}
 .arch-i{border:1px solid var(--line);border-radius:14px;padding:10px 12px}
 .arch-i>summary{cursor:pointer;display:flex;flex-direction:column;gap:2px;font-weight:700;font-size:14.5px}.arch-i>summary small{font-weight:500;color:var(--muted);font-size:12px}
@@ -812,7 +816,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "7.6 · 22 ottobre";
+const APP_VERSION = "7.7 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1886,7 +1890,7 @@ function movePicker(from, kind) {
   else src = from === "__extra" ? ((l && l.m && l.m.extra) || []) : (((l && l.m && l.m.manual) || {})[from] || []);
   const it = src[mv.i]; if (!it) return "";
   const dest = slots().filter(x => x.key !== from).map(x => `<button class="chip sm" data-act="man-move-to" data-to="${x.key}">${esc(x.name)}</button>`).join("") + (from !== "__extra" ? `<button class="chip sm" data-act="man-move-to" data-to="__extra">Fuori pasto</button>` : "");
-  return `<div class="mv-pick"><span>Sposta <b>${esc(it.food)}</b> in:</span><div class="chips" style="flex-wrap:wrap">${dest}</div></div>`;
+  return `<div class="mv-pick"><div class="mv-top"><span>Sposta <b>${esc(it.food)}</b> in:</span><button class="mv-x" data-act="man-move-cancel" aria-label="Annulla lo spostamento">✕ Annulla</button></div><div class="chips" style="flex-wrap:wrap">${dest}</div></div>`;
 }
 function mealCard(sl, ml, nextKey) {
   const eaten = !!ml.eaten[sl.key];
@@ -2657,6 +2661,7 @@ document.addEventListener("click", ev => {
       store.saveProfile(); render(); toast("Pasto eliminato"); return;
     }
     case "man-move": { const src = b.dataset.src || "man"; S.moving = S.moving && S.moving.m === b.dataset.m && S.moving.i === +b.dataset.i && S.moving.src === src ? null : { m: b.dataset.m, i: +b.dataset.i, src }; render(); return; }
+    case "man-move-cancel": S.moving = null; render(); return;
     case "man-move-to": {
       const l = dayLog(); const mv = S.moving; if (!mv) return;
       if (mv.src === "opt") { // alimento della dieta: il pasto di partenza diventa "Scrivo io" con il resto degli alimenti
