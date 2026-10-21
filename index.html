@@ -485,6 +485,14 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .lv-dock.over .dk-t span{color:rgba(11,16,32,.7)}
 .last-sess{font-size:13px;color:var(--muted);margin:-4px 2px 12px}.last-sess b{color:var(--ink)}
 .lv-lastsess{font-size:13.5px;color:var(--hero-mut);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:9px 12px}.lv-lastsess b{color:var(--hero-ink)}
+.cp-mem{position:relative;font-size:17px}.cp-mem i{position:absolute;top:-3px;right:-3px;min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--acc,#3d6bff);color:#fff;font-size:10px;font-style:normal;font-weight:800;display:grid;place-items:center}
+.cp-mem.on{background:var(--surface-2)}
+.mem-v{display:flex;flex-direction:column;gap:8px}
+.mem-h{display:flex;flex-direction:column;gap:4px;margin-bottom:4px}.mem-h b{font-size:16px}.mem-h span{font-size:13px;color:var(--muted)}
+.mem-i{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:14px;background:var(--surface-2);font-size:14px}
+.mem-i span{flex:1;display:flex;flex-direction:column;gap:2px}.mem-i small{font-size:11.5px;color:var(--muted)}
+.mem-i button{border:0;background:none;color:var(--muted);padding:2px;width:28px;height:28px;flex:none}.mem-i button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2}.mem-i{border:1px solid var(--line);background:var(--surface)}
+.mem-add{display:flex;gap:8px;margin-top:6px}.mem-add .in{flex:1;font-size:16px}
 .lv-ask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,8,16,.7);backdrop-filter:blur(6px)}
 .lv-ask-b{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:22px 18px;border-radius:24px;background:var(--hero-bg2);color:var(--hero-ink);box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .lv-ask-b b{font-size:19px}.lv-ask-b p{margin:0 0 6px;color:var(--hero-mut);font-size:14.5px}
@@ -715,7 +723,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.7 · 21 ottobre";
+const APP_VERSION = "6.8 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3422,6 +3430,7 @@ function coachContext() {
   const U = S.profile.user || {};
   L.push(U.sex === "f" ? "L'utente è una DONNA: rivolgiti a lei al femminile, accordando aggettivi, participi e insulti al femminile (es. \"sei pronta\", \"smidollata\", \"mollacciona\")." : "L'utente è un uomo: rivolgiti a lui al maschile.");
   if (U.name || U.goal || U.targetKg) L.push(`Utente: ${U.name || "senza nome"}${U.goal ? ". Obiettivo: " + (GOALS[U.goal] || U.goal) : ""}${num(U.targetKg) ? ". Peso obiettivo: " + fmtN(num(U.targetKg)) + " kg" : ""}. Chiamalo per nome ogni tanto, senza esagerare.`);
+  { const MEM = S.profile.mem || []; if (MEM.length) L.push("MEMORIA DEL COACH (cose che l'utente ti ha detto nelle chat precedenti: tienine conto quando servono, senza elencarle ogni volta):\n" + MEM.map(m => "- " + m.t + " (" + m.d + ")").join("\n")); }
   L.push("Data e ora: " + now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ", " + pad(now.getHours()) + ":" + pad(now.getMinutes()));
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
   if (ws.length) L.push("Peso (data kg): " + ws.slice(-20).map(w => w.d + " " + fmtN(w.kg)).join("; "));
@@ -3546,10 +3555,11 @@ function renderCoach() {
   el.innerHTML = `<div class="cp-head">
       <div class="cp-av">${COACH_AV}</div>
       <div class="cp-t"><b>Coach</b><span><i class="live-dot"></i>${AI.ready() ? "Conosce scheda, dieta e progressi" : "Serve la chiave API in Piano"}</span></div>
-      ${CH.msgs.length ? `<button class="cp-ic" data-act="coach-new" aria-label="Nuova chat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>` : ""}
+      <button class="cp-ic cp-mem ${CH.memView ? "on" : ""}" data-act="coach-mem" aria-label="Memoria del coach">🧠${(S.profile.mem || []).length ? `<i>${(S.profile.mem || []).length}</i>` : ""}</button>
+      ${CH.msgs.length && !CH.memView ? `<button class="cp-ic" data-act="coach-new" aria-label="Nuova chat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>` : ""}
       <button class="cp-ic" data-act="coach-close" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     </div>
-    <div class="cp-msgs" id="msgs">
+    ${CH.memView ? memViewHtml() : `<div class="cp-msgs" id="msgs">
       ${empty ? `<div class="cp-hi"><div class="cp-big">${COACH_AV}</div><h3>${coachTone() === "roast" ? `Eccolo${userName() ? ", " + esc(userName()) : ""}. Si lavora.` : coachTone() === "cazzaro" ? `Ueee${userName() ? " " + esc(userName()) : ""}! 🍻` : `Ciao${userName() ? " " + esc(userName()) : ""}, come posso aiutarti?`}</h3><p>${coachTone() === "roast" ? "Vent'anni che porto gente all'obiettivo, e ci porto anche te. Scheda, dieta e allenamenti li conosco tutti: dimmi che cazzo ti serve e niente scuse." : coachTone() === "cazzaro" ? "Dimmi tutto, coglione. Scheda, dieta e allenamenti li so a memoria: chiedi pure, tanto ti prendo per il culo comunque." : coachTone() === "wild" ? "Conosco la tua scheda, la dieta e quanto hai sudato. Spara pure, senza vergogna." : coachTone() === "fun" ? "Conosco scheda, dieta e allenamenti. Chiedimi pure, prometto battute pessime." : "Rispondo usando la tua scheda, la dieta e i tuoi allenamenti."}</p>
         <div class="cp-grid">${COACH_QL.map((q, i) => `<button class="cp-q" data-act="coach-q" data-i="${i}"><span>${q[0]}</span>${esc(q[1])}</button>`).join("")}</div></div>` : ""}
       ${CH.msgs.map((m, i) => m.role === "user" ? `${m.imgs && m.imgs.length ? `<div class="cb-imgs">${m.imgs.map(src => `<img src="${src}" alt="Foto allegata">`).join("")}</div>` : m.nimg ? `<div class="cb-imgs-n">📷 ${m.nimg} foto</div>` : ""}<div class="cb u" ${i === CH.msgs.length - 1 ? 'id="lastBub"' : ""}>${esc(m.content)}</div>`
@@ -3562,12 +3572,56 @@ function renderCoach() {
       <textarea id="coachIn" rows="1" placeholder="${CH.att.length ? "Aggiungi un commento…" : "Chiedi al tuo coach…"}" enterkeyhint="enter" aria-label="Messaggio">${esc(CH.draft)}</textarea>
       ${CH.busy ? `<button type="button" class="cp-send" data-act="coach-stop" aria-label="Ferma"><svg viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" stroke="none"/></svg></button>`
         : `<button class="cp-send" aria-label="Invia"><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>`}
-    </form>`;
-  const ms = $("#msgs"); ms.scrollTop = ms.scrollHeight;
+    </form>`}`;
+  const ms = $("#msgs"); if (ms) ms.scrollTop = ms.scrollHeight;
+}
+function memViewHtml() {
+  const M = S.profile.mem || [];
+  return `<div class="cp-msgs mem-v">
+    <div class="mem-h"><b>🧠 Cosa ricorda il coach</b><span>Resta anche quando inizi una nuova chat. Si aggiorna da solo mentre parli; puoi anche scrivergli "ricordati che…" o "dimentica…".</span></div>
+    ${M.length ? M.slice().reverse().map(m => `<div class="mem-i"><span>${esc(m.t)}<small>${esc(fmtDay(m.d, { day: "numeric", month: "short" }))}</small></span><button data-act="mem-del" data-id="${m.id}" aria-label="Dimentica">${ICON_X}</button></div>`).join("") : `<p class="small muted" style="text-align:center;margin:18px 0">Ancora niente. Raccontagli di te: infortuni, cibi che non mangi, orari, obiettivi…</p>`}
+    <div class="mem-add"><input class="in" id="memIn" placeholder="Aggiungi tu un ricordo…" maxlength="140"><button class="btn sm" data-act="mem-add">Aggiungi</button></div>
+    ${M.length ? `<button class="btn ghost sm" data-act="mem-clear" style="align-self:center">Cancella tutta la memoria</button>` : ""}
+    <button class="btn sm" data-act="coach-mem" style="align-self:center">← Torna alla chat</button>
+  </div>`;
 }
 function openCoach() { $("#coachBg").hidden = false; ovOpen("coach"); renderCoach(); }
 function closeCoach() { $("#coachBg").hidden = true; ovClose("coach"); }
 document.addEventListener("click", ev => { if (ev.target.id === "coachBg") closeCoach(); });
+let MEM_BUSY = Promise.resolve();
+function memUpdate(userText, answer) { // dopo ogni scambio: il coach decide cosa ricordare (modello veloce, in background)
+  if (!AI.ready() || !userText || userText.length < 4) return;
+  MEM_BUSY = MEM_BUSY.then(async () => {
+    const mem = S.profile.mem || [];
+    const r = await AI.json(`Sei la memoria a lungo termine di un coach di palestra e alimentazione. Decidi cosa ricordare dell'utente per le chat future.
+MEMORIA ATTUALE (id: testo):
+${mem.length ? mem.map(m => m.id + ": " + m.t).join("\n") : "(vuota)"}
+
+ULTIMO SCAMBIO
+Utente: """${userText.slice(0, 1500)}"""
+Coach: """${String(answer || "").slice(0, 800)}"""
+
+Regole:
+- Salva solo fatti DURATURI e utili per allenarlo e nutrirlo meglio che l'utente ha detto lui: fastidi o infortuni, esercizi che non può o non vuole fare, cibi che non mangia o che preferisce, orari e giorni in cui si allena, attrezzatura o palestra, impegni e scadenze (es. vacanza, gara), obiettivi personali, come reagisce a certi carichi, preferenze su come vuole essere seguito.
+- Se l'utente chiede esplicitamente di ricordare qualcosa ("ricordati che…"), salvalo. Se chiede di dimenticare qualcosa, toglilo.
+- NON salvare: domande occasionali, cose già registrate nell'app (pesate, serie fatte, pasti segnati, scheda, dieta), cose che valgono solo per oggi, opinioni del coach.
+- Se un fatto nuovo aggiorna o contraddice uno vecchio, aggiorna quello vecchio invece di aggiungerne un altro.
+- Frasi brevi in terza persona, max 110 caratteri (es. "Ha un fastidio alla spalla destra nelle spinte sopra la testa").
+- Quasi sempre non c'è niente da salvare: in quel caso liste vuote.
+Rispondi solo con JSON: {"add":["…"],"update":[{"id":"…","t":"…"}],"remove":["id"]}`, { tier: "quick", maxTokens: 800 }).catch(() => null);
+    if (!r) return;
+    let list = (S.profile.mem || []).slice(); const added = [];
+    (r.remove || []).forEach(id => { list = list.filter(m => m.id !== String(id)); });
+    (r.update || []).forEach(u => { const m = list.find(x => x.id === String(u.id)); if (m && u.t) { m.t = String(u.t).slice(0, 140); m.d = today(); } });
+    (r.add || []).forEach(t => { t = String(t || "").trim().slice(0, 140); if (t && !list.some(m => norm(m.t) === norm(t))) { list.push({ id: uid().slice(0, 6), t, d: today() }); added.push(t); } });
+    const changed = JSON.stringify(list) !== JSON.stringify(S.profile.mem || []);
+    if (!changed) return;
+    S.profile.mem = list.slice(-50); store.saveProfile();
+    if (added.length) toast("🧠 Il coach si ricorderà: " + (added[0].length > 60 ? added[0].slice(0, 60) + "…" : added[0]), 3500);
+    if (!$("#coach").hidden && CH.memView) renderCoach();
+    else { const bt = document.querySelector(".cp-mem"); if (bt) bt.innerHTML = "🧠" + (S.profile.mem.length ? `<i>${S.profile.mem.length}</i>` : ""); }
+  });
+}
 async function coachSend(text, opts = {}) {
   text = String(text || "").trim(); const att = CH.att.slice(); if ((!text && !att.length) || CH.busy) return;
   if (!text) text = att.length > 1 ? "Valuta queste foto." : "Valuta questa foto.";
@@ -3591,6 +3645,7 @@ async function coachSend(text, opts = {}) {
   CH.busy = false; CH.ctl = null;
   if (opts.check && !ans.err && ans.content && ans.content.length > 80) { S.profile.checks = [{ date: today(), text: ans.content }, ...(S.profile.checks || []).filter(c => c.date !== today())].slice(0, 30); store.saveProfile(); render(); }
   saveChat(); if (!$("#coach").hidden) renderCoach();
+  if (!ans.err && ans.content && !opts.check) memUpdate(opts.label ? "" : text, ans.content);
 }
 // icona fluttuante trascinabile: un tocco apre il coach, trascinando la sposti (posizione ricordata)
 (function initFab() {
@@ -3625,6 +3680,10 @@ document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#coach")) return;
   const a = b.dataset.act;
   if (a === "coach-close") closeCoach();
+  else if (a === "coach-mem") { CH.memView = !CH.memView; renderCoach(); }
+  else if (a === "mem-del") { S.profile.mem = (S.profile.mem || []).filter(m => m.id !== b.dataset.id); store.saveProfile(); renderCoach(); toast("Dimenticato"); }
+  else if (a === "mem-add") { const v = ($("#memIn") || {}).value || ""; if (v.trim()) { (S.profile.mem = S.profile.mem || []).push({ id: uid().slice(0, 6), t: v.trim().slice(0, 140), d: today() }); store.saveProfile(); renderCoach(); } }
+  else if (a === "mem-clear") { if (b.dataset.sure) { S.profile.mem = []; store.saveProfile(); renderCoach(); toast("Memoria cancellata"); } else { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per confermare"; } }
   else if (a === "coach-new") { if (CH.ctl) CH.ctl.abort(); CH.msgs = []; CH.busy = false; saveChat(); renderCoach(); }
   else if (a === "coach-q") { if (+b.dataset.i === COACH_Q.length - 1 && !CH.att.length) { CH.draft = COACH_Q[+b.dataset.i]; renderCoach(); toast("Allega le foto con il tasto 📷 e poi invia"); return; } coachSend(COACH_Q[+b.dataset.i]); }
   else if (a === "coach-stop") { if (CH.ctl) CH.ctl.abort(); }
