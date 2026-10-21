@@ -475,6 +475,20 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .dk-b.hi{background:var(--hero-ink);color:var(--hero-bg)}
 .lv-dock.over{border:0;text-align:left;font:inherit;background:linear-gradient(135deg,#2fbf7a,#4fd296);color:#0b1020;animation:pulse 1.1s ease-in-out infinite;width:auto}
 .lv-dock.over .dk-t span{color:rgba(11,16,32,.7)}
+.lv-full{position:fixed;inset:0;z-index:47;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:calc(16px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));background:radial-gradient(120% 80% at 50% 0%,var(--hero-bg2),var(--hero-bg) 70%);color:var(--hero-ink);animation:rfIn .22s ease-out}
+.lv-full>*{width:100%;max-width:520px}
+.lv-full .lv-ring{width:min(300px,76vw)}
+.lv-full .lv-next{text-align:center}
+.lv-full.over{background:radial-gradient(120% 80% at 50% 0%,#1d5a43,var(--hero-bg) 75%)}
+.rf-top{display:flex;align-items:center;justify-content:space-between;position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:0;right:0;margin:0 auto;padding:0 20px}
+.rf-min{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:inherit;font:inherit;font-weight:700;font-size:14px;padding:9px 14px;border-radius:999px}
+.rf-feel{display:flex;flex-direction:column;align-items:center;gap:6px}
+.rf-feel>span{font-size:13px;color:var(--hero-mut);font-weight:600}
+.rf-feel>div{display:flex;gap:6px}
+.rf-feel .fl{font-size:24px;padding:6px 10px}
+.rf-feel .fl small{display:none}
+.dk-exp{border:0;background:none;color:inherit;font:inherit;text-align:left;padding:0;cursor:pointer}
+@keyframes rfIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 .dk-big{font-family:var(--f-display);font-weight:700;font-size:30px;flex:none;padding:0 6px}
 .feel{display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding-bottom:8px}
 .feel>span{font-size:12px;color:var(--muted);font-weight:600;margin-right:2px}
@@ -674,7 +688,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "5.6 · 21 ottobre";
+const APP_VERSION = "5.7 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1051,16 +1065,23 @@ function unlockAlarm() { // va chiamata dentro un tocco: sblocca la riproduzione
     ALARM_EL.muted = true; const pr = ALARM_EL.play(); if (pr && pr.then) pr.then(() => { ALARM_EL.pause(); ALARM_EL.currentTime = 0; ALARM_EL.muted = false; }).catch(() => { ALARM_EL.muted = false; }); else { ALARM_EL.pause(); ALARM_EL.muted = false; } } catch (e) {}
   try { const a = T.audio || (T.audio = new (window.AudioContext || window.webkitAudioContext)()); if (a.state !== "running") a.resume(); const b = a.createBuffer(1, 1, 22050), src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); src.start(0); } catch (e) {}
 }
-function beep() {
+let ALARM_MODE = "", ALARM_NODES = [];
+function beep(loop) { // loop: continua a suonare finché non si chiama stopAlarm()
   try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
-  if (ALARM_EL) { try { ALARM_EL.muted = false; ALARM_EL.currentTime = 0; const pr = ALARM_EL.play(); if (pr && pr.catch) pr.catch(() => beepSynth()); return; } catch (e) {} }
-  beepSynth();
+  if (ALARM_EL) { try { ALARM_EL.muted = false; ALARM_EL.loop = !!loop; ALARM_EL.currentTime = 0; ALARM_MODE = "el"; const pr = ALARM_EL.play(); if (pr && pr.catch) pr.catch(() => { ALARM_MODE = loop ? "synth" : ""; beepSynth(); }); return; } catch (e) {} }
+  ALARM_MODE = loop ? "synth" : ""; beepSynth();
+}
+function stopAlarm() { // silenzio immediato
+  ALARM_MODE = "";
+  if (ALARM_EL) { try { ALARM_EL.loop = false; ALARM_EL.pause(); ALARM_EL.currentTime = 0; } catch (e) {} }
+  ALARM_NODES.forEach(n => { try { n.disconnect(); } catch (e) {} }); ALARM_NODES = [];
+  try { navigator.vibrate && navigator.vibrate(0); } catch (e) {}
 }
 function beepSynth() { // allarme a due toni, forte, per la fine del recupero
   try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
   try {
     const a = T.audio || (T.audio = new (window.AudioContext || window.webkitAudioContext)()); if (a.state === "suspended") a.resume();
-    const comp = a.createDynamicsCompressor(); comp.threshold.value = -6; comp.ratio.value = 4; comp.connect(a.destination);
+    const comp = a.createDynamicsCompressor(); comp.threshold.value = -6; comp.ratio.value = 4; comp.connect(a.destination); ALARM_NODES.push(comp);
     const t0 = a.currentTime + 0.03;
     for (let i = 0; i < 10; i++) {
       const st = t0 + i * 0.19; const o = a.createOscillator(), o2 = a.createOscillator(), g = a.createGain();
@@ -2200,7 +2221,7 @@ document.addEventListener("click", ev => {
   const a = b.dataset.act; const P = plan();
   switch (a) {
     case "rest-add": T.end = Math.max(T.end, Date.now()) + 15000; T.beeped = false; tick(); return;
-    case "rest-stop": stopRest(); return;
+    case "rest-stop": stopAlarm(); stopRest(); return;
     case "sel-day": S.selDay = b.dataset.id; render(); return;
     case "set": { unlockAlarm();
       const row = b.closest(".set"); const day = currentDay(); const ex = day.exercises.find(e => e.id === row.dataset.ex); const i = +row.dataset.i;
@@ -2493,7 +2514,7 @@ function openLive() {
   try { if (!T.audio) T.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   tagMuscles();
 }
-function closeLive() { LV.resting = false; LV.over = false; clearInterval(LV.iv); try { LV.wake && LV.wake.release(); } catch (e) {} LV.wake = null; ovClose("live"); render(); }
+function closeLive() { stopAlarm(); LV.resting = false; LV.over = false; clearInterval(LV.iv); try { LV.wake && LV.wake.release(); } catch (e) {} LV.wake = null; ovClose("live"); render(); }
 function bestBefore(name) { const key = norm(name); let b = 0; for (const d of sortedDates()) { if (d >= S.date) break; const ex = (S.days[d].w && S.days[d].w.ex) || {}; for (const k in ex) if (norm(ex[k].name) === key) (ex[k].s || []).forEach(s => { if (s && s.done) b = Math.max(b, num(s.kg) || 0); }); } return b; }
 function lvTick() {
   const c = $("#lvClock"); const l = peekLog();
@@ -2502,11 +2523,12 @@ function lvTick() {
     const left = Math.max(0, Math.ceil((LV.restEnd - Date.now()) / 1000));
     const n = $("#lvRestN"), r = $("#lvRestArc");
     if (n && !LV.over) n.textContent = Math.floor(left / 60) + ":" + pad(left % 60);
-    if (r) { const C = 2 * Math.PI * 22; r.setAttribute("stroke-dasharray", `${(C * left / Math.max(1, LV.restTotal)).toFixed(1)} ${C.toFixed(1)}`); }
-    if (left <= 0 && !LV.over) { LV.over = true; LV.alarms = 1; LV.lastAlarm = Date.now(); beep(); renderLive(); }
+    if (r) { const C = 2 * Math.PI * (+r.getAttribute("r") || 22); r.setAttribute("stroke-dasharray", `${(C * left / Math.max(1, LV.restTotal)).toFixed(1)} ${C.toFixed(1)}`); }
+    if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); beep(true); renderLive(); }
     if (LV.over) {
       const x = Math.floor((Date.now() - LV.restEnd) / 1000); const o = $("#lvOver"); if (o) o.textContent = "+" + Math.floor(x / 60) + ":" + pad(x % 60);
-      if (LV.alarms < 3 && Date.now() - LV.lastAlarm > 6000) { LV.alarms++; LV.lastAlarm = Date.now(); beep(); }
+      if (x >= 180) { if (ALARM_MODE) stopAlarm(); } // dopo 3 minuti smette da solo
+      else if (ALARM_MODE === "synth" && Date.now() - LV.lastAlarm > 1900) { LV.lastAlarm = Date.now(); beepSynth(); }
     }
   }
 }
@@ -2574,16 +2596,30 @@ function renderLive() {
       <div class="lv-row"><button class="lv-btn" data-act="lv-prev" ${LV.exIdx ? "" : "disabled"}>← Precedente</button><button class="lv-btn" data-act="lv-next" ${LV.exIdx < exs.length - 1 ? "" : "disabled"}>Prossimo →</button></div>`;
   }
   let dock = "";
-  if (LV.resting && LV.phase !== "done") {
+  if (LV.resting && LV.phase !== "done" && !LV.mini) { // recupero a tutto schermo; "Riduci" lo porta alla barra
+    const C = 2 * Math.PI * 88;
+    const fx = LV.feelEx && day.exercises.find(x => x.id === LV.feelEx);
+    const feel = fx ? `<div class="rf-feel"><span>${esc(fx.name)}: com'è andata?</span><div>${FEELS.map(([k, em, lb]) => `<button class="fl ${((dayLog().w.ex[fx.id] || {}).feel === k) ? "on" : ""}" data-act="feel" data-ex="${fx.id}" data-f="${k}" aria-label="${lb}">${em}<small>${lb}</small></button>`).join("")}</div></div>` : "";
+    const head = `<div class="rf-top"><span class="lv-k">${LV.over ? "Recupero finito" : "Recupero"}</span><button class="rf-min" data-act="lv-mini" aria-label="Riduci a barra">▾ Riduci</button></div>`;
+    dock = LV.over ? `<div class="lv-full over">${head}
+        <button class="lv-ring go" data-act="lv-skip" aria-label="Inizia la prossima serie"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="rgba(79,210,150,.14)" stroke="var(--hero-g)" stroke-width="12"/></svg><b>VIA!<small id="lvOver">+0:00</small></b></button>
+        <div class="lv-next"><span>Tocca per continuare</span><b>${esc(LV.nextLabel || "")}</b></div>${feel}
+        <button class="lv-go" data-act="lv-skip">▶ Inizia la serie</button></div>`
+      : `<div class="lv-full">${head}
+        <div class="lv-ring"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="none" stroke="var(--hero-track)" stroke-width="12"/><circle id="lvRestArc" cx="100" cy="100" r="88" fill="none" stroke="var(--hero-g)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C} ${C}" transform="rotate(-90 100 100)"/></svg><b id="lvRestN">0:00</b></div>
+        ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
+        <div class="lv-next"><span>Poi</span><b>${esc(LV.nextLabel || "")}</b></div>${feel}
+        <div class="lv-row"><button class="lv-btn" data-act="lv-rest" data-d="-15">−15 s</button><button class="lv-btn" data-act="lv-rest" data-d="15">+15 s</button><button class="lv-btn hi" data-act="lv-skip">Salta</button></div></div>`;
+  } else if (LV.resting && LV.phase !== "done") {
     const C = 2 * Math.PI * 22; const ex = exs[LV.exIdx];
     const fx = LV.feelEx && day.exercises.find(x => x.id === LV.feelEx);
     const feelStrip = fx ? `<div class="dk-feel"><span>${esc(fx.name)}: com'è andata?</span>${FEELS.map(([k, em, lb]) => `<button class="fl" data-act="feel" data-ex="${fx.id}" data-f="${k}" aria-label="${lb}">${em}<small>${lb}</small></button>`).join("")}</div>` : "";
-    dock = feelStrip + (LV.over ? `<button class="lv-dock over" data-act="lv-skip"><span class="dk-big">VIA!</span><span class="dk-t"><b>Recupero finito <span id="lvOver">+0:00</span></b><span>Tocca per chiudere · ${esc(LV.nextLabel || "")}</span></span></button>`
+    dock = feelStrip + (LV.over ? `<button class="lv-dock over" data-act="lv-skip"><span class="dk-big">VIA!</span><span class="dk-t"><b>Recupero finito <span id="lvOver">+0:00</span></b><span>Tocca per continuare · ${esc(LV.nextLabel || "")}</span></span></button>`
       : `<div class="lv-dock"><div class="dk-ring"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" fill="none" stroke="var(--hero-track)" stroke-width="5"/><circle id="lvRestArc" cx="26" cy="26" r="22" fill="none" stroke="var(--hero-g)" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C} ${C}" transform="rotate(-90 26 26)"/></svg><b id="lvRestN">0:00</b></div>
-        <span class="dk-t"><b>Recupero</b><span>Poi: ${esc(LV.nextLabel || "")}</span></span>
+        <button class="dk-t dk-exp" data-act="lv-mini" aria-label="Recupero a tutto schermo"><b>Recupero ⤢</b><span>Poi: ${esc(LV.nextLabel || "")}</span></button>
         <button class="dk-b" data-act="lv-rest" data-d="-15">−15</button><button class="dk-b" data-act="lv-rest" data-d="15">+15</button><button class="dk-b hi" data-act="lv-skip">Salta</button></div>`);
   }
-  el.innerHTML = `<div class="lv-in ${dock ? "docked" : ""}">${top}${LV.flash && LV.resting ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}<div class="lv-body">${body}</div></div>${dock}`;
+  el.innerHTML = `<div class="lv-in ${dock && LV.mini ? "docked" : ""}">${top}${LV.flash && LV.resting ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}<div class="lv-body">${body}</div></div>${dock}`;
   lvTick();
   const on = el.querySelector(".lv-pill.on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
 }
@@ -2609,9 +2645,10 @@ function lvSetDone() {
   if (exComplete && f[0] !== LV.exIdx) { // esercizio finito: schermata di passaggio al prossimo, niente recupero automatico
     LV.doneEx = ex.id; LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "exdone"; LV.resting = false; LV.over = false; LV.restTotal = rest; lvDefaults(); renderLive(); return;
   }
-  LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; LV.resting = true; LV.over = false; LV.nextLabel = (day.exercises[f[0]] || {}).name + " · serie " + (f[1] + 1); LV.restTotal = rest; LV.restEnd = Date.now() + rest * 1000;
+  LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (day.exercises[f[0]] || {}).name + " · serie " + (f[1] + 1); LV.restTotal = rest; LV.restEnd = Date.now() + rest * 1000;
   lvDefaults(); renderLive();
 }
+document.addEventListener("pointerdown", ev => { if (LV.over && ev.target.closest && ev.target.closest("#live")) stopAlarm(); }, true);
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#live")) return;
   ev.stopPropagation(); const a = b.dataset.act; const day = lvDay();
@@ -2634,8 +2671,9 @@ document.addEventListener("click", ev => {
   else if (a === "lv-prev" || a === "lv-next") { LV.exIdx = Math.max(0, Math.min(day.exercises.length - 1, LV.exIdx + (a === "lv-next" ? 1 : -1))); const ex = day.exercises[LV.exIdx]; const e = dayLog().w.ex[ex.id]; let j = 0; while (j < exSets(ex) - 1 && e && e.s && e.s[j] && e.s[j].done) j++; LV.setIdx = j; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-rest") { if (LV.over || !LV.resting) return; LV.restEnd += +b.dataset.d * 1000; LV.restTotal = Math.max(LV.restTotal, Math.ceil((LV.restEnd - Date.now()) / 1000)); lvTick(); }
   else if (a === "lv-nextex") { LV.phase = "set"; LV.flash = ""; LV.doneEx = null; lvDefaults(); renderLive(); window.scrollTo(0, 0); $("#live").scrollTop = 0; }
-  else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.nextLabel = (nx ? nx.name : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
-  else if (a === "lv-skip") { const wasRestPhase = LV.phase === "rest"; LV.phase = "set"; LV.resting = false; LV.over = false; LV.flash = ""; if (wasRestPhase) lvDefaults(); renderLive(); }
+  else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (nx ? nx.name : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
+  else if (a === "lv-mini") { LV.mini = !LV.mini; renderLive(); }
+  else if (a === "lv-skip") { stopAlarm(); const wasRestPhase = LV.phase === "rest"; LV.phase = "set"; LV.resting = false; LV.over = false; LV.flash = ""; if (wasRestPhase) lvDefaults(); renderLive(); }
   else if (a === "lv-finish") { const l = dayLog(); l.w.done = true; if (!l.w.end) l.w.end = Date.now(); store.saveDay(S.date); closeLive(); toast("Allenamento salvato 💪"); }
 }, true);
 document.addEventListener("input", ev => { const nk = ev.target.dataset && ev.target.dataset.note; if (nk) { setNote(nk, ev.target.value); return; } if (ev.target.id === "lvKg") LV.kg = String(num(ev.target.value) ?? ""); else if (ev.target.id === "lvReps") LV.reps = String(parseInt(ev.target.value) || ""); });
