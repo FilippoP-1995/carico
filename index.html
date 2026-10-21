@@ -812,7 +812,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "7.5 · 21 ottobre";
+const APP_VERSION = "7.6 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1868,7 +1868,7 @@ function optBlock(sl, id, label, sub, items, selected, extra) {
       <span class="mhl"><span class="optl">${esc(label)}</span>${sub ? `<span class="small muted">${esc(sub)}</span>` : ""}</span>
       ${t.known ? `<span class="optk"><b>${fmtI(t.kcal)}</b> kcal<br><span>P ${fmtI(t.p)} · C ${fmtI(t.c)} · G ${fmtI(t.f)}</span></span>` : ""}
     </button>
-    ${items.length && id !== "manual" ? `<ul class="items">${items.map(it => itemLi(it)).join("")}</ul>` : ""}
+    ${items.length && id !== "manual" ? `<ul class="items">${items.map((it, i) => itemLi(it, selected ? `<button class="mv" data-act="man-move" data-m="${sl.key}" data-i="${i}" data-src="opt" aria-label="Sposta ${esc(it.food)} in un altro pasto">⇄</button>` : "")).join("")}</ul>${selected ? movePicker(sl.key, "opt") : ""}` : ""}
     ${extra || ""}
   </div>`;
 }
@@ -1879,9 +1879,12 @@ function addCustomMeal(diet, name, time) {
     X.splice(at, 0, m);
   });
 }
-function movePicker(from) {
-  const mv = S.moving; if (!mv || mv.m !== from) return "";
-  const l = peekLog(); const src = from === "__extra" ? ((l && l.m && l.m.extra) || []) : (((l && l.m && l.m.manual) || {})[from] || []); const it = src[mv.i]; if (!it) return "";
+function movePicker(from, kind) {
+  const mv = S.moving; if (!mv || mv.m !== from || (mv.src || "man") !== (kind || "man")) return "";
+  const l = peekLog(); let src;
+  if (kind === "opt") { const fs = slots().find(x => x.key === from); src = fs ? slotPick(mealLog(), fs).items || [] : []; }
+  else src = from === "__extra" ? ((l && l.m && l.m.extra) || []) : (((l && l.m && l.m.manual) || {})[from] || []);
+  const it = src[mv.i]; if (!it) return "";
   const dest = slots().filter(x => x.key !== from).map(x => `<button class="chip sm" data-act="man-move-to" data-to="${x.key}">${esc(x.name)}</button>`).join("") + (from !== "__extra" ? `<button class="chip sm" data-act="man-move-to" data-to="__extra">Fuori pasto</button>` : "");
   return `<div class="mv-pick"><span>Sposta <b>${esc(it.food)}</b> in:</span><div class="chips" style="flex-wrap:wrap">${dest}</div></div>`;
 }
@@ -2653,9 +2656,14 @@ document.addEventListener("click", ev => {
       plan().diet.variants.forEach(v => { v.meals = (v.meals || []).filter(m => !(m.custom && slug(m.name) === k)); });
       store.saveProfile(); render(); toast("Pasto eliminato"); return;
     }
-    case "man-move": S.moving = S.moving && S.moving.m === b.dataset.m && S.moving.i === +b.dataset.i ? null : { m: b.dataset.m, i: +b.dataset.i }; render(); return;
+    case "man-move": { const src = b.dataset.src || "man"; S.moving = S.moving && S.moving.m === b.dataset.m && S.moving.i === +b.dataset.i && S.moving.src === src ? null : { m: b.dataset.m, i: +b.dataset.i, src }; render(); return; }
     case "man-move-to": {
-      const l = dayLog(); const mv = S.moving; if (!mv) return; const src = mv.m === "__extra" ? l.m.extra : (l.m.manual[mv.m] || []);
+      const l = dayLog(); const mv = S.moving; if (!mv) return;
+      if (mv.src === "opt") { // alimento della dieta: il pasto di partenza diventa "Scrivo io" con il resto degli alimenti
+        const fs = slots().find(x => x.key === mv.m); const cur = fs ? slotPick(mealLog(), fs) : null; if (!cur) { S.moving = null; render(); return; }
+        l.m.manual[mv.m] = (cur.items || []).map(x => ({ ...x })); l.m.pick[mv.m] = "manual";
+      }
+      const src = mv.m === "__extra" ? l.m.extra : (l.m.manual[mv.m] || []);
       const it = src[mv.i]; if (!it) { S.moving = null; render(); return; }
       src.splice(mv.i, 1); const to = b.dataset.to;
       if (to === "__extra") l.m.extra.push(it);
