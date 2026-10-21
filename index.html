@@ -715,7 +715,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.6 · 21 ottobre";
+const APP_VERSION = "6.7 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1043,8 +1043,11 @@ function restoreRun(l, day) { // riaperta ma non usata: torna com'era
 }
 function lastSessionRun(day) { // l'ultima volta che hai fatto questa seduta (prima di quella in corso)
   const ids = new Set((day.exercises || []).map(x => x.id)); const cands = [];
-  const pick = (d, ex, start, end) => { let sets = 0, vol = 0; for (const k in ex) { if (!ids.has(k)) continue; (ex[k].s || []).forEach(s => { if (s && s.done) { sets++; vol += (num(s.kg) || 0) * (num(s.reps) || 0); } }); } if (sets) cands.push({ date: d, sets, vol, mins: start && end && end > start ? Math.round((end - start) / 60000) : 0 }); };
+  const pick = (d, ex, start, end) => { let sets = 0, vol = 0, a = 0, z = 0; for (const k in ex) { if (!ids.has(k)) continue; (ex[k].s || []).forEach(s => { if (s && s.done) { sets++; vol += (num(s.kg) || 0) * (num(s.reps) || 0); if (s.at) { a = a ? Math.min(a, s.at) : s.at; z = Math.max(z, s.at); } } }); }
+    let mins = start && end && end > start ? Math.round((end - start) / 60000) : 0; if (!mins && a && z > a) mins = Math.round((z - a) / 60000) + 2;
+    if (sets) cands.push({ date: d, sets, vol, mins }); };
   const T = S.days[S.date]; if (T && T.w && T.w.done && T.w.dayId === day.id) pick(S.date, T.w.ex || {}, T.w.start, T.w.end);
+  if (T && T.w && (T.w.doneAlso || []).includes(day.id)) { const t = (T.w.times || {})[day.id] || {}; pick(S.date, T.w.ex || {}, t.start, t.end); }
   if (T) (T.runs || []).slice().reverse().forEach(r => r.dayId === day.id && pick(S.date, r.ex || {}, r.start, r.end));
   for (const d of sortedDates().filter(x => x < S.date).reverse()) {
     if (cands.length) break; const l = S.days[d]; const w = l.w || {};
@@ -1057,7 +1060,8 @@ function lastSessionRun(day) { // l'ultima volta che hai fatto questa seduta (pr
 function lastSessionLine(day) {
   const r = lastSessionRun(day); if (!r) return "";
   const when = r.date === today() ? "oggi" : fmtDay(r.date, { weekday: "short", day: "numeric", month: "short" });
-  return `🕘 Ultima volta: <b>${esc(when)}</b>${r.mins ? ` · ${r.mins} min` : ""} · ${r.sets} serie${r.vol ? ` · ${r.vol >= 10000 ? fmtN(Math.round(r.vol / 100) / 10) + " t" : fmtI(Math.round(r.vol)) + " kg"}` : ""}`;
+  const dur = r.mins ? (r.mins >= 60 ? `${Math.floor(r.mins / 60)} h ${String(r.mins % 60).padStart(2, "0")} min` : `${r.mins} min`) : "";
+  return `🕘 Ultima volta: <b>${esc(when)}</b> · ⏱ durata <b>${dur || "non registrata"}</b> · ${r.sets} serie${r.vol ? ` · ${r.vol >= 10000 ? fmtN(Math.round(r.vol / 100) / 10) + " t" : fmtI(Math.round(r.vol)) + " kg"}` : ""}`;
 }
 function sessionDates() { return sortedDates().filter(d => isSession(S.days[d])); }
 function suggestedDay() {
