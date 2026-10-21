@@ -493,6 +493,62 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .mem-i span{flex:1;display:flex;flex-direction:column;gap:2px}.mem-i small{font-size:11.5px;color:var(--muted)}
 .mem-i button{border:0;background:none;color:var(--muted);padding:2px;width:28px;height:28px;flex:none}.mem-i button svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2}.mem-i{border:1px solid var(--line);background:var(--surface)}
 .mem-add{display:flex;gap:8px;margin-top:6px}.mem-add .in{flex:1;font-size:16px}
+/* ===== Home futuristica (stile alternativo: Piano → Il tuo profilo → Stile della Home) ===== */
+html.neo-home,html.neo-home body{
+  --bg:#060914; --surface:rgba(18,24,44,.72); --surface-2:rgba(255,255,255,.05); --ink:#e9eefc; --muted:#8f9bbd; --line:rgba(130,165,255,.16);
+  --accent:#6f98ff; --accent-soft:rgba(111,152,255,.16); --on-accent:#fff; --ok-soft:rgba(79,210,150,.14);
+  --neo-a:#58a6ff; --neo-b:#a77bff; --neo-c:#3ff0d0; --neo-glow:rgba(88,140,255,.55); color-scheme:dark}
+html.neo-home body{background:radial-gradient(90% 55% at 15% -5%,rgba(88,110,255,.30),transparent 60%),radial-gradient(70% 45% at 110% 25%,rgba(167,123,255,.22),transparent 60%),radial-gradient(80% 50% at 50% 115%,rgba(63,240,208,.12),transparent 60%),#060914;background-attachment:fixed}
+html.neo-home body::before{content:"";position:fixed;inset:-50%;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(120,160,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(120,160,255,.07) 1px,transparent 1px);background-size:38px 38px;transform:perspective(600px) rotateX(58deg) translateY(10%);mask-image:radial-gradient(60% 50% at 50% 60%,#000,transparent 75%);-webkit-mask-image:radial-gradient(60% 50% at 50% 60%,#000,transparent 75%);animation:neoGrid 14s linear infinite}
+@keyframes neoGrid{to{background-position:0 380px,0 0}}
+html.neo-home header.top{background:linear-gradient(#060914 70%,rgba(6,9,20,0))}
+html.neo-home nav.tabs{background:rgba(10,14,28,.78);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+html.neo-home nav.tabs button[aria-current="page"]{color:#9cc0ff;text-shadow:0 0 12px rgba(120,170,255,.8)}
+html.neo-home nav.tabs button[aria-current="page"] svg{filter:drop-shadow(0 0 6px rgba(120,170,255,.9))}
+.neo-home .hero-sum{position:relative;overflow:hidden;isolation:isolate;background:linear-gradient(160deg,rgba(26,36,78,.92),rgba(9,13,30,.94));border:1px solid rgba(130,170,255,.28);box-shadow:0 30px 70px -30px var(--neo-glow),inset 0 1px 0 rgba(255,255,255,.08);border-radius:24px}
+.neo-home .hero-sum::before{content:"";position:absolute;z-index:-1;width:140%;aspect-ratio:1;left:-20%;top:-70%;background:conic-gradient(from 0deg,rgba(88,166,255,.0),rgba(88,166,255,.35),rgba(167,123,255,.35),rgba(63,240,208,.25),rgba(88,166,255,0));filter:blur(50px);animation:neoSpin 16s linear infinite;opacity:.7}
+.neo-home .hero-sum::after{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.06) 45%,transparent 60%);background-size:250% 100%;animation:neoSheen 7s ease-in-out infinite}
+@keyframes neoSpin{to{transform:rotate(360deg)}}
+@keyframes neoSheen{0%,100%{background-position:120% 0}50%{background-position:-20% 0}}
+.neo-home .hs-hi{background:linear-gradient(90deg,#fff 0%,#a9c6ff 40%,#c7a6ff 70%,#fff 100%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:neoText 6s linear infinite;letter-spacing:.04em}
+@keyframes neoText{to{background-position:-200% 0}}
+.neo-home .ring .rp{filter:drop-shadow(0 0 5px var(--neo-glow));animation:neoRing 1.2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes neoRing{from{stroke-dasharray:0 200}}
+.neo-home .ring .rv{text-shadow:0 0 14px rgba(140,180,255,.7);font-size:16px}
+.neo-home .rw::after{content:"";position:absolute;inset:14%;border-radius:50%;background:radial-gradient(circle,rgba(120,160,255,.18),transparent 70%);z-index:-1}
+.neo-home .rw{isolation:isolate}
+.neo-home .wd{transition:transform .2s}
+.neo-home .wd.today{background:linear-gradient(160deg,rgba(88,166,255,.28),rgba(167,123,255,.22));box-shadow:0 0 0 1px rgba(140,180,255,.45),0 0 18px rgba(88,140,255,.45);color:#fff}
+.neo-home .wd i.w{background:linear-gradient(90deg,var(--neo-a),var(--neo-b));box-shadow:0 0 8px rgba(88,166,255,.8)}
+.neo-home .wd i.m{background:linear-gradient(90deg,#ffd166,#ff9f43);box-shadow:0 0 8px rgba(255,190,90,.7)}
+.neo-home .hs-grid{background:none;gap:6px}
+.neo-home .hs{background:rgba(255,255,255,.04);border:1px solid rgba(130,170,255,.16);border-radius:14px;backdrop-filter:blur(6px)}
+.neo-home .hv{background:linear-gradient(180deg,#fff,#b8ccff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.neo-home .hv small{-webkit-text-fill-color:var(--hero-mut)}
+.neo-home .badge-main{box-shadow:0 0 0 1px rgba(255,190,90,.5),0 0 22px rgba(255,170,60,.35)!important}
+.neo-home .badge-h{background:rgba(255,255,255,.05)!important;border-color:rgba(130,170,255,.25)!important}
+.neo-home .streak{background:rgba(255,170,60,.08);border-color:rgba(255,190,90,.35);box-shadow:0 0 16px rgba(255,170,60,.2)}
+.neo-home .quote.sarge{border:1px solid transparent;background:linear-gradient(rgba(16,20,40,.92),rgba(16,20,40,.92)) padding-box,linear-gradient(90deg,#ff6b6b,#ffb547,#a77bff,#ff6b6b) border-box;background-size:100% 100%,300% 100%;animation:neoBorder 6s linear infinite;box-shadow:0 0 24px rgba(255,107,107,.18)}
+@keyframes neoBorder{to{background-position:0 0,-300% 0}}
+.neo-home .card{background:var(--surface);border:1px solid var(--line);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 18px 50px -25px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.05);position:relative;overflow:hidden}
+.neo-home .card.hero::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,var(--neo-a),var(--neo-b),transparent);opacity:.9}
+.neo-home .card .big{background:linear-gradient(90deg,#fff,#b9cdff 60%,#d2b8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.neo-home .card .eyebrow{color:#8fb0ff;letter-spacing:.14em}
+.neo-home .bar{background:rgba(255,255,255,.07);overflow:hidden}
+.neo-home .bar>i{background:linear-gradient(90deg,var(--neo-c),var(--neo-a),var(--neo-b));box-shadow:0 0 14px rgba(88,166,255,.7);position:relative}
+.neo-home .bar.d>i{background:linear-gradient(90deg,#ffd166,#ff9f43)}
+.neo-home .bar>i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);background-size:50% 100%;background-repeat:no-repeat;animation:neoBar 2.4s ease-in-out infinite}
+@keyframes neoBar{from{background-position:-60% 0}to{background-position:160% 0}}
+.neo-home .btn.primary{background:linear-gradient(100deg,#3f7bff,#7a5cff);border:0;color:#fff;box-shadow:0 10px 30px -10px rgba(90,110,255,.9),inset 0 1px 0 rgba(255,255,255,.25)}
+.neo-home .btn:not(.primary){background:rgba(255,255,255,.06);border-color:var(--line);color:var(--ink)}
+.neo-home .in{background:rgba(255,255,255,.05);border-color:var(--line);color:var(--ink)}
+.neo-home .tag{background:rgba(111,152,255,.16);color:#a9c4ff}
+.neo-home .home-in>*{animation:neoRise .7s cubic-bezier(.2,.8,.2,1) both}
+.neo-home .home-in>*:nth-child(2){animation-delay:.08s}.neo-home .home-in>*:nth-child(3){animation-delay:.16s}.neo-home .home-in>*:nth-child(4){animation-delay:.24s}.neo-home .home-in>*:nth-child(5){animation-delay:.32s}.neo-home .home-in>*:nth-child(n+6){animation-delay:.4s}
+@keyframes neoRise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+html.neo-home .toast{background:rgba(22,30,60,.92);color:#eef2ff;border:1px solid rgba(130,170,255,.35);backdrop-filter:blur(14px);box-shadow:0 12px 40px -10px rgba(88,140,255,.6)}
+.home-style{align-self:center;border:1px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;border-radius:99px;padding:7px 14px;margin:2px auto 0}
+@media (prefers-reduced-motion:reduce){.neo-home *,.neo-home *::before,.neo-home *::after,html.neo-home body::before{animation:none!important}}
 .lv-ask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,8,16,.7);backdrop-filter:blur(6px)}
 .lv-ask-b{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:22px 18px;border-radius:24px;background:var(--hero-bg2);color:var(--hero-ink);box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .lv-ask-b b{font-size:19px}.lv-ask-b p{margin:0 0 6px;color:var(--hero-mut);font-size:14.5px}
@@ -723,7 +779,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "7.0 · 21 ottobre";
+const APP_VERSION = "7.1 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1200,8 +1256,11 @@ function render() {
   const y = window.scrollY;
   v.innerHTML = (S.date !== today() && S.tab !== "piano" ? `<div class="pastbar"><span>📅 Stai registrando <b>${esc(fmtDay(S.date))}</b></span><button data-act="day-today">Torna a oggi</button></div>` : "") + ({ oggi: vOggi, allenamento: vAllenamento, dieta: vDieta, progressi: vProgressi, piano: vPiano }[S.tab])();
   window.scrollTo(0, y);
+  const neo = S.tab === "oggi" && homeStyle() === "neo";
+  document.documentElement.classList.toggle("neo-home", neo);
+  if (neo && S.homeEnter) { const hs = v.querySelector(".hero-sum"); if (hs) countUp(hs); S.homeEnter = false; }
 }
-function go(tab) { S.tab = tab; render(); window.scrollTo(0, 0); }
+function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
 
 function noPlan(kind) {
   return `<div class="card empty">
@@ -1287,7 +1346,7 @@ function recentPR() { // ultimo record personale di carico negli ultimi 21 giorn
 function ring(pct, color, label, val) {
   const r = 26, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, pct || 0));
   return `<div class="ring"><div class="rw"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--hero-track)" stroke-width="7"/>
-    ${p > 0.005 ? "" : "<!--"}<circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(c * p).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)"/>${p > 0.005 ? "" : "-->"}</svg>
+    ${p > 0.005 ? "" : "<!--"}<circle class="rp" cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(c * p).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)"/>${p > 0.005 ? "" : "-->"}</svg>
     <span class="rv">${val}</span></div><span class="rl">${label}</span></div>`;
 }
 function sessionsOn(date) { // sedute segnate in un giorno (chiuse, affiancate e in corso)
@@ -1368,6 +1427,18 @@ function summaryCard() {
   </section>`;
 }
 
+const homeStyle = () => ((S.profile.user || {}).homeStyle === "classic" ? "classic" : "neo");
+function countUp(root) { // numeri che salgono all'apertura della Home futuristica
+  root.querySelectorAll(".rv, .hv").forEach(el => {
+    const node = [...el.childNodes].find(n => n.nodeType === 3 && /\d/.test(n.textContent)); if (!node) return;
+    const txt = node.textContent; const m = /^(\D*)([\d.]+(?:,\d+)?)(.*)$/.exec(txt); if (!m) return;
+    const target = parseFloat(m[2].replace(/\./g, "").replace(",", ".")); if (!isFinite(target) || target === 0) return;
+    const dec = (m[2].split(",")[1] || "").length; const t0 = performance.now(), D = 900;
+    const fmt = v => { const s = v.toFixed(dec).split("."); s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, "."); return s.join(","); };
+    const step = now => { const k = Math.min(1, (now - t0) / D); const e = 1 - Math.pow(1 - k, 3); node.textContent = m[1] + fmt(target * e) + m[3]; if (k < 1) requestAnimationFrame(step); else node.textContent = txt; };
+    requestAnimationFrame(step);
+  });
+}
 function vOggi() {
   if (!wDays().length && !variants().length) return `<h2>Benvenuto</h2>` + noPlan();
   const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc); if ((S.profile.user || {}).hkOn) out.push(hkCard());
@@ -1407,7 +1478,8 @@ function vOggi() {
   </div>`);
   if (!day) out.push(noPlan("workout"));
   if (!v) out.push(noPlan("diet"));
-  return `<div class="stack" style="margin-top:6px">${out.join("")}</div>`;
+  out.push(`<button class="home-style" data-act="home-style">🎨 ${homeStyle() === "neo" ? "Home futuristica · torna alla classica" : "Prova la Home futuristica"}</button>`);
+  return `<div class="stack ${homeStyle() === "neo" && S.homeEnter ? "home-in" : ""}" style="margin-top:6px">${out.join("")}</div>`;
 }
 
 function copyVisible(exId) { // il pulsante "copia" appare quando la 1ª serie ha kg e ripetizioni
@@ -1996,6 +2068,7 @@ function vPiano() {
         <label class="f">🎵 Playlist Spotify per l'allenamento<input class="in" data-e="user" data-k="playlist" value="${esc((S.profile.user || {}).playlist || "")}" placeholder="Incolla il link della playlist" inputmode="url" autocomplete="off"><span class="small muted" style="font-weight:500">${(S.profile.user || {}).playlist ? (spotifyParse((S.profile.user || {}).playlist) ? "✅ Link valido" : "⚠️ Link non riconosciuto: copialo da Spotify → ⋯ → Condividi → Copia link") : "In Spotify apri la playlist → ⋯ → Condividi → Copia link, poi incollalo qui."}</span></label>
         <div class="f">Sesso<div class="chips" style="margin-top:4px">${[["m", "Uomo"], ["f", "Donna"]].map(([k, l]) => `<button class="chip sm ${(S.profile.user || {}).sex === k || (!(S.profile.user || {}).sex && k === "m") ? "on-acc" : ""}" data-act="me-sex" data-k="${k}">${l}</button>`).join("")}</div></div>
         <div class="f">Giorno del check settimanale<div class="chips" style="flex-wrap:wrap;margin-top:4px">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button class="chip sm ${checkDay() === d ? "on-acc" : ""}" data-act="me-check" data-k="${d}">${DOW[d].slice(0, 3)}</button>`).join("")}</div></div>
+        <div class="f">Stile della Home<div class="chips" style="margin-top:4px">${[["classic", "Classica"], ["neo", "Futuristica ✨"]].map(([k, lb]) => `<button class="chip sm ${homeStyle() === k ? "on-acc" : ""}" data-act="home-style-set" data-k="${k}">${lb}</button>`).join("")}</div></div>
         <div class="f">Tono del Coach<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(TONES).map(([k, t]) => `<button class="chip sm ${coachTone() === k ? "on-acc" : ""}" aria-pressed="${coachTone() === k}" data-act="me-tone" data-k="${k}">${esc(t.label)}</button>`).join("")}</div></div>
       </div>
     </details>
@@ -2406,6 +2479,8 @@ document.addEventListener("click", ev => {
     case "rv-del": S.review.items.splice(+b.dataset.i, 1); render(); return;
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
+    case "home-style-set": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = b.dataset.k; store.saveProfile(); render(); return; }
+    case "home-style": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = homeStyle() === "neo" ? "classic" : "neo"; store.saveProfile(); S.homeEnter = true; render(); window.scrollTo(0, 0); toast(homeStyle() === "neo" ? "Home futuristica ✨" : "Home classica"); return; }
     case "live-open": if (b.dataset.day && wDays().find(d => d.id === b.dataset.day)) S.selDay = b.dataset.day; openLive(); return;
     case "feel": setFeel(b.dataset.ex, b.dataset.f); render(); return;
     case "note": S.noteOpen = S.noteOpen === b.dataset.ex ? null : b.dataset.ex; render(); if (S.noteOpen) setTimeout(() => { const t = document.getElementById("note-" + S.noteOpen); t && t.focus(); }, 30); return;
@@ -3944,7 +4019,7 @@ if (ntSupported()) {
   await store.init();
   try { migrateDiet(); } catch (e) { console.warn("migrazione", e); }
   showMode();
-  render();
+  S.homeEnter = true; render();
   showOnboarding();
   try { const q = new URLSearchParams(location.search).get("go"); if (q && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(q)) { go(q); history.replaceState(null, "", location.pathname); } } catch (e) {}
   if (((S.profile.user || {}).notif || {}).on && ntSupported()) { navigator.serviceWorker.register("./sw.js").catch(() => {}); pushSync(); }
