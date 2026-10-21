@@ -723,7 +723,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.9 · 21 ottobre";
+const APP_VERSION = "7.0 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1261,7 +1261,7 @@ function dayHeadline() { // cambia ogni giorno alle 6:00
 }
 function badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet }) {
   const b = [];
-  if (day && l && l.w.dayId === day.id && l.w.done) b.push("💪 Allenamento di oggi fatto");
+  if (sessionsOn(S.date).some(x => x.finished)) b.push("💪 Allenamento di oggi fatto");
   if (streak >= 3) b.push(`🔥 ${streak} giorni di fila`);
   if (pr) b.push("🏆 Nuovo record");
   if (weekN >= target) b.push("✅ Settimana completata");
@@ -1290,11 +1290,29 @@ function ring(pct, color, label, val) {
     ${p > 0.005 ? "" : "<!--"}<circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(c * p).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)"/>${p > 0.005 ? "" : "-->"}</svg>
     <span class="rv">${val}</span></div><span class="rl">${label}</span></div>`;
 }
+function sessionsOn(date) { // sedute segnate in un giorno (chiuse, affiancate e in corso)
+  const l = S.days[date]; if (!l) return []; const out = []; const byId = id => wDays().find(d => d.id === id);
+  const cnt = (ex, d) => (d.exercises || []).reduce((n, x) => n + (((ex[x.id] || {}).s) || []).filter(s => s && s.done).length, 0);
+  (l.runs || []).forEach(r => { const d = byId(r.dayId); if (d) out.push({ day: d, sets: cnt(r.ex || {}, d), finished: true }); });
+  const w = l.w || {};
+  (w.also || []).forEach(id => { const d = byId(id); if (!d) return; const n = cnt(w.ex || {}, d); const f = (w.doneAlso || []).includes(id); if (n || f) out.push({ day: d, sets: n, finished: f }); });
+  const d = byId(w.dayId); if (d) { const n = cnt(w.ex || {}, d); if (n || w.done) out.push({ day: d, sets: n, finished: !!w.done, active: true }); }
+  return out;
+}
+function homeSession() { // la seduta da mostrare in Home: quella in corso, altrimenti l'ultima fatta oggi, altrimenti quella prevista
+  const day = currentDay(); if (!day) return null;
+  const ss = sessionsOn(S.date);
+  const act = ss.find(x => x.active && x.day.id === day.id);
+  if (act) return { day, done: act.sets, tot: totalSets(day), finished: act.finished || act.sets >= totalSets(day) };
+  const last = ss.filter(x => x.sets || x.finished).slice(-1)[0];
+  if (last) return { day: last.day, done: last.sets, tot: totalSets(last.day), finished: last.finished || last.sets >= totalSets(last.day) };
+  return { day, done: 0, tot: totalSets(day), finished: false };
+}
 function summaryCard() {
   const h = new Date().getHours(); const uname = userName(); const hi = (h < 12 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera") + (uname ? ", " + uname : "") + "\u00a0" + (h < 12 ? "☀️" : h < 18 ? "💪" : "🌙");
   // allenamento di oggi
-  const day = currentDay(); const l = peekLog();
-  const done = day && l && l.w.dayId === day.id ? setsFor(l, day) : 0; const tot = day ? totalSets(day) : 0;
+  const hs = homeSession(); const day = hs ? hs.day : null; const l = peekLog();
+  const done = hs ? hs.done : 0; const tot = hs ? hs.tot : 0;
   // alimentazione
   const hasDiet = variants().length > 0; const t = hasDiet ? dayTotals() : zeroT(); const Tg = hasDiet ? targetsFor() : {};
   // settimana
@@ -1353,16 +1371,15 @@ function summaryCard() {
 function vOggi() {
   if (!wDays().length && !variants().length) return `<h2>Benvenuto</h2>` + noPlan();
   const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc); if ((S.profile.user || {}).hkOn) out.push(hkCard());
-  const day = currentDay();
+  const hs = homeSession(); const day = hs && hs.day;
   if (day) {
-    const l = peekLog(); const done = l && l.w.dayId === day.id ? setsFor(l, day) : 0; const tot = totalSets(day);
-    const finished = l && l.w.dayId === day.id && l.w.done;
+    const done = hs.done; const tot = hs.tot; const finished = hs.finished;
     out.push(`<div class="card hero">
       <div class="row between"><span class="eyebrow">Allenamento di oggi</span>${finished ? `<span class="tag" style="background:var(--ok-soft);color:var(--ok)">Fatto</span>` : `<span class="tag b">${(day.exercises || []).length} ${(day.exercises || []).length === 1 ? "esercizio" : "esercizi"}</span>`}</div>
       <div class="big">${esc(day.name)}</div>
       <div class="bar"><i style="width:${tot ? Math.min(100, done / tot * 100) : 0}%"></i></div>
       <div class="row between small muted"><span>${done} di ${tot} serie</span><span>${esc((day.exercises || []).slice(0, 3).map(e => e.name).join(" · "))}${(day.exercises || []).length > 3 ? "…" : ""}</span></div>
-      <div class="row"><button class="btn primary" style="flex:1" data-act="live-open">▶ ${done ? "Riprendi" : "Inizia"} a schermo intero</button><button class="btn" data-go="allenamento">Lista</button></div>
+      <div class="row"><button class="btn primary" style="flex:1" data-act="live-open" data-day="${day.id}">▶ ${finished ? "Apri" : done ? "Riprendi" : "Inizia"} a schermo intero</button><button class="btn" data-go="allenamento">Lista</button></div>
     </div>`);
   }
   const SL = variants().length ? slots() : [];
@@ -2389,7 +2406,7 @@ document.addEventListener("click", ev => {
     case "rv-del": S.review.items.splice(+b.dataset.i, 1); render(); return;
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
-    case "live-open": openLive(); return;
+    case "live-open": if (b.dataset.day && wDays().find(d => d.id === b.dataset.day)) S.selDay = b.dataset.day; openLive(); return;
     case "feel": setFeel(b.dataset.ex, b.dataset.f); render(); return;
     case "note": S.noteOpen = S.noteOpen === b.dataset.ex ? null : b.dataset.ex; render(); if (S.noteOpen) setTimeout(() => { const t = document.getElementById("note-" + S.noteOpen); t && t.focus(); }, 30); return;
     case "hk-import": importHK(); return;
@@ -2642,7 +2659,7 @@ function discardSession(l, day) { // toglie la seduta day da questa data, senza 
 function shortSession() { const l = dayLog(); const day = lvDay(); if (LV.keepShort || !l.w.start || setsFor(l, day) === 0) return false; return ((l.w.end || lastSetAt(l, day) || Date.now()) - l.w.start) < 5 * 60000; }
 function lvCloseAsk() {
   const l = dayLog(); const day = lvDay();
-  if (l.w.dayId === day.id && setsFor(l, day) === 0 && !l.w.done) { delete l.w.start; delete l.w.end; if (LV.archived) restoreRun(l, day); store.saveDay(S.date); closeLive(); return; }
+  if (l.w.dayId === day.id && setsFor(l, day) === 0 && !l.w.done) { delete l.w.start; delete l.w.end; if (!(LV.archived && restoreRun(l, day)) && (l.w.also || []).length) discardSession(l, day); store.saveDay(S.date); closeLive(); return; }
   if (shortSession()) { LV.ask = "close"; renderLive(); return; }
   closeLive();
 }
