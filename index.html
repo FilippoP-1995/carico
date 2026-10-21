@@ -99,7 +99,10 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .set .unit{font-size:11px;color:var(--muted);display:block;text-align:center;margin-top:2px}
 .chk{width:48px;height:44px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);display:grid;place-items:center}
 .chk svg{width:22px;height:22px;stroke:var(--muted)}
+.lc-day{display:block;font-size:12px;font-weight:600;opacity:.8;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .set.done{background:var(--ok-soft)}
+.set.next{box-shadow:inset 4px 0 0 var(--acc,#3d6bff);background:color-mix(in srgb,var(--acc,#3d6bff) 9%,transparent)}
+.set.next .sn{color:var(--acc,#3d6bff);font-weight:800}
 .set.done .chk{background:var(--ok);border-color:var(--ok)}
 .set.done .chk svg{stroke:#fff}
 .set.done .sn{color:var(--ok)}
@@ -254,6 +257,7 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .lv-sets{display:flex;gap:6px;flex-wrap:wrap}
 .lv-s{min-width:44px;height:36px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.16);background:transparent;color:var(--hero-mut);font-weight:700;font-size:13px;font-variant-numeric:tabular-nums}
 .lv-s.on{border-color:var(--hero-ink);color:var(--hero-ink)}
+.lv-s{min-width:50px;height:42px;font-size:14px;transition:transform .15s}
 .lv-s.ok{background:rgba(79,210,150,.16);border-color:rgba(79,210,150,.5);color:var(--hero-g)}
 .lv-go{width:100%;min-height:62px;border:0;border-radius:18px;font-size:19px;font-weight:700;color:#0b1020;background:linear-gradient(135deg,var(--hero-g),#8be6b8);box-shadow:0 10px 28px rgba(79,210,150,.28)}
 .lv-go:active{transform:scale(.98)}
@@ -462,6 +466,10 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .hk-tpl{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
 .hk-tpl code{font-size:13.5px;word-break:break-word;font-family:ui-monospace,Menlo,monospace}
 .lv-s.pre{border-style:dashed;color:var(--hero-ink)}
+.lv-s.on,.lv-s.on.ok,.lv-s.on.pre{background:var(--hero-a);border:2px solid #fff;border-style:solid;color:#fff;transform:scale(1.12);box-shadow:0 0 0 4px rgba(125,156,255,.35),0 6px 16px rgba(0,0,0,.35);position:relative;z-index:1}
+.lv-s.on::after{content:"";position:absolute;left:50%;bottom:-9px;width:0;height:0;margin-left:-5px;border:5px solid transparent;border-top-color:#fff}
+.lv-sets{padding:4px 2px 8px;gap:8px}
+.lv-set b{display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 6px;border-radius:9px;background:var(--hero-a);color:#fff;font-size:18px;margin:0 2px}
 .lv-copy{align-self:flex-start;border:0;background:rgba(125,156,255,.14);color:var(--hero-a);border-radius:10px;padding:8px 12px;font-weight:700;font-size:13.5px;margin-top:-6px}
 .lv-in.docked{padding-bottom:calc(170px + env(safe-area-inset-bottom,0px))}
 .lv-dock{position:fixed;z-index:45;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:536px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:10px 10px 10px 12px;border-radius:20px;background:rgba(20,26,43,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.14);box-shadow:0 14px 40px rgba(0,0,0,.45);color:var(--hero-ink);animation:popUp .25s ease}
@@ -702,7 +710,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.0 · 21 ottobre";
+const APP_VERSION = "6.1 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1382,11 +1390,12 @@ function vAllenamento() {
     const doneN = logged.filter(s => s && s.done).length;
     const open = S.openEx.has(ex.id);
     const complete = doneN >= sets;
+    const nextI = isThis ? Array.from({ length: sets }, (_, i) => i).find(i => !(logged[i] && logged[i].done)) : 0;
     let inner = "";
     if (open) {
       const rows = Array.from({ length: Math.max(sets, logged.length) }, (_, i) => {
         const s = logged[i] || {}; const ls = last && last.sets[Math.min(i, last.sets.length - 1)];
-        const row = `<div class="set ${s.done ? "done" : ""}" data-ex="${ex.id}" data-i="${i}">
+        const row = `<div class="set ${s.done ? "done" : ""} ${i === nextI ? "next" : ""}" data-ex="${ex.id}" data-i="${i}">
           <span class="sn">${i + 1}</span>
           <div><input inputmode="decimal" data-f="kg" value="${esc(s.kg ?? "")}" placeholder="${ls && ls.kg !== "" && ls.kg != null ? esc(ls.kg) : (ex.load && num(ex.load) != null && !/%|rpe/i.test(ex.load) ? esc(num(ex.load)) : "–")}" aria-label="Serie ${i + 1} chili"><span class="unit">kg</span></div>
           <span class="x">×</span>
@@ -1417,7 +1426,7 @@ function vAllenamento() {
     <div class="chips" role="group" aria-label="Giorno della scheda">${chips}</div>
     <div class="row between small muted" style="margin:10px 0 6px"><span>${done} di ${tot} serie fatte</span>${isThis && l.w.done ? `<span style="color:var(--ok);font-weight:700">Completato</span>` : ""}</div>
     <div class="bar" style="margin-bottom:14px"><i style="width:${tot ? Math.min(100, done / tot * 100) : 0}%"></i></div>
-    <div class="row" style="margin-bottom:12px;gap:8px"><button class="btn primary live-cta" data-act="live-open" style="flex:1">▶ Modalità allenamento · ${esc(day.name.length > 22 ? day.name.slice(0, 22) + "…" : day.name)}</button><button class="btn spot-btn" data-act="spotify" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button></div>
+    <div class="row" style="margin-bottom:12px;gap:8px"><button class="btn primary live-cta" data-act="live-open" style="flex:1;flex-direction:column;gap:1px;line-height:1.15">▶ Modalità allenamento<small class="lc-day">${esc(day.name)}</small></button><button class="btn spot-btn" data-act="spotify" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button></div>
     <div class="stack">${exs}
     ${isThis && l.w.done ? `<button class="btn block" data-act="reopen">Riapri l'allenamento</button>` : `<button class="btn primary block" data-act="finish">${done ? "Termina allenamento" : "✓ Segna come fatto (senza registrare le serie)"}</button>`}
     <p class="small muted" style="margin:0;text-align:center">Per segnare un allenamento di un altro giorno della settimana, tocca il giorno nel riepilogo della Home. Tocca un esercizio per aprire le serie. Con ✓ segni la serie e parte il recupero; se lasci vuoto uso il carico dell'ultima volta.</p>
@@ -2338,7 +2347,7 @@ document.addEventListener("click", ev => {
     case "copy-first": {
       const day = currentDay(); const ex = day.exercises.find(e => e.id === b.dataset.ex); const l = dayLog(); const e = l.w.ex[ex.id]; if (!e || !e.s[0]) return;
       const s0 = e.s[0]; const sets = Math.max(parseInt(ex.sets) || 3, e.s.length); let n = 0;
-      for (let i = 1; i < sets; i++) { const s = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; if (!s.done) { s.kg = s0.kg; s.reps = s0.reps; n++; } }
+      for (let i = 1; i < sets; i++) { const s = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; const empty = (s.kg === "" || s.kg == null) && (s.reps === "" || s.reps == null); if (!s.done || empty) { s.kg = s0.kg; s.reps = s0.reps; n++; } }
       store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su ${n} serie`); return;
     }
     case "add-set": { const day = currentDay(); const ex = day.exercises.find(e => e.id === b.dataset.ex); ex.sets = (parseInt(ex.sets) || 3) + 1; store.saveProfile(); render(); return; }
@@ -2777,7 +2786,8 @@ document.addEventListener("click", ev => {
     const kg = kgI ? String(num(kgI.value) ?? "") : LV.kg, reps = rI ? String(parseInt(rI.value) || "") : LV.reps;
     if (!kg && !reps) { toast("Imposta prima kg e ripetizioni"); return; }
     const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] }; const n = exSets(ex); let c = 0;
-    for (let i = 0; i < n; i++) { const s0 = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; if (!s0.done) { s0.kg = kg; s0.reps = reps; c++; } }
+    for (let i = 0; i < n; i++) { const s0 = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; const empty = (s0.kg === "" || s0.kg == null) && (s0.reps === "" || s0.reps == null);
+      if (i === LV.setIdx || !s0.done || empty) { s0.kg = kg; s0.reps = reps; c++; } }
     LV.kg = kg; LV.reps = reps; store.saveDay(S.date); renderLive(); toast(`${fmtN(num(kg))} kg × ${reps} su ${c} ${c === 1 ? "serie" : "serie"}`);
   }
   else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); }
@@ -2786,7 +2796,7 @@ document.addEventListener("click", ev => {
   else if (a === "lv-prev" || a === "lv-next") { const g = ssGroup(day, LV.exIdx); const t = Math.max(0, Math.min(day.exercises.length - 1, a === "lv-next" ? g[g.length - 1] + 1 : g[0] - 1)); const r = lvOpenAt(day, t); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "ss-done") lvSsDone();
   else if (a === "ss-adj") { const v = LV.ssv[b.dataset.x] = LV.ssv[b.dataset.x] || {}; const f = b.dataset.f; const cur = f === "kg" ? (num(v.kg) || 0) : (parseInt(v.reps) || 0); const nv = Math.max(0, Math.round((cur + +b.dataset.d) * 100) / 100); v[f] = String(nv); const inp = document.querySelector(`[data-ssx="${b.dataset.x}"][data-ssf="${f}"]`); if (inp) inp.value = f === "kg" ? fmtN(nv) : String(nv); }
-  else if (a === "ss-copy") { const l = lvLog(); ssGroup(day, LV.exIdx).forEach(i => { const x = day.exercises[i]; const v = LV.ssv[x.id] || {}; const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: x.name, s: [] }; e.name = x.name; for (let k = LV.setIdx; k < exSets(x); k++) { const sk = e.s[k]; if (sk && sk.done) continue; e.s[k] = { kg: v.kg || "", reps: v.reps || "", done: false }; } for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false }; }); store.saveDay(S.date); toast("Valori copiati su tutte le serie da fare"); renderLive(); }
+  else if (a === "ss-copy") { const l = lvLog(); ssGroup(day, LV.exIdx).forEach(i => { const x = day.exercises[i]; const v = LV.ssv[x.id] || {}; const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: x.name, s: [] }; e.name = x.name; for (let k = 0; k < exSets(x); k++) { const sk = e.s[k]; const empty = !sk || ((sk.kg === "" || sk.kg == null) && (sk.reps === "" || sk.reps == null)); if (k === LV.setIdx && sk) { sk.kg = v.kg || ""; sk.reps = v.reps || ""; continue; } if (sk && sk.done && !empty) continue; e.s[k] = { kg: v.kg || "", reps: v.reps || "", done: !!(sk && sk.done) }; } for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false }; }); store.saveDay(S.date); toast("Valori copiati su tutte le serie da fare"); renderLive(); }
   else if (a === "lv-rest") { if (LV.over || !LV.resting) return; LV.restEnd += +b.dataset.d * 1000; LV.restTotal = Math.max(LV.restTotal, Math.ceil((LV.restEnd - Date.now()) / 1000)); lvTick(); }
   else if (a === "lv-nextex") { LV.phase = "set"; LV.flash = ""; LV.doneEx = null; LV.doneGroup = null; lvDefaults(); renderLive(); window.scrollTo(0, 0); $("#live").scrollTop = 0; }
   else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (nx ? nx.name : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
