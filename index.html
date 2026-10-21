@@ -483,6 +483,8 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .dk-b.hi{background:var(--hero-ink);color:var(--hero-bg)}
 .lv-dock.over{border:0;text-align:left;font:inherit;background:linear-gradient(135deg,#2fbf7a,#4fd296);color:#0b1020;animation:pulse 1.1s ease-in-out infinite;width:auto}
 .lv-dock.over .dk-t span{color:rgba(11,16,32,.7)}
+.last-sess{font-size:13px;color:var(--muted);margin:-4px 2px 12px}.last-sess b{color:var(--ink)}
+.lv-lastsess{font-size:13.5px;color:var(--hero-mut);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:9px 12px}.lv-lastsess b{color:var(--hero-ink)}
 .lv-ask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,8,16,.7);backdrop-filter:blur(6px)}
 .lv-ask-b{width:100%;max-width:380px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;padding:22px 18px;border-radius:24px;background:var(--hero-bg2);color:var(--hero-ink);box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .lv-ask-b b{font-size:19px}.lv-ask-b p{margin:0 0 6px;color:var(--hero-mut);font-size:14.5px}
@@ -713,7 +715,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "6.5 · 21 ottobre";
+const APP_VERSION = "6.6 · 21 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1017,7 +1019,46 @@ function useSession(l, day) { // porta la seduta "day" in primo piano su questa 
   return l.w;
 }
 function setsFor(l, day) { if (!l || !l.w || !day) return 0; return (day.exercises || []).reduce((n, ex) => n + exDone(l, ex), 0); }
-const isSession = l => !!(l && l.w && (setsDone(l) > 0 || (l.w.done && l.w.dayId)));
+const isSession = l => !!(l && ((l.runs && l.runs.length) || (l.w && (setsDone(l) > 0 || (l.w.done && l.w.dayId)))));
+function exOf(d) { // tutte le serie del giorno: seduta in corso + sedute già chiuse con "Salva e chiudi"
+  const l = S.days[d]; if (!l) return {}; const out = Object.assign({}, (l.w && l.w.ex) || {});
+  (l.runs || []).forEach((r, i) => { for (const k in r.ex || {}) out[k + "~" + i] = r.ex[k]; });
+  return out;
+}
+function exHistory(beforeDate, inclToday) { // mappe di esercizi dalla più recente alla più vecchia
+  const out = []; const t = S.days[beforeDate];
+  if (inclToday && t) (t.runs || []).slice().reverse().forEach(r => out.push({ date: beforeDate, ex: r.ex || {} }));
+  sortedDates().filter(d => d < beforeDate).reverse().forEach(d => { const l = S.days[d]; if (l.w && l.w.ex) out.push({ date: d, ex: l.w.ex }); (l.runs || []).slice().reverse().forEach(r => out.push({ date: d, ex: r.ex || {} })); });
+  return out;
+}
+function archiveRun(l, day) { // la seduta finita va in archivio: riaprendola si comincia una nuova volta
+  const ids = new Set((day.exercises || []).map(x => x.id)); const ex = {};
+  for (const k in l.w.ex) if (ids.has(k)) { ex[k] = l.w.ex[k]; delete l.w.ex[k]; }
+  (l.runs = l.runs || []).push({ dayId: day.id, dayName: day.name, ex, done: true, start: l.w.start || 0, end: l.w.end || lastSetAt({ w: { ex } }) || 0 });
+  l.w.done = false; delete l.w.start; delete l.w.end;
+}
+function restoreRun(l, day) { // riaperta ma non usata: torna com'era
+  const r = (l.runs || [])[l.runs ? l.runs.length - 1 : -1]; if (!r || r.dayId !== day.id || l.w.dayId !== day.id || setsFor(l, day) > 0) return false;
+  l.runs.pop(); Object.assign(l.w.ex, r.ex); l.w.done = true; if (r.start) l.w.start = r.start; if (r.end) l.w.end = r.end; if (!l.runs.length) delete l.runs; return true;
+}
+function lastSessionRun(day) { // l'ultima volta che hai fatto questa seduta (prima di quella in corso)
+  const ids = new Set((day.exercises || []).map(x => x.id)); const cands = [];
+  const pick = (d, ex, start, end) => { let sets = 0, vol = 0; for (const k in ex) { if (!ids.has(k)) continue; (ex[k].s || []).forEach(s => { if (s && s.done) { sets++; vol += (num(s.kg) || 0) * (num(s.reps) || 0); } }); } if (sets) cands.push({ date: d, sets, vol, mins: start && end && end > start ? Math.round((end - start) / 60000) : 0 }); };
+  const T = S.days[S.date]; if (T && T.w && T.w.done && T.w.dayId === day.id) pick(S.date, T.w.ex || {}, T.w.start, T.w.end);
+  if (T) (T.runs || []).slice().reverse().forEach(r => r.dayId === day.id && pick(S.date, r.ex || {}, r.start, r.end));
+  for (const d of sortedDates().filter(x => x < S.date).reverse()) {
+    if (cands.length) break; const l = S.days[d]; const w = l.w || {};
+    if (w.dayId === day.id) pick(d, w.ex || {}, w.start, w.end);
+    else if ((w.also || []).includes(day.id)) { const t = (w.times || {})[day.id] || {}; pick(d, w.ex || {}, t.start, t.end); }
+    if (!cands.length) (l.runs || []).slice().reverse().forEach(r => r.dayId === day.id && pick(d, r.ex || {}, r.start, r.end));
+  }
+  return cands[0] || null;
+}
+function lastSessionLine(day) {
+  const r = lastSessionRun(day); if (!r) return "";
+  const when = r.date === today() ? "oggi" : fmtDay(r.date, { weekday: "short", day: "numeric", month: "short" });
+  return `🕘 Ultima volta: <b>${esc(when)}</b>${r.mins ? ` · ${r.mins} min` : ""} · ${r.sets} serie${r.vol ? ` · ${r.vol >= 10000 ? fmtN(Math.round(r.vol / 100) / 10) + " t" : fmtI(Math.round(r.vol)) + " kg"}` : ""}`;
+}
 function sessionDates() { return sortedDates().filter(d => isSession(S.days[d])); }
 function suggestedDay() {
   const days = wDays(); if (!days.length) return null;
@@ -1068,9 +1109,7 @@ function feelHint(last) {
 }
 function lastPerformance(exName, beforeDate) {
   const key = norm(exName);
-  const dates = sortedDates().filter(d => d < beforeDate).reverse();
-  for (const d of dates) {
-    const ex = S.days[d].w && S.days[d].w.ex; if (!ex) continue;
+  for (const { date: d, ex } of exHistory(beforeDate, true)) {
     for (const k in ex) if (norm(ex[k].name) === key) { const done = (ex[k].s || []).filter(s => s && s.done); if (done.length) return { date: d, sets: done, feel: ex[k].feel || "", note: ex[k].note || "" }; }
   }
   return null;
@@ -1225,11 +1264,11 @@ function badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet })
 
 function dayHasActivity(d) { const l = S.days[d]; if (!l) return false; return isSession(l) || Object.keys((l.m && l.m.eaten) || {}).length > 0 || ((l.m && l.m.extra) || []).length > 0; }
 function weekStart(d) { const x = parseD(d); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
-function sessionVolume(d) { let v = 0; const ex = (S.days[d] && S.days[d].w && S.days[d].w.ex) || {}; for (const k in ex) (ex[k].s || []).forEach(s => { if (s && s.done) v += (num(s.kg) || 0) * (num(s.reps) || 0); }); return v; }
+function sessionVolume(d) { let v = 0; const ex = exOf(d); for (const k in ex) (ex[k].s || []).forEach(s => { if (s && s.done) v += (num(s.kg) || 0) * (num(s.reps) || 0); }); return v; }
 function recentPR() { // ultimo record personale di carico negli ultimi 21 giorni
   const sess = sessionDates(); const best = {}; let last = null;
   const limit = new Date(parseD(S.date)); limit.setDate(limit.getDate() - 21); const lim = dstr(limit);
-  for (const d of sess) { const ex = S.days[d].w.ex; for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(s => s && s.done).map(s => num(s.kg) || 0)); if (!top) continue; const key = norm(ex[k].name);
+  for (const d of sess) { const ex = exOf(d); for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(s => s && s.done).map(s => num(s.kg) || 0)); if (!top) continue; const key = norm(ex[k].name);
     if (best[key] != null && top > best[key] && d >= lim) last = { name: ex[k].name, kg: top, prev: best[key], d }; best[key] = Math.max(best[key] || 0, top); } }
   return last;
 }
@@ -1454,6 +1493,7 @@ function vAllenamento() {
     <div class="row between small muted" style="margin:10px 0 6px"><span>${done} di ${tot} serie fatte</span>${isThis && l.w.done ? `<span style="color:var(--ok);font-weight:700">Completato</span>` : ""}</div>
     <div class="bar" style="margin-bottom:14px"><i style="width:${tot ? Math.min(100, done / tot * 100) : 0}%"></i></div>
     <div class="row" style="margin-bottom:12px;gap:8px"><button class="btn primary live-cta" data-act="live-open" style="flex:1;flex-direction:column;gap:1px;line-height:1.15">▶ Modalità allenamento<small class="lc-day">${esc(day.name)}</small></button><button class="btn spot-btn" data-act="spotify" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button></div>
+    ${lastSessionLine(day) ? `<div class="last-sess">${lastSessionLine(day)}</div>` : ""}
     <div class="stack">${exs}
     ${isThis && l.w.done ? `<button class="btn block" data-act="reopen">Riapri l'allenamento</button>` : `<button class="btn primary block" data-act="finish">${done ? "Termina allenamento" : "✓ Segna come fatto (senza registrare le serie)"}</button>`}
     <p class="small muted" style="margin:0;text-align:center">Per segnare un allenamento di un altro giorno della settimana, tocca il giorno nel riepilogo della Home. Tocca un esercizio per aprire le serie. Con ✓ segni la serie e parte il recupero; se lasci vuoto uso il carico dell'ultima volta.</p>
@@ -1798,7 +1838,7 @@ function vProgressi() {
   const weeks = Array.from({ length: 8 }, (_, i) => { const s = new Date(monday); s.setDate(monday.getDate() - (7 - i) * 7); const e = new Date(s); e.setDate(s.getDate() + 7); return { s, n: sess.filter(d => d >= dstr(s) && d < dstr(e)).length }; });
   const maxW = Math.max(3, ...weeks.map(w => w.n));
   const exMap = {};
-  sess.forEach(d => { const ex = S.days[d].w.ex; for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(s => s && s.done).map(s => num(s.kg) || 0)); if (top > 0) { const key = norm(ex[k].name); (exMap[key] = exMap[key] || { name: ex[k].name, pts: [] }).pts.push({ d, kg: top }); } } });
+  sess.forEach(d => { const ex = exOf(d); for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(s => s && s.done).map(s => num(s.kg) || 0)); if (top > 0) { const key = norm(ex[k].name); (exMap[key] = exMap[key] || { name: ex[k].name, pts: [] }).pts.push({ d, kg: top }); } } });
   const exKeys = Object.keys(exMap).sort((a, b) => exMap[b].pts.length - exMap[a].pts.length);
   if (!S.progEx || !exMap[S.progEx]) S.progEx = exKeys[0] || null;
   const ex = S.progEx && exMap[S.progEx];
@@ -2590,7 +2630,7 @@ function discardSession(l, day) { // toglie la seduta day da questa data, senza 
 function shortSession() { const l = dayLog(); const day = lvDay(); if (LV.keepShort || !l.w.start || setsFor(l, day) === 0) return false; return ((l.w.end || lastSetAt(l, day) || Date.now()) - l.w.start) < 5 * 60000; }
 function lvCloseAsk() {
   const l = dayLog(); const day = lvDay();
-  if (l.w.dayId === day.id && setsFor(l, day) === 0 && !l.w.done) { delete l.w.start; delete l.w.end; store.saveDay(S.date); closeLive(); return; }
+  if (l.w.dayId === day.id && setsFor(l, day) === 0 && !l.w.done) { delete l.w.start; delete l.w.end; if (LV.archived) restoreRun(l, day); store.saveDay(S.date); closeLive(); return; }
   if (shortSession()) { LV.ask = "close"; renderLive(); return; }
   closeLive();
 }
@@ -2629,7 +2669,8 @@ function lvFirstOpen() {
 function openLive() {
   const day = lvDay(); if (!day || !(day.exercises || []).length) { toast("Carica prima una scheda di allenamento"); return; }
   { const l0 = dayLog(); useSession(l0, day); if (setsFor(l0, day) === 0 && !l0.w.done && (l0.w.start || l0.w.end)) { const prev = (l0.w.also || []).slice(-1)[0]; if (prev && l0.w.end) { l0.w.times = l0.w.times || {}; if (!l0.w.times[prev]) l0.w.times[prev] = { start: l0.w.start || 0, end: l0.w.end }; } delete l0.w.start; delete l0.w.end; } }
-  LV.ask = null; LV.keepShort = false;
+  LV.ask = null; LV.keepShort = false; LV.archived = false;
+  { const l1 = dayLog(); if (l1.w.dayId === day.id && l1.w.done && setsFor(l1, day) > 0) { archiveRun(l1, day); LV.archived = true; store.saveDay(S.date); } }
   lvLog(); const f = lvFirstOpen();
   if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; }
   else { // seduta già finita: si riapre dal primo esercizio, con le serie fatte e i carichi segnati, pronta da rivedere o modificare
@@ -2642,7 +2683,7 @@ function openLive() {
   tagMuscles();
 }
 function closeLive() { stopAlarm(); LV.resting = false; LV.over = false; clearInterval(LV.iv); try { LV.wake && LV.wake.release(); } catch (e) {} LV.wake = null; ovClose("live"); render(); }
-function bestBefore(name) { const key = norm(name); let b = 0; for (const d of sortedDates()) { if (d >= S.date) break; const ex = (S.days[d].w && S.days[d].w.ex) || {}; for (const k in ex) if (norm(ex[k].name) === key) (ex[k].s || []).forEach(s => { if (s && s.done) b = Math.max(b, num(s.kg) || 0); }); } return b; }
+function bestBefore(name) { const key = norm(name); let b = 0; for (const { ex } of exHistory(S.date, true)) { for (const k in ex) if (norm(ex[k].name) === key) (ex[k].s || []).forEach(s => { if (s && s.done) b = Math.max(b, num(s.kg) || 0); }); } return b; }
 function lvTick() {
   const c = $("#lvClock"); const l = peekLog();
   if (c && l && l.w.start) { const s = Math.max(0, Math.floor(((l.w.end || (LV.phase === "done" ? lastSetAt(l, lvDay()) : 0) || Date.now()) - l.w.start) / 1000)); c.textContent = (s >= 3600 ? Math.floor(s / 3600) + ":" + pad(Math.floor(s / 60) % 60) : Math.floor(s / 60)) + ":" + pad(s % 60); }
@@ -2672,6 +2713,7 @@ function renderLive() {
     <div class="lv-prog"><i style="width:${tot ? done / tot * 100 : 0}%"></i></div>
     <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(ex.name)}</button>`; }).join("")}</div>`;
   let body = "";
+  const lsl = LV.phase === "set" && setsFor(l, day) === 0 ? lastSessionLine(day) : "";
   if (LV.phase === "exdone" && LV.doneGroup) {
     const gx = LV.doneGroup.map(id => exs.find(x => x.id === id)).filter(Boolean); const nx = exs[LV.exIdx];
     body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Super serie completata</span><h1>${gx.map(x => esc(x.name)).join(" + ")}</h1>
@@ -2757,7 +2799,7 @@ function renderLive() {
   if (LV.ask) { const m = Math.max(0, Math.round(((dayLog().w.end || Date.now()) - (dayLog().w.start || Date.now())) / 60000));
     dock += `<div class="lv-ask"><div class="lv-ask-b"><div style="font-size:34px">⏱️</div><b>Allenamento di ${m < 1 ? "meno di un minuto" : m + (m === 1 ? " minuto" : " minuti")}</b><p>È durato meno di 5 minuti. Vuoi salvarlo lo stesso?</p>
       <button class="lv-go" data-act="ask-save">Sì, salva</button><button class="lv-btn hi" data-act="ask-drop" style="width:100%">Non salvare</button><button class="lv-btn" data-act="ask-back" style="width:100%">Torna all'allenamento</button></div></div>`; }
-  el.innerHTML = `<div class="lv-in ${dock && LV.mini ? "docked" : ""}">${top}${LV.flash && LV.resting ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}<div class="lv-body">${body}</div></div>${dock}`;
+  el.innerHTML = `<div class="lv-in ${dock && LV.mini ? "docked" : ""}">${top}${lsl ? `<div class="lv-lastsess">${lsl}</div>` : ""}${LV.flash && LV.resting ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}<div class="lv-body">${body}</div></div>${dock}`;
   lvTick();
   const on = el.querySelector(".lv-pill.on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
 }
@@ -2863,7 +2905,7 @@ document.addEventListener("click", ev => {
   else if (a === "lv-skip") { stopAlarm(); const wasRestPhase = LV.phase === "rest"; LV.phase = "set"; LV.resting = false; LV.over = false; LV.flash = ""; if (wasRestPhase) lvDefaults(); renderLive(); }
   else if (a === "lv-finish") lvFinish();
   else if (a === "ask-save") { const w = LV.ask; LV.ask = null; LV.keepShort = true; if (w === "finish") lvFinish(); else closeLive(); }
-  else if (a === "ask-drop") { const l = dayLog(); discardSession(l, day); store.saveDay(S.date); LV.ask = null; closeLive(); toast("Allenamento non salvato"); }
+  else if (a === "ask-drop") { const l = dayLog(); (day.exercises || []).forEach(x => { delete l.w.ex[x.id]; }); if (!(LV.archived && restoreRun(l, day))) discardSession(l, day); store.saveDay(S.date); LV.ask = null; closeLive(); toast("Allenamento non salvato"); }
   else if (a === "ask-back") { LV.ask = null; renderLive(); }
   else if (a === "lv-review") { LV.phase = "set"; LV.exIdx = 0; LV.setIdx = 0; LV.doneGroup = null; lvDefaults(); renderLive(); }
 }, true);
@@ -3120,7 +3162,7 @@ function weekStats() {
   L.push(`Allenamenti: ${ws.length} su ${target} previsti${ws.length ? " (" + ws.map(d => fmtDay(d, { weekday: "short" }) + " " + (S.days[d].w.dayName || "")).join("; ") + ")" : ""}.`);
   const vol = ds => ds.reduce((a, d) => a + sessionVolume(d), 0); const v1 = vol(ws), v0 = vol(sess.filter(d => d >= pstart && d < start));
   if (v1 || v0) L.push(`Volume sollevato: ${fmtI(v1)} kg (settimana prima ${fmtI(v0)} kg).`);
-  const prs = []; ws.forEach(d => { const ex = S.days[d].w.ex || {}; for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(s => s && s.done).map(s => num(s.kg) || 0)); let best = 0; sortedDates().filter(x => x < d).forEach(x => { const e2 = (S.days[x].w && S.days[x].w.ex) || {}; for (const k2 in e2) if (norm(e2[k2].name) === norm(ex[k].name)) (e2[k2].s || []).forEach(s => { if (s && s.done) best = Math.max(best, num(s.kg) || 0); }); }); if (top && best && top > best) prs.push(`${ex[k].name} ${fmtN(top)} kg (prima ${fmtN(best)})`); } });
+  const prs = []; ws.forEach(d => { const ex = exOf(d); for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(s => s && s.done).map(s => num(s.kg) || 0)); let best = 0; sortedDates().filter(x => x < d).forEach(x => { const e2 = (S.days[x].w && S.days[x].w.ex) || {}; for (const k2 in e2) if (norm(e2[k2].name) === norm(ex[k].name)) (e2[k2].s || []).forEach(s => { if (s && s.done) best = Math.max(best, num(s.kg) || 0); }); }); if (top && best && top > best) prs.push(`${ex[k].name} ${fmtN(top)} kg (prima ${fmtN(best)})`); } });
   if (prs.length) L.push("Record: " + prs.join("; ") + ".");
   const W = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
   const wIn = W.filter(w => inR(w.d, start, end)), wPrev = W.filter(w => inR(w.d, pstart, start) && w.d < start);
@@ -3389,7 +3431,7 @@ function coachContext() {
   const sess = sessionDates().slice(-15);
   if (sess.length) {
     L.push("\nALLENAMENTI RECENTI (serie fatte kg x rip):");
-    sess.forEach(d => { const w = S.days[d].w; L.push(`- ${d} ${w.dayName || ""}: ` + Object.values(w.ex || {}).map(e => { const sd = (e.s || []).filter(x => x && x.done); return sd.length ? `${e.name} ${sd.map(x => (x.kg || "–") + "x" + (x.reps || "–")).join(",")}${e.feel && feelOf(e.feel) ? " (sensazione: " + feelOf(e.feel)[2].toLowerCase() + ")" : ""}${e.note ? ' [nota: "' + e.note.slice(0, 120) + '"]' : ""}` : null; }).filter(Boolean).join("; ")); });
+    sess.forEach(d => { const w = S.days[d].w; L.push(`- ${d} ${w.dayName || ""}: ` + Object.values(exOf(d)).map(e => { const sd = (e.s || []).filter(x => x && x.done); return sd.length ? `${e.name} ${sd.map(x => (x.kg || "–") + "x" + (x.reps || "–")).join(",")}${e.feel && feelOf(e.feel) ? " (sensazione: " + feelOf(e.feel)[2].toLowerCase() + ")" : ""}${e.note ? ' [nota: "' + e.note.slice(0, 120) + '"]' : ""}` : null; }).filter(Boolean).join("; ")); });
   } else L.push("Nessun allenamento registrato finora.");
   { const hk = hkDay(today()); if (hk) L.push(`Anelli di Salute oggi: ${fmtI(hk.kcal)} kcal attive (obiettivo ${fmtI(HKG().kcal)}), ${fmtI(hk.ex)} min di esercizio (obiettivo ${HKG().ex}), ${fmtI(hk.steps)} passi (obiettivo ${fmtI(HKG().steps)}).`); }
   { const h = hydro(today()); L.push(`Acqua oggi: ${fmtN(Math.round((h.w || 0) / 100) / 10)} L su ${fmtN(waterGoal())} L.${supps().length ? " Integratori: " + supps().map(x => `${x.name}${x.dose ? " " + x.dose : ""} ${h.s && h.s[x.id] ? "(preso)" : "(non ancora)"}`).join(", ") + "." : ""}`); }
