@@ -734,6 +734,35 @@ input.small,textarea.small,select.small,.in.small{font-size:16px}
 .tag.b{background:var(--accent-soft);color:var(--accent)}
 .addf{display:flex;gap:8px}
 .addf .in{flex:1}
+/* ===== Colori vari per sezione ===== */
+:root{--p0:#d48700;--p0s:#fff1d6;--p1:#1f9d57;--p1s:#dff5e8;--p2:#e0485f;--p2s:#ffe4e8;--p3:#0b97a5;--p3s:#d9f4f6;--p4:#4f5bd5;--p4s:#e6e8ff;--p5:#8b4fd8;--p5s:#f0e6ff;--p6:#e5651a;--p6s:#ffe9db}
+html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79,209,139,.14);--p2:#ff7a8c;--p2s:rgba(255,122,140,.14);--p3:#3fd0dc;--p3s:rgba(63,208,220,.14);--p4:#8b95ff;--p4s:rgba(139,149,255,.16);--p5:#b88cff;--p5s:rgba(184,140,255,.15);--p6:#ff9a5a;--p6s:rgba(255,154,90,.15)}
+.pc0{--pc:var(--p0);--pc-soft:var(--p0s)}.pc1{--pc:var(--p1);--pc-soft:var(--p1s)}.pc2{--pc:var(--p2);--pc-soft:var(--p2s)}.pc3{--pc:var(--p3);--pc-soft:var(--p3s)}.pc4{--pc:var(--p4);--pc-soft:var(--p4s)}.pc5{--pc:var(--p5);--pc-soft:var(--p5s)}.pc6{--pc:var(--p6);--pc-soft:var(--p6s)}
+/* pasti: ogni pasto il suo colore */
+.card.meal{--diet:var(--pc);--diet-soft:var(--pc-soft);border-left:4px solid var(--pc)!important}
+.card.meal .mhl>.small:first-child{color:var(--pc);font-weight:700}
+.neo-home .meal.eaten{box-shadow:0 0 0 1px color-mix(in srgb,var(--pc) 55%,transparent),0 14px 34px -24px var(--pc)!important}
+.neo-home .meal.eaten .mchk{box-shadow:0 0 12px color-mix(in srgb,var(--pc) 70%,transparent)!important}
+.meal.eaten .mchk svg{stroke:#fff}
+/* macro: kcal ambra, proteine corallo, carbo turchese, grassi viola */
+.mtile .mbar i,.mstrip .ms i{background:var(--pc)!important}
+.mtile em{color:var(--pc);font-weight:700}.mstrip .ms em{color:var(--pc);font-weight:700}
+.mtile{box-shadow:inset 0 3px 0 var(--pc)}
+.mtile.over .mbar i,.mstrip .ms.over i{background:var(--danger)!important}
+.mtile.good em::after{content:" ✓"}
+/* allenamento: colore per giorno e per esercizio */
+.wk-v{--accent:var(--pc);--accent-soft:var(--pc-soft)}
+.wk-v .bar i{background:var(--pc)}
+.neo-home .wk-v .live-cta,.wk-v .live-cta{background:linear-gradient(100deg,var(--pc),color-mix(in srgb,var(--pc) 55%,#7a5cff));box-shadow:0 12px 30px -12px var(--pc)}
+.chip.daychip[aria-pressed="true"]{background:var(--pc)!important;border-color:var(--pc)!important;color:#fff!important;box-shadow:0 8px 20px -10px var(--pc)}
+.chip.daychip:not([aria-pressed="true"]){box-shadow:inset 0 -3px 0 var(--pc)}
+.card.ex{--accent:var(--pc);--accent-soft:var(--pc-soft);--acc:var(--pc);border-left:4px solid var(--pc)!important}
+.card.ex .prog{color:var(--pc)}.card.ex.complete .prog{color:var(--ok)}
+.card.ex .ss-k{background:var(--pc)}
+/* progressi: ogni riquadro il suo colore */
+.prog-v>.card:nth-child(7n+1){--pc:var(--p3);--pc-soft:var(--p3s)}.prog-v>.card:nth-child(7n+2){--pc:var(--p0);--pc-soft:var(--p0s)}.prog-v>.card:nth-child(7n+3){--pc:var(--p2);--pc-soft:var(--p2s)}.prog-v>.card:nth-child(7n+4){--pc:var(--p5);--pc-soft:var(--p5s)}.prog-v>.card:nth-child(7n+5){--pc:var(--p1);--pc-soft:var(--p1s)}.prog-v>.card:nth-child(7n+6){--pc:var(--p6);--pc-soft:var(--p6s)}.prog-v>.card:nth-child(7n+7){--pc:var(--p4);--pc-soft:var(--p4s)}
+.prog-v>.card{--accent:var(--pc);--accent-soft:var(--pc-soft);box-shadow:inset 0 3px 0 var(--pc)}
+.prog-v>.card .eyebrow,html.neo-dark .prog-v>.card .eyebrow,.neo-home .prog-v>.card .eyebrow{color:var(--pc)}
 .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mtile{background:var(--surface-2);border-radius:12px;padding:9px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .mtile .num{font-size:21px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -872,7 +901,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "10.7 · 22 ottobre";
+const APP_VERSION = "10.8 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1770,7 +1799,7 @@ function vAllenamento() {
   if (S.exInit !== day.id + S.date) {
     S.exInit = day.id + S.date; S.openEx = new Set();
   }
-  const chips = wDays().map(d => `<button class="chip" aria-pressed="${d.id === day.id}" data-act="sel-day" data-id="${d.id}">${esc(d.name)}</button>`).join("");
+  const chips = wDays().map((d, di) => `<button class="chip daychip pc${EX_PC[di % EX_PC.length]}" aria-pressed="${d.id === day.id}" data-act="sel-day" data-id="${d.id}">${esc(d.name)}</button>`).join("");
   const exs = (day.exercises || []).map((ex, xi) => {
     const ssg = ssGroup(day, xi); const ssPos = ssg.length > 1 ? ssg.indexOf(xi) : -1;
     const sets = exSets(ex);
@@ -1802,7 +1831,7 @@ function vAllenamento() {
         ${complete ? `<div style="padding:8px 12px 0;border-top:1px solid var(--line)">${feelRow(ex.id, false)}</div>` : ""}
         <div class="row" style="padding:8px 12px;border-top:1px solid var(--line)"><button class="btn ghost small" data-act="add-set" data-ex="${ex.id}">+ Aggiungi serie</button></div>`;
     }
-    return `${ssPos === 0 ? `<div class="ss-label">🔗 Super serie · ${ssg.length} esercizi di fila, poi recupero</div>` : ""}<div class="card ex ${complete ? "complete" : ""} ${open ? "open" : ""} ${ssPos >= 0 ? "ss" + (ssPos === 0 ? " ss-first" : "") + (ssPos === ssg.length - 1 ? " ss-last" : "") : ""}">
+    return `${ssPos === 0 ? `<div class="ss-label">🔗 Super serie · ${ssg.length} esercizi di fila, poi recupero</div>` : ""}<div class="card ex pc${EX_PC[xi % EX_PC.length]} ${complete ? "complete" : ""} ${open ? "open" : ""} ${ssPos >= 0 ? "ss" + (ssPos === 0 ? " ss-first" : "") + (ssPos === ssg.length - 1 ? " ss-last" : "") : ""}">
       <button class="exbtn" data-act="toggle-ex" data-ex="${ex.id}" aria-expanded="${open}">
         <span class="ex-top">${ssPos >= 0 ? `<span class="ss-k">${String.fromCharCode(65 + ssPos)}</span>` : ""}<span class="h3">${esc(ex.name)}</span><span class="prog">${complete ? "✓ " : ""}${doneN}/${sets}</span>${ICON_CHEV}</span>
         <span class="ex-t"><span><b>${sets}</b> serie</span>${ex.reps ? `<span>× <b>${esc(ex.reps)}</b></span>` : ""}${ex.rest ? `<span>rec. <b>${esc(ex.rest)}s</b></span>` : ""}${ex.load ? `<span>carico <b>${esc(ex.load)}</b></span>` : ""}</span>
@@ -1812,7 +1841,8 @@ function vAllenamento() {
   }).join("");
   const done = isThis ? setsFor(l, day) : 0, tot = totalSets(day);
   if (wDays().some(d => (d.exercises || []).some(ex => !ex.muscles && !ex.muscleTried))) setTimeout(tagMuscles, 50);
-  return `<h2>Allenamento</h2>
+  const dpc = "pc" + EX_PC[Math.max(0, wDays().findIndex(d => d.id === day.id)) % EX_PC.length];
+  return `<div class="wk-v ${dpc}"><h2>Allenamento</h2>
     <div class="chips" role="group" aria-label="Giorno della scheda">${chips}</div>
     <div class="row between small muted" style="margin:10px 0 6px"><span>${done} di ${tot} serie fatte</span>${isThis && l.w.done ? `<span style="color:var(--ok);font-weight:700">Completato</span>` : ""}</div>
     <div class="bar" style="margin-bottom:14px"><i style="width:${tot ? Math.min(100, done / tot * 100) : 0}%"></i></div>
@@ -1821,7 +1851,7 @@ function vAllenamento() {
     <div class="stack">${exs}
     ${isThis && l.w.done ? `<button class="btn block" data-act="reopen">Riapri l'allenamento</button>` : `<button class="btn primary block" data-act="finish">${done ? "Termina allenamento" : "✓ Segna come fatto (senza registrare le serie)"}</button>`}
     <p class="small muted" style="margin:0;text-align:center">Per segnare un allenamento di un altro giorno della settimana, tocca il giorno nel riepilogo della Home. Tocca un esercizio per aprire le serie. Con ✓ segni la serie e parte il recupero; se lasci vuoto uso il carico dell'ultima volta.</p>
-    </div>`;
+    </div></div>`;
 }
 
 /* ---------- ricerca alimenti ---------- */
@@ -2076,7 +2106,8 @@ function movePicker(from, kind) {
   const dest = slots().filter(x => x.key !== from).map(x => `<button class="chip sm" data-act="man-move-to" data-to="${x.key}">${esc(x.name)}</button>`).join("") + (from !== "__extra" ? `<button class="chip sm" data-act="man-move-to" data-to="__extra">Fuori pasto</button>` : "");
   return `<div class="mv-pick"><div class="mv-top"><span>Sposta <b>${esc(it.food)}</b> in:</span><button class="mv-x" data-act="man-move-cancel" aria-label="Annulla lo spostamento">✕ Annulla</button></div><div class="chips" style="flex-wrap:wrap">${dest}</div></div>`;
 }
-function mealCard(sl, ml, nextKey) {
+function mealCard(sl, ml, nextKey, ci) {
+  const pc = "pc" + MEAL_PC[(ci || 0) % MEAL_PC.length];
   const eaten = !!ml.eaten[sl.key];
   const pick = slotPick(ml, sl);
   const open = S.openMeals.has(sl.key);
@@ -2089,7 +2120,7 @@ function mealCard(sl, ml, nextKey) {
       ${ICON_CHEV}
     </button>
     <button class="mchk" data-act="meal" data-id="${sl.key}" aria-pressed="${eaten}" aria-label="Segna ${esc(sl.name)} come mangiato">${ICON_CHECK}</button></div>`;
-  if (!open) return `<div class="card meal ${eaten ? "eaten" : ""} ${sl.key === nextKey ? "next" : ""}">${head}</div>`;
+  if (!open) return `<div class="card meal ${pc} ${eaten ? "eaten" : ""} ${sl.key === nextKey ? "next" : ""}">${head}</div>`;
   const base = sumItems(sl.options[0] ? sl.options[0].items : []);
   const deltaOf = items => {
     const c = sumItems(items); if (!base.known || !c.n) return "";
@@ -2116,7 +2147,7 @@ function mealCard(sl, ml, nextKey) {
       ${foodAdder("v:" + sl.key)}
       <div class="row"><button class="btn diet sm" style="flex:1" data-act="vb-save" ${vb.items.length ? "" : "disabled"}>Salva variante</button><button class="btn sm" data-act="vb-close">Annulla</button></div>
     </div>` : `<button class="btn ghost sm add-alt" data-act="var-new" data-m="${sl.key}">+ Crea una variante a mano</button>`;
-  return `<div class="card meal open ${eaten ? "eaten" : ""} ${sl.key === nextKey ? "next" : ""}">
+  return `<div class="card meal open ${pc} ${eaten ? "eaten" : ""} ${sl.key === nextKey ? "next" : ""}">
     ${head}
     <div class="opts">${manual}${opts}</div>
     ${sl.custom ? `<div class="row between"><span class="small muted">Pasto aggiunto da te</span><button class="btn ghost sm" data-act="meal-custom-del" data-m="${sl.key}">Elimina questo pasto</button></div>${varForm}` : altForm + varForm}
@@ -2124,18 +2155,21 @@ function mealCard(sl, ml, nextKey) {
 }
 
 const MSHORT = { kcal: "kcal", p: "Prot.", c: "Carb.", f: "Grassi" };
+const MAC_PC = { kcal: "pc0", p: "pc2", c: "pc3", f: "pc5" }; // ambra, corallo, turchese, viola
+const MEAL_PC = [0, 1, 2, 3, 4, 6, 5]; // colore per pasto
+const EX_PC = [4, 3, 1, 6, 5, 2, 0]; // colore per esercizio / giorno
 function macroState(t, Tg, k) { const tgt = Tg[k]; if (!tgt) return { pct: 0, cls: "" }; const pct = t[k] / tgt * 100;
   return { pct, cls: t[k] > tgt * 1.05 + (k === "kcal" ? 20 : 3) ? "over" : pct >= 95 ? "good" : "" }; }
 function macroTiles() { // mangiato / obiettivo, in cima alla Dieta
   const t = dayTotals(), Tg = targetsFor(); const has = MK.some(k => Tg[k]); const st = statusMsg(t, Tg);
   return `<div class="mtiles" id="mtiles">${MK.map(k => { const m = macroState(t, Tg, k);
-      return `<div class="mtile ${m.cls}"><span class="num">${fmtI(t[k])}</span><small>${Tg[k] ? "di " + fmtI(Tg[k]) + (k === "kcal" ? "" : " g") : (k === "kcal" ? "kcal" : "g")}</small><span class="mbar"><i style="width:${Math.min(100, m.pct)}%"></i></span><em>${MSHORT[k]}</em></div>`; }).join("")}</div>
+      return `<div class="mtile ${MAC_PC[k]} ${m.cls}"><span class="num">${fmtI(t[k])}</span><small>${Tg[k] ? "di " + fmtI(Tg[k]) + (k === "kcal" ? "" : " g") : (k === "kcal" ? "kcal" : "g")}</small><span class="mbar"><i style="width:${Math.min(100, m.pct)}%"></i></span><em>${MSHORT[k]}</em></div>`; }).join("")}</div>
     ${st ? `<div class="alert ${st.cls}" style="margin:0">${esc(st.text)}</div>` : ""}
     ${has ? "" : `<span class="small muted">Inserisci gli obiettivi in Piano per vedere quanto ti manca.</span>`}`;
 }
 function macroStrip() { // versione compatta che resta in alto mentre scorri i pasti
   const t = dayTotals(), Tg = targetsFor();
-  return MK.map(k => { const m = macroState(t, Tg, k); return `<span class="ms ${m.cls}"><em>${k === "kcal" ? "kcal" : k === "p" ? "P" : k === "c" ? "C" : "G"}</em> <b>${fmtI(t[k])}</b>${Tg[k] ? `<small>/${fmtI(Tg[k])}</small>` : ""}<i style="width:${Math.min(100, m.pct)}%"></i></span>`; }).join("");
+  return MK.map(k => { const m = macroState(t, Tg, k); return `<span class="ms ${MAC_PC[k]} ${m.cls}"><em>${k === "kcal" ? "kcal" : k === "p" ? "P" : k === "c" ? "C" : "G"}</em> <b>${fmtI(t[k])}</b>${Tg[k] ? `<small>/${fmtI(Tg[k])}</small>` : ""}<i style="width:${Math.min(100, m.pct)}%"></i></span>`; }).join("");
 }
 function stripSync() {
   const el = document.getElementById("mstrip"); if (!el) return;
@@ -2178,7 +2212,7 @@ function vDieta() {
     ${hydroCard()}
     <div class="row between small muted"><span>${n} di ${SL.length} pasti</span><span>Tocca un pasto per vedere le varianti</span></div>
     <div class="bar d"><i style="width:${SL.length ? n / SL.length * 100 : 0}%"></i></div>
-    ${SL.map(sl => mealCard(sl, ml, nextKey)).join("")}
+    ${SL.map((sl, i) => mealCard(sl, ml, nextKey, i)).join("")}
     ${S.mealAdd ? `<div class="card stack" style="border-color:var(--diet)"><span class="eyebrow">Nuovo pasto</span>
       <div class="row" style="gap:8px"><input class="in" id="mealName" placeholder="Nome, es. Spuntino 2" maxlength="40" style="flex:1"><input class="in" id="mealTime" type="time" style="flex:0 0 110px" aria-label="Orario"></div>
       <span class="small muted">Comparirà ogni giorno insieme agli altri pasti. Dentro scrivi tu cosa mangi, con i macro calcolati.</span>
@@ -2227,7 +2261,7 @@ function vProgressi() {
   if (!S.progEx || !exMap[S.progEx]) S.progEx = exKeys[0] || null;
   const ex = S.progEx && exMap[S.progEx];
   const recent = sess.slice().reverse().slice(0, 8);
-  return `<h2>Progressi</h2><div class="stack">
+  return `<h2>Progressi</h2><div class="stack prog-v">
     <div class="card stack">
       <div class="row between"><span class="eyebrow">Peso corporeo</span>${ws.length ? `<span class="num" style="font-size:22px">${fmtN(ws[ws.length - 1].kg)} kg</span>` : ""}</div>
       ${delta != null ? `<span class="small muted">${delta > 0 ? "+" : ""}${fmtN(delta)} kg dal ${esc(fmtDay(ws[0].d, { day: "numeric", month: "long" }))}</span>` : ""}
