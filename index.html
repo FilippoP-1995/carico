@@ -901,7 +901,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "10.9 · 22 ottobre";
+const APP_VERSION = "11.0 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -4136,6 +4136,7 @@ Regole fisse: le frecciate sul fisico non devono mai tradursi in consigli di man
 };
 const coachTone = () => TONES[(S.profile.user || {}).tone] ? (S.profile.user || {}).tone : "roast";
 const COACH_RULES = `Sei il coach dentro Carico, un'app per chi va in palestra. Parli italiano, sei diretto, motivante ma onesto: se qualcosa non va lo dici.
+DATI REGISTRATI = VERITÀ: tu VEDI le sezioni Dieta e Allenamento dell'app, sono nel "REGISTRO REALE DI OGGI" in fondo ai dati, aggiornato a questo momento (anche quando l'utente registra da solo, senza passare da te). Per calorie, macro, pasti mangiati e allenamenti fatti usa SOLO quei dati. Quello che l'utente ti ha detto in chat ma non è registrato (es. "forse mangio un poke") NON conta nei totali: al massimo chiedi se vuole registrarlo. Se in messaggi precedenti hai dato numeri diversi, valgono i dati registrati attuali. Non dire mai che non vedi la dieta o gli allenamenti.
 RISPOSTE BREVI: massimo 80 parole (3-5 frasi o un elenco di 3-5 punti), adatte allo schermo di un telefono. Vai dritto al punto, niente premesse né riepiloghi. Solo se l'utente chiede esplicitamente un piano, una dieta o una spiegazione dettagliata puoi arrivare a 150 parole. Usa elenchi puntati quando aiutano. Usa **grassetto** solo per i punti chiave.
 Basati sui dati dell'utente qui sotto. La data e l'ora sono quelle in "Data e ora": "oggi" è sempre quel giorno, anche se nella chat ci sono messaggi di giorni precedenti (sono segnati con la loro data). Se un dato manca dillo e fai una stima ragionevole spiegando le ipotesi.
 - "Cosa faccio oggi": indica la seduta prevista, gli esercizi e i carichi da provare in base alle ultime volte (progressione graduale).
@@ -4199,13 +4200,39 @@ function coachContext0() {
     });
     L.push(dietTxt.slice(0, 9000));
     if (plan().diet.notes) L.push("Note della dieta: " + plan().diet.notes.slice(0, 600));
-    const eaten = slots().filter(sl => ml.eaten[sl.key]).map(sl => { const p = slotPick(ml, sl); const m = sumItems(p.items); return `${sl.name}: ${optLabel(sl, p.id)}${p.kind === "manual" ? " (" + p.items.map(x => x.qty + " " + x.food).join(", ") + ")" : ""} [${fmtI(m.kcal)} kcal P${fmtI(m.p)} C${fmtI(m.c)} G${fmtI(m.f)}]`; });
-    L.push("\nOGGI MANGIATO: " + (eaten.length ? eaten.join("; ") : "niente segnato") + (ml.extra.length ? "; fuori pasto: " + ml.extra.map(x => x.qty + " " + x.food).join(", ") : ""));
-    L.push(`Totale oggi: ${fmtI(t.kcal)} kcal, P ${fmtI(t.p)}, C ${fmtI(t.c)}, G ${fmtI(t.f)}. Restano: ${fmtI(Tg.kcal - t.kcal)} kcal, P ${fmtI(Tg.p - t.p)}, C ${fmtI(Tg.c - t.c)}, G ${fmtI(Tg.f - t.f)}.`);
-    const notEaten = slots().filter(sl => !ml.eaten[sl.key]).map(sl => sl.name); if (notEaten.length) L.push("Pasti ancora da fare oggi: " + notEaten.join(", "));
     L.push("PASTI REGISTRABILI (chiave = nome): " + slots().map(sl => `${sl.key} = ${sl.name}${sl.time ? " (" + sl.time + ")" : ""}`).join("; ") + "; extra = Fuori pasto");
   } else L.push("\nNessun piano alimentare caricato.");
+  L.push(registroTxt());
   return L.join("\n");
+}
+function registroTxt() { // quello che è DAVVERO registrato nelle sezioni Dieta e Allenamento (oggi + ultimi giorni)
+  const keep = S.date; const t0 = today(); const out = [];
+  const it = x => `${x.qty ? x.qty + " " : ""}${x.food}${hasMac(x) ? ` (${fmtI(x.kcal)} kcal P${fmtI(x.p)} C${fmtI(x.c)} G${fmtI(x.f)})` : ""}`;
+  const mac = m => m.known || m.kcal ? `${fmtI(m.kcal)} kcal, P ${fmtI(m.p)}, C ${fmtI(m.c)}, G ${fmtI(m.f)}` : "macro non noti";
+  try {
+    S.date = t0;
+    out.push("\n=== REGISTRO REALE DI OGGI (" + t0 + ") — sezioni Dieta e Allenamento dell'app, aggiornate a questo momento ===");
+    if (variants().length) {
+      const ml = mealLog(); const Tg = targetsFor(); const t = dayTotals();
+      out.push("DIETA:");
+      slots().forEach(sl => { const pk = slotPick(ml, sl); const m = sumItems(pk.items || []);
+        if (ml.eaten[sl.key]) out.push(`- ${sl.name}${sl.time ? " (" + sl.time + ")" : ""}: ✓ MANGIATO — ${optLabel(sl, pk.id)}: ${(pk.items || []).map(it).join(", ") || "nessun alimento"} = ${mac(m)}`);
+        else out.push(`- ${sl.name}${sl.time ? " (" + sl.time + ")" : ""}: NON ancora mangiato (previsto: ${optLabel(sl, pk.id)}, ${mac(m)})`); });
+      out.push(ml.extra.length ? "- Fuori pasto: " + ml.extra.map(it).join(", ") + " = " + mac(sumItems(ml.extra)) : "- Fuori pasto: niente");
+      out.push(`TOTALE REGISTRATO OGGI: ${mac(t)}. Obiettivo: ${fmtI(Tg.kcal)} kcal, P ${fmtI(Tg.p)}, C ${fmtI(Tg.c)}, G ${fmtI(Tg.f)}. Restano: ${fmtI(Tg.kcal - t.kcal)} kcal, P ${fmtI(Tg.p - t.p)}, C ${fmtI(Tg.c - t.c)}, G ${fmtI(Tg.f - t.f)}.`);
+    }
+    const L0 = S.days[t0]; const ss = sessionsOn(t0);
+    out.push("ALLENAMENTO:");
+    if (ss.length) ss.forEach(x => { const ex = Object.values(x.ex || {}).map(e => { const sd = (e.s || []).filter(z => z && z.done); return sd.length ? `${e.name} ${sd.map(z => (z.kg || "–") + "x" + (z.reps || "–")).join(",")}` : null; }).filter(Boolean);
+      out.push(`- ${x.day.name}: ${x.finished ? "terminato" : "in corso"}, ${x.sets} serie su ${totalSets(x.day)}${ex.length ? " — " + ex.join("; ") : ""}`); });
+    else if (L0 && L0.rest) out.push("- Oggi l'utente ha segnato RIPOSO (nessun allenamento).");
+    else { const pl = hasSched() ? plannedOn(t0) : undefined; out.push("- Nessuna serie registrata oggi" + (pl ? ` (in programma: ${(wDays().find(d => d.id === pl) || {}).name})` : pl === null ? " (giorno di riposo da programma)" : "") + "."); }
+    // ultimi giorni di dieta
+    const past = Object.keys(S.days).filter(d => d < t0).sort().slice(-6).reverse(); const rows = [];
+    past.forEach(d => { S.date = d; const ml = mealLog(); const nE = slots().filter(sl => ml.eaten[sl.key]).length; if (!nE && !ml.extra.length) return; rows.push(`${d}: ${mac(dayTotals())} (${nE}/${slots().length} pasti spuntati)`); });
+    if (rows.length && variants().length) out.push("DIETA DEI GIORNI SCORSI (registrata): " + rows.join("; "));
+  } catch (e) {} finally { S.date = keep; }
+  return out.join("\n");
 }
 function md(t) {
   const lines = esc(t).split("\n"); let out = "", ul = false;
