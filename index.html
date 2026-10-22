@@ -901,7 +901,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.1 · 22 ottobre";
+const APP_VERSION = "11.2 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -4155,7 +4155,13 @@ REGISTRARE UN PASTO: se l'utente ti chiede di registrare, segnare o aggiungere a
 {"slot": "chiave-del-pasto oppure null", "items": [{"food": "Petto di pollo (cotto)", "qty": "150 g", "kcal": 248, "p": 46, "c": 0, "f": 5}]}
 \`\`\`
 Le quantità sono in grammi (o unità chiare) e i macro sono per quella quantità, con valori medi da tabelle nutrizionali. Per "slot" usa una delle chiavi elencate in "PASTI REGISTRABILI" solo se l'utente l'ha detto o è evidente dall'orario; altrimenti metti null. L'app mostrerà una scheda con un tasto: sarà l'utente a scegliere il pasto e a confermare.
-Se l'utente ti scrive cosa HA mangiato o sta mangiando (es. "a cena ho mangiato…", "ho preso un poke con…", "per pranzo pasta al tonno"), anche senza dirti "registra", proponi SUBITO la registrazione: una frase breve (col tuo tono) e il blocco carico-pasto, senza rielencare gli alimenti nel testo (li mostra già la scheda). Non usare il blocco per cose solo ipotetiche o future ("forse stasera mangio…", "cosa mangio?"): lì rispondi e basta.`;
+Se l'utente ti scrive cosa HA mangiato o sta mangiando (es. "a cena ho mangiato…", "ho preso un poke con…", "per pranzo pasta al tonno"), anche senza dirti "registra", proponi SUBITO la registrazione: una frase breve (col tuo tono) e il blocco carico-pasto, senza rielencare gli alimenti nel testo (li mostra già la scheda). Non usare il blocco per cose solo ipotetiche o future ("forse stasera mangio…", "cosa mangio?"): lì rispondi e basta.
+ESEMPI DI COMPORTAMENTO (cosa fare; le parole e il tono li prendi SEMPRE dalla sezione TONO in fondo):
+- Utente: "a cena ho mangiato 200 g di salmone e 300 g di patate" → una frase di commento sul pasto rispetto a quanto gli restava, poi SUBITO il blocco carico-pasto con slot della cena e i due alimenti con i macro. Niente elenco degli alimenti nel testo.
+- Utente: "a quante calorie sono?" → prendi i numeri dal REGISTRO REALE DI OGGI: kcal e proteine fatte, quanto manca, e un consiglio concreto per il prossimo pasto da fare (con grammi).
+- Utente: "forse stasera mangio un poke" → stima i macro di un poke tipico, dì se ci sta in quello che resta e come aggiustarlo (es. meno riso). Nessun blocco: digli di scrivertelo quando l'ha mangiato davvero.
+- Utente: "cosa faccio oggi?" → seduta in programma oggi (o riposo), 2-4 esercizi chiave con i carichi da provare rispetto all'ultima volta.
+- Utente: "consigli per X" → 3 punti concreti e pratici legati ai SUOI dati (carichi, pasti, peso), non consigli generici da manuale.`;
 function coachContext() { const keep = S.date; S.date = today(); try { return coachContext0(); } finally { S.date = keep; } }
 function coachContext0() {
   const L = [];
@@ -4254,13 +4260,20 @@ const TONE_REMIND = {
   cazzaro: "(Rispondimi da Cazzaro: battute, parolacce, da amico di palestra. Niente tono da assistente.)",
   wild: "(Rispondimi senza filtri, da amico vero, con qualche parolaccia.)",
 };
+// sistema misto: Haiku per la chat normale, Sonnet quando serve ragionare (foto, check, valutazioni, piani, consigli articolati)
+const COACH_BIG = /valut|analizz|miglior|sostitu|alternativ|progression|stallo|plateau|non (sale|salgo|cresc|scend)|confront|prima e dopo|piano|programm|strategi|perch[eé]|spiega|consigl|cosa ne pensi|previsio|quando arriv|quanto (tempo|ci metto)|errori|correggi|ottimizz/i;
+function chatNeedsBig(turns, images, deep) {
+  if (deep || images.length) return true;
+  const u = [...turns].reverse().find(m => m.role === "user"); const t = u ? String(u.content || "") : "";
+  return t.length > 500 || COACH_BIG.test(t);
+}
 AI.chat = async function (turns, { onText, signal, images = [], deep = false } = {}) {
-  const tone = coachTone();
+  const tone = coachTone(); const big = chatNeedsBig(turns, images, deep); this.lastModel = big ? "sonnet" : "haiku";
   const ctx = COACH_RULES + "\n\nDATI DELL'UTENTE:\n" + coachContext() + "\n\n=== TONO E PERSONAGGIO (PRIORITÀ MASSIMA: vale per OGNI risposta, anche brevi, anche per registrare un pasto o fare conti) ===\n" + TONES[tone].txt + (TONE_REMIND[tone] ? "\nNelle risposte brevi il tono non si taglia: la frase a effetto e il linguaggio del personaggio stanno dentro le 80 parole, a costo di togliere dettagli." : "");
   if (TONE_REMIND[tone] && turns.length) { const last = turns[turns.length - 1]; if (last.role === "user") turns = turns.slice(0, -1).concat([{ ...last, content: last.content + "\n\n" + TONE_REMIND[tone] }]); }
   if (this.sample) {
     const input = [{ role: "user", content: ctx }, ...turns];
-    const o = { cache: false, signal, onText: ({ text }) => onText && onText(text) }; if (!deep) o.modelTier = "quick"; if (images.length) o.images = images;
+    const o = { cache: false, signal, onText: ({ text }) => onText && onText(text) }; if (!big) o.modelTier = "quick"; if (images.length) o.images = images;
     const r = await this.sample(input, o);
     return r.text;
   }
@@ -4270,7 +4283,7 @@ AI.chat = async function (turns, { onText, signal, images = [], deep = false } =
   if (images.length && msgs.length) { const last = msgs[msgs.length - 1]; const content = []; for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } }); content.push({ type: "text", text: last.content }); last.content = content; }
   let res;
   try {
-    res = await this.post({ model: "claude-sonnet-5-5", max_tokens: deep ? 2000 : 2500, stream: true, system: ctx, messages: msgs }, signal);
+    res = await this.post({ model: big ? "claude-sonnet-5-5" : "claude-haiku-5-5", max_tokens: big ? 2500 : 4000, stream: true, system: ctx, messages: msgs }, signal);
   } catch (e) { if (e && e.code) throw e; throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
   if (!res.ok) { const pe = await this.errOf(res.clone()); if (pe) throw pe; let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {} throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail }; }
   let text = "";
