@@ -593,6 +593,7 @@ html.neo-dark .tag{background:rgba(111,152,255,.16);color:#a9c4ff}
 html.neo-dark .toast{background:rgba(22,30,60,.94);color:#eef2ff;border:1px solid rgba(130,170,255,.35);backdrop-filter:blur(14px);box-shadow:0 12px 40px -10px rgba(88,140,255,.6)}
 html.neo-dark .set.done{background:linear-gradient(90deg,rgba(34,211,183,.16),rgba(77,141,255,.06))}
 html.neo-dark .macros>div,html.neo-dark .ip-day{background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.w-row{display:flex;align-items:center;gap:10px;font-size:14px;padding:5px 0;border-bottom:1px dashed var(--line)}.w-row span{flex:1;color:var(--muted)}.w-row .rm{border:0;background:none;color:var(--muted);padding:2px 4px;font:inherit;font-size:12.5px;font-weight:700}.w-row .rm svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
 .home-style{align-self:center;border:1px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;border-radius:99px;padding:7px 14px;margin:2px auto 0}
 @media (prefers-reduced-motion:reduce){.neo-home *,.neo-home *::before,.neo-home *::after,html.neo-home body::before{animation:none!important}}
 .lv-ask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,8,16,.7);backdrop-filter:blur(6px)}
@@ -825,7 +826,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.2 · 22 ottobre";
+const APP_VERSION = "9.3 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2128,7 +2129,8 @@ function vProgressi() {
       <div class="row between"><span class="eyebrow">Peso corporeo</span>${ws.length ? `<span class="num" style="font-size:22px">${fmtN(ws[ws.length - 1].kg)} kg</span>` : ""}</div>
       ${delta != null ? `<span class="small muted">${delta > 0 ? "+" : ""}${fmtN(delta)} kg dal ${esc(fmtDay(ws[0].d, { day: "numeric", month: "long" }))}</span>` : ""}
       ${lineChart(wpts, "peso")}
-      <form class="row" data-form="weight"><input class="in" id="wIn" inputmode="decimal" placeholder="Peso di oggi" aria-label="Peso di oggi in kg"><span class="muted">kg</span><button class="btn">Salva</button></form>
+      <form class="stack" data-form="weight" style="gap:8px"><div class="row" style="gap:8px"><input class="in" id="wIn" inputmode="decimal" placeholder="Peso" aria-label="Peso in kg" style="flex:1"><span class="muted">kg</span><input class="in" id="wDate" type="date" value="${today()}" max="${today()}" aria-label="Data della pesata" style="flex:0 0 140px;font-size:16px"></div><button class="btn">Salva pesata</button></form>
+      ${ws.length ? `<details class="w-hist" ${S.wHistOpen ? "open" : ""}><summary class="small" style="cursor:pointer;font-weight:600">Tutte le pesate (${ws.length})</summary><div class="stack" style="gap:2px;margin-top:6px">${ws.slice().reverse().slice(0, 60).map(w => `<div class="w-row"><span>${esc(fmtDay(w.d, { weekday: "short", day: "numeric", month: "short", year: "numeric" }))}</span><b>${fmtN(w.kg)} kg</b><button class="rm" data-act="w-del" data-d="${w.d}" aria-label="Elimina pesata">${ICON_X}</button></div>`).join("")}</div></details>` : ""}
     </div>
     ${measCard()}
     <div class="card stack">
@@ -2662,10 +2664,11 @@ document.addEventListener("submit", ev => {
   const f = ev.target; ev.preventDefault();
   if (f.dataset.form === "weight") {
     const v = num($("#wIn", f).value); if (!v || v < 20 || v > 400) { toast("Scrivi il peso in kg, es. 78,4"); return; }
-    const ws = S.profile.weights = S.profile.weights || []; const ex = ws.find(w => w.d === S.date);
-    if (ex) ex.kg = v; else ws.push({ d: S.date, kg: v });
+    const dIn = $("#wDate", f); let wd = (dIn && dIn.value) || S.date; if (wd > today()) wd = today();
+    const ws = S.profile.weights = S.profile.weights || []; const ex = ws.find(w => w.d === wd);
+    if (ex) ex.kg = v; else ws.push({ d: wd, kg: v });
     ws.sort((a, b) => a.d < b.d ? -1 : 1); if (ws.length > 730) ws.splice(0, ws.length - 730);
-    store.saveProfile(); toast("Peso salvato"); render();
+    store.saveProfile(); toast(wd === today() ? "Peso salvato" : "Peso salvato per " + fmtDay(wd, { weekday: "long", day: "numeric", month: "long" })); render();
   } else if (f.dataset.form === "food") { const k = f.dataset.key; const list = S.sug[k] || []; if (list.length && list[0].sc >= 3 * parseQuery(S.drafts[k] || "").terms.length) openPicker(k, list[0]); else addFood(k); }
   else if (f.dataset.form === "hk") { const o = parseHK($("#hkTxt").value); if (!o) { toast("Non riconosco il testo: deve iniziare con CARICO", 4500); return; } applyHK(o); }
   else if (f.dataset.form === "supp") { const n = $("#suppName").value.trim(); if (!n) { toast("Scrivi il nome dell'integratore"); return; } S.profile.supps = [...supps(), { id: uid(), name: n.slice(0, 40), dose: $("#suppDose").value.trim().slice(0, 20) }]; store.saveProfile(); render(); }
@@ -2725,6 +2728,7 @@ document.addEventListener("click", ev => {
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
     case "sched-clear": { const W = plan().workout; delete W.schedule; delete W.moves; delete W.skips; store.saveProfile(); render(); toast("Programma tolto: torno alla rotazione"); return; }
+    case "w-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.innerHTML = "Elimina?"; return; } S.profile.weights = (S.profile.weights || []).filter(w => w.d !== b.dataset.d); S.wHistOpen = true; store.saveProfile(); render(); toast("Pesata eliminata"); return; }
     case "theme-set": { S.profile.user = S.profile.user || {}; S.profile.user.theme = b.dataset.k; store.saveProfile(); render(); return; }
     case "home-style-set": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = b.dataset.k; store.saveProfile(); render(); return; }
     case "home-style": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = homeStyle() === "neo" ? "classic" : "neo"; store.saveProfile(); S.homeEnter = true; render(); window.scrollTo(0, 0); toast(homeStyle() === "neo" ? "Stile futuristico ✨" : "Stile classico"); return; }
