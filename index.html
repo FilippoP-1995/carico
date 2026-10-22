@@ -162,8 +162,9 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .wd:has(.wp.rest) span{opacity:.75}.wd .wp.done{opacity:1;color:var(--hero-g)}
 .sch-r{display:flex;align-items:center;gap:10px}.sch-r>span{flex:0 0 92px;font-weight:600;font-size:14.5px}.sch-r select{flex:1;font-size:16px}
 .wd.now span{text-decoration:underline;text-underline-offset:3px}
-.wd i{display:block;width:18px;height:4px;border-radius:2px;background:var(--hero-track)}
-.wd i.w{background:var(--hero-a)} .wd i.m{background:var(--hero-d)}
+.wd i{display:block;width:18px;height:4px;border-radius:2px;background:var(--hero-track);overflow:hidden}
+.wd i b{display:block;height:100%;border-radius:2px;transition:width .4s ease}
+.wd i.bar-w b{background:var(--hero-a)} .wd i.bar-m b{background:var(--hero-d)}
 .hs-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.1);border-radius:14px;overflow:hidden}
 .hs{background:var(--hero-bg);padding:8px 7px;display:flex;flex-direction:column;gap:1px;min-width:0}
 .hv{font-family:var(--f-display);font-weight:700;font-size:19px;white-space:nowrap;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -524,8 +525,8 @@ html.neo-home nav.tabs button[aria-current="page"] svg{filter:drop-shadow(0 0 5p
 .neo-home .rw{isolation:isolate}
 .neo-home .wd{transition:transform .2s}
 .neo-home .wd.today{background:linear-gradient(160deg,rgba(88,166,255,.28),rgba(167,123,255,.22));box-shadow:0 0 0 1px rgba(140,180,255,.45),0 0 18px rgba(88,140,255,.45);color:#fff}
-.neo-home .wd i.w{background:linear-gradient(90deg,var(--neo-a),var(--neo-b));box-shadow:0 0 8px rgba(88,166,255,.8)}
-.neo-home .wd i.m{background:linear-gradient(90deg,#ffd166,#ff9f43);box-shadow:0 0 8px rgba(255,190,90,.7)}
+.neo-home .wd i.bar-w b{background:linear-gradient(90deg,var(--neo-a),var(--neo-b));box-shadow:0 0 8px rgba(88,166,255,.8)}
+.neo-home .wd i.bar-m b{background:linear-gradient(90deg,#ffd166,#ff9f43);box-shadow:0 0 8px rgba(255,190,90,.7)}
 .neo-home .hs-grid{background:none;gap:6px}
 .neo-home .hs{background:rgba(255,255,255,.04);border:1px solid rgba(130,170,255,.16);border-radius:14px;backdrop-filter:blur(6px)}
 .neo-home .hv{background:linear-gradient(180deg,#fff,#b8ccff);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -832,7 +833,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.6 · 22 ottobre";
+const APP_VERSION = "9.7 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1247,6 +1248,16 @@ function moveBox(date, asg) { // oggi, se non mi sono allenato: la seduta previs
     <span class="small" style="opacity:.8">Se oggi non ti alleni, slitta da sola al giorno dopo.</span>
     <div class="wk-opts"><button class="wk-o rm" data-act="wk-skip" data-id="${pd.id}">Salta questa settimana (una volta in meno)</button></div></div>${skipBox()}`;
 }
+function dayWorkPct(ds) { // riempimento della mini barra allenamento: serie fatte / serie della seduta
+  const L = S.days[ds]; if (!L || !isSession(L)) return 0; const id = assignedOn(ds); const d = id && wDays().find(x => x.id === id); if (!d) return 100;
+  const ss = sessionsOn(ds).filter(x => x.day.id === id); if (ss.some(x => x.finished)) return 100;
+  const tot = totalSets(d); const done = ss.reduce((a, x) => a + x.sets, 0); return tot ? Math.min(100, Math.round(done / tot * 100)) : 100;
+}
+function dayMealPct(ds) { // pasti segnati / pasti della dieta
+  const L = S.days[ds]; const m = L && L.m; if (!m) return 0; const SL = variants().length ? slots() : [];
+  if (!SL.length) return Object.keys(m.eaten || {}).length || (m.extra || []).length ? 100 : 0;
+  const n = SL.filter(sl => m.eaten && m.eaten[sl.key]).length; return Math.round(n / SL.length * 100);
+}
 function assignedOn(d) { // la seduta fatta in quel giorno (quella assegnata, o l'ultima con serie)
   const L = S.days[d]; if (!L || !L.w) return null; const w = L.w; const ad = w.dayId && wDays().find(x => x.id === w.dayId);
   if (ad && (w.done || setsFor(L, ad) > 0)) return ad.id;
@@ -1530,7 +1541,7 @@ function summaryCard() {
     const doneId = ds <= today() && w ? assignedOn(ds) : null; // giorni passati: la seduta fatta davvero, anche se era riposo
     const pl = hasSched() ? plannedOn(ds) : undefined; const showId = doneId || pl;
     const plTag = (pl === undefined && !doneId) ? "" : `<small class="wp ${showId ? "" : "rest"} ${doneId ? "done" : ""}">${showId ? esc(shortName((wDays().find(x => x.id === showId) || {}).name)) : "💤"}</small>`;
-    return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() && !hasSched() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span>${plTag}<i class="${w ? "w" : ""}"></i><i class="${m ? "m" : ""}"></i></button>`; }).join("");
+    return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() && !hasSched() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span>${plTag}<i class="bar-w"><b style="width:${dayWorkPct(ds)}%"></b></i><i class="bar-m"><b style="width:${dayMealPct(ds)}%"></b></i></button>`; }).join("");
   let wkPick = "";
   if (S.wkSel && wDays().length && S.wkSel > today()) { // giorno futuro: cosa è previsto secondo il programma (che slitta da solo)
     const pl = plannedOn(S.wkSel); const pd = pl && wDays().find(d => d.id === pl);
