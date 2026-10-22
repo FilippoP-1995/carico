@@ -901,7 +901,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.0 · 22 ottobre";
+const APP_VERSION = "11.1 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -4136,7 +4136,7 @@ Regole fisse: le frecciate sul fisico non devono mai tradursi in consigli di man
 };
 const coachTone = () => TONES[(S.profile.user || {}).tone] ? (S.profile.user || {}).tone : "roast";
 const COACH_RULES = `Sei il coach dentro Carico, un'app per chi va in palestra. Parli italiano, sei diretto, motivante ma onesto: se qualcosa non va lo dici.
-DATI REGISTRATI = VERITÀ: tu VEDI le sezioni Dieta e Allenamento dell'app, sono nel "REGISTRO REALE DI OGGI" in fondo ai dati, aggiornato a questo momento (anche quando l'utente registra da solo, senza passare da te). Per calorie, macro, pasti mangiati e allenamenti fatti usa SOLO quei dati. Quello che l'utente ti ha detto in chat ma non è registrato (es. "forse mangio un poke") NON conta nei totali: al massimo chiedi se vuole registrarlo. Se in messaggi precedenti hai dato numeri diversi, valgono i dati registrati attuali. Non dire mai che non vedi la dieta o gli allenamenti.
+DATI REGISTRATI = VERITÀ: tu VEDI le sezioni Dieta e Allenamento dell'app, sono nel "REGISTRO REALE DI OGGI" in fondo ai dati, aggiornato a questo momento (anche quando l'utente registra da solo, senza passare da te). Per calorie, macro, pasti mangiati e allenamenti fatti usa SOLO quei dati. Quello che l'utente ti ha detto in chat ma non è registrato (es. "forse mangio un poke") NON conta nei totali finché non viene salvato con la scheda di registrazione. Se in messaggi precedenti hai dato numeri diversi, valgono i dati registrati attuali. Non dire mai che non vedi la dieta o gli allenamenti.
 RISPOSTE BREVI: massimo 80 parole (3-5 frasi o un elenco di 3-5 punti), adatte allo schermo di un telefono. Vai dritto al punto, niente premesse né riepiloghi. Solo se l'utente chiede esplicitamente un piano, una dieta o una spiegazione dettagliata puoi arrivare a 150 parole. Usa elenchi puntati quando aiutano. Usa **grassetto** solo per i punti chiave.
 Basati sui dati dell'utente qui sotto. La data e l'ora sono quelle in "Data e ora": "oggi" è sempre quel giorno, anche se nella chat ci sono messaggi di giorni precedenti (sono segnati con la loro data). Se un dato manca dillo e fai una stima ragionevole spiegando le ipotesi.
 - "Cosa faccio oggi": indica la seduta prevista, gli esercizi e i carichi da provare in base alle ultime volte (progressione graduale).
@@ -4154,7 +4154,8 @@ REGISTRARE UN PASTO: se l'utente ti chiede di registrare, segnare o aggiungere a
 \`\`\`carico-pasto
 {"slot": "chiave-del-pasto oppure null", "items": [{"food": "Petto di pollo (cotto)", "qty": "150 g", "kcal": 248, "p": 46, "c": 0, "f": 5}]}
 \`\`\`
-Le quantità sono in grammi (o unità chiare) e i macro sono per quella quantità, con valori medi da tabelle nutrizionali. Per "slot" usa una delle chiavi elencate in "PASTI REGISTRABILI" solo se l'utente l'ha detto o è evidente dall'orario; altrimenti metti null. L'app mostrerà una scheda con un tasto: sarà l'utente a scegliere il pasto e a confermare. Non usare questo blocco se l'utente non ha chiesto di registrare.`;
+Le quantità sono in grammi (o unità chiare) e i macro sono per quella quantità, con valori medi da tabelle nutrizionali. Per "slot" usa una delle chiavi elencate in "PASTI REGISTRABILI" solo se l'utente l'ha detto o è evidente dall'orario; altrimenti metti null. L'app mostrerà una scheda con un tasto: sarà l'utente a scegliere il pasto e a confermare.
+Se l'utente ti scrive cosa HA mangiato o sta mangiando (es. "a cena ho mangiato…", "ho preso un poke con…", "per pranzo pasta al tonno"), anche senza dirti "registra", proponi SUBITO la registrazione: una frase breve (col tuo tono) e il blocco carico-pasto, senza rielencare gli alimenti nel testo (li mostra già la scheda). Non usare il blocco per cose solo ipotetiche o future ("forse stasera mangio…", "cosa mangio?"): lì rispondi e basta.`;
 function coachContext() { const keep = S.date; S.date = today(); try { return coachContext0(); } finally { S.date = keep; } }
 function coachContext0() {
   const L = [];
@@ -4269,7 +4270,7 @@ AI.chat = async function (turns, { onText, signal, images = [], deep = false } =
   if (images.length && msgs.length) { const last = msgs[msgs.length - 1]; const content = []; for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } }); content.push({ type: "text", text: last.content }); last.content = content; }
   let res;
   try {
-    res = await this.post({ model: deep ? "claude-sonnet-5-5" : "claude-haiku-5-5", max_tokens: deep ? 2000 : 4000, stream: true, system: ctx, messages: msgs }, signal);
+    res = await this.post({ model: "claude-sonnet-5-5", max_tokens: deep ? 2000 : 2500, stream: true, system: ctx, messages: msgs }, signal);
   } catch (e) { if (e && e.code) throw e; throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
   if (!res.ok) { const pe = await this.errOf(res.clone()); if (pe) throw pe; let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {} throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail }; }
   let text = "";
