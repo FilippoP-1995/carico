@@ -40,7 +40,7 @@
   --accent:#6189ff; --accent-soft:#1c2747; --on-accent:#0b0f18;
   --diet:#e8b236; --diet-soft:#3a2e10; --ok:#43c584; --ok-soft:#15301f; --danger:#ff6e63; --danger-soft:#3b1a18;
   --shadow:0 1px 2px rgba(0,0,0,.4); --mm-b:#2a3142; --mm-n:#3a4255; --hero-bg:#18213a; --hero-bg2:#24346a; color-scheme:dark;}
-html,body{background:var(--bg)}
+html,body{background:var(--bg);overscroll-behavior-y:none}
 body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
 *{box-sizing:border-box}
 button,input,textarea,select{font:inherit;color:inherit}
@@ -870,7 +870,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "10.4 · 22 ottobre";
+const APP_VERSION = "10.5 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2766,7 +2766,9 @@ window.addEventListener("scroll", () => { if (S.tab === "dieta") stripSync(); },
     const nav = document.querySelector("nav.tabs"); if (!nav || document.documentElement.classList.contains("kb")) return;
     const r = nav.getBoundingClientRect(); const want = vv.offsetTop + vv.height; // fondo visibile, in coordinate client
     const base = r.bottom - off; let d = Math.round(want - base);
-    if (Math.abs(d) < 2) d = 0;
+    // correggo solo la barra "rimasta in alto" (d > 0). Durante il rimbalzo in cima/in fondo iOS dà valori falsi: li ignoro
+    const sy = window.scrollY, maxY = document.documentElement.scrollHeight - window.innerHeight;
+    if (d < 2 || vv.offsetTop < 0 || sy <= 0 || sy >= maxY) d = 0;
     if (d !== off) { off = d; nav.style.transform = d ? `translateY(${d}px)` : ""; }
   };
   const q = () => { if (!raf) raf = requestAnimationFrame(pin); };
