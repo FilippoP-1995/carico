@@ -824,7 +824,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "8.4 · 22 ottobre";
+const APP_VERSION = "8.5 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1191,31 +1191,47 @@ function sessionDates() { return sortedDates().filter(d => isSession(S.days[d]))
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 function schedObj() { return (plan().workout || {}).schedule || null; }
 function hasSched() { const o = schedObj(); return !!o && Object.keys(o).length > 0; }
-function plannedOn(date) { // id della seduta prevista, null = riposo, undefined = nessun programma (rotazione)
-  const W = plan().workout || {}; const mv = (W.moves || {})[date];
-  if (mv !== undefined) return mv === "rest" ? null : (wDays().find(d => d.id === mv) ? mv : null);
-  if (!hasSched()) return undefined;
-  const v = schedObj()[parseD(date).getDay()]; return v && wDays().find(d => d.id === v) ? v : null;
+function weekSlots(date) { // sequenza ideale lun→dom della settimana (seduta o null = riposo), tolte le sedute saltate
+  const o = schedObj() || {}; const wk = dstr(weekStart(date)); const sk = (((plan().workout || {}).skips || {})[wk] || []).slice();
+  return WEEK_ORDER.map(g => { let id = o[g] && wDays().find(d => d.id === o[g]) ? o[g] : null; if (id) { const k = sk.indexOf(id); if (k >= 0) { sk.splice(k, 1); id = null; } } return id; });
 }
-function weekTarget(date) { // allenamenti previsti nella settimana di "date"
+function weekProjection(date) { // il programma è ideale: quello che fai consuma la sequenza, il resto slitta in avanti
+  const ws = weekStart(date); const days = []; for (let i = 0; i < 7; i++) { const d = new Date(ws); d.setDate(ws.getDate() + i); days.push(dstr(d)); }
+  const t = today(); const ideal = weekSlots(date);
+  const doneOn = days.map(ds => ds <= t && isSession(S.days[ds]) ? assignedOn(ds) : null);
+  const trainedToday = days.includes(t) && !!doneOn[days.indexOf(t)];
+  let start = days.findIndex(ds => ds > t || (ds === t && !trainedToday)); if (start < 0) start = 7;
+  const done = doneOn.slice(0, start).filter(Boolean); const missed = [];
+  for (let i = 0; i < start; i++) { const sId = ideal[i]; if (!sId) continue; const k = done.indexOf(sId); if (k >= 0) done.splice(k, 1); else missed.push(sId); }
+  const win = []; for (let i = start; i < 7; i++) { const sId = ideal[i]; if (sId) { const k = done.indexOf(sId); if (k >= 0) { done.splice(k, 1); continue; } } win.push(sId); }
+  const seq = missed.concat(win); while (seq.length < 7 - start) seq.push(null);
+  const out = {}; days.forEach((ds, i) => { out[ds] = i < start ? doneOn[i] : seq[i - start]; });
+  return out;
+}
+function plannedOn(date) { // seduta prevista (null = riposo, undefined = nessun programma: rotazione)
+  if (!hasSched()) return undefined;
+  if (dstr(weekStart(date)) === dstr(weekStart(today()))) { const v = weekProjection(date)[date]; return v && wDays().find(d => d.id === v) ? v : null; }
+  const v = weekSlots(date)[WEEK_ORDER.indexOf(parseD(date).getDay())]; return v || null;
+}
+function weekTarget(date) { // allenamenti previsti nella settimana (programma meno quelli saltati)
   if (!hasSched()) return wDays().length || 3;
-  const ws = weekStart(date || S.date); let n = 0;
-  for (let i = 0; i < 7; i++) { const d = new Date(ws); d.setDate(ws.getDate() + i); if (plannedOn(dstr(d))) n++; }
-  return Math.max(n, 0);
+  return weekSlots(date || S.date).filter(Boolean).length;
 }
 function shortName(name) { const m = /\b(?:seduta|giorno|day|allenamento|scheda)\s+([A-Z0-9]{1,2})\b/i.exec(name || ""); if (m) return m[1].toUpperCase(); const n = /\b([A-Z])\b/.exec(name || ""); return n ? n[1] : String(name || "?").trim().slice(0, 2); }
 function restToday() { if (!hasSched() || plannedOn(S.date) !== null) return false; return !sessionsOn(S.date).some(x => x.finished || x.sets); }
 function nextPlanned(from) { for (let i = 1; i <= 7; i++) { const d = parseD(from); d.setDate(d.getDate() + i); const ds = dstr(d); const p = plannedOn(ds); if (p) return { date: ds, day: wDays().find(x => x.id === p) }; } return null; }
 function freeDays(from) { const out = []; for (let i = 1; i <= 7; i++) { const d = parseD(from); d.setDate(d.getDate() + i); const ds = dstr(d); if (!plannedOn(ds)) out.push(ds); } return out; }
 function cleanMoves() { const W = plan().workout || {}; if (!W.moves) return; const lim = new Date(); lim.setDate(lim.getDate() - 60); const ls = dstr(lim); for (const k in W.moves) if (k < ls) delete W.moves[k]; }
-function moveBox(date, asg) { // oggi: se non mi sono allenato posso spostare o saltare la seduta in programma
-  if (!hasSched() || date !== today() || asg) return "";
-  const pl = plannedOn(date); if (!pl) return ""; const pd = wDays().find(d => d.id === pl);
-  const fd = freeDays(date);
+function skipBox() { // sedute saltate questa settimana, ripristinabili
+  const W = plan().workout || {}; const wk = dstr(weekStart(today())); const sk = (W.skips || {})[wk] || []; if (!sk.length) return "";
+  return `<div class="wk-opts"><span class="small" style="opacity:.8;width:100%">Saltate questa settimana:</span>${sk.map((id, i) => `<button class="wk-o" data-act="wk-unskip" data-i="${i}">↩ ${esc(((wDays().find(d => d.id === id) || {}).name) || "seduta")}</button>`).join("")}</div>`;
+}
+function moveBox(date, asg) { // oggi, se non mi sono allenato: la seduta prevista slitta da sola; posso anche saltarla
+  if (!hasSched() || date !== today() || asg) return skipBox();
+  const pl = plannedOn(date); if (!pl) return skipBox(); const pd = wDays().find(d => d.id === pl);
   return `<div class="wk-s"><div class="wk-sh">📅 In programma oggi: ${esc(pd.name)}</div>
-    ${S.wkMove ? `<span class="small" style="opacity:.8">Spostala in un giorno di riposo:</span><div class="wk-opts">${fd.length ? fd.map(d => `<button class="wk-o" data-act="wk-move" data-d="${d}">${esc(fmtDay(d, { weekday: "short", day: "numeric" }))}</button>`).join("") : `<span class="small">Nessun giorno libero nei prossimi 7 giorni.</span>`}<button class="wk-o rm" data-act="wk-move-x">Annulla</button></div>`
-      : `<div class="wk-opts"><button class="wk-o" data-act="wk-move-open">↪ Sposta a un altro giorno</button><button class="wk-o rm" data-act="wk-skip">Salta (una volta in meno)</button></div>`}
-  </div>`;
+    <span class="small" style="opacity:.8">Se oggi non ti alleni, slitta da sola al giorno dopo.</span>
+    <div class="wk-opts"><button class="wk-o rm" data-act="wk-skip" data-id="${pd.id}">Salta questa settimana (una volta in meno)</button></div></div>${skipBox()}`;
 }
 function assignedOn(d) { // la seduta fatta in quel giorno (quella assegnata, o l'ultima con serie)
   const L = S.days[d]; if (!L || !L.w) return null; const w = L.w; const ad = w.dayId && wDays().find(x => x.id === w.dayId);
@@ -1502,11 +1518,12 @@ function summaryCard() {
     const plTag = (pl === undefined && !doneId) ? "" : `<small class="wp ${showId ? "" : "rest"} ${doneId ? "done" : ""}">${showId ? esc(shortName((wDays().find(x => x.id === showId) || {}).name)) : "·"}</small>`;
     return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() && !hasSched() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span>${plTag}<i class="${w ? "w" : ""}"></i><i class="${m ? "m" : ""}"></i></button>`; }).join("");
   let wkPick = "";
-  if (S.wkSel && wDays().length && S.wkSel > today()) { // giorno futuro: cosa è in programma
-    const pl = plannedOn(S.wkSel);
-    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: cosa hai in programma?</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
-      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${pl === d.id ? "on" : ""}" data-act="wk-plan" data-id="${d.id}">${pl === d.id ? "📅 " : ""}${esc(d.name)}</button>`).join("")}<button class="wk-o rm ${pl ? "" : "on"}" data-act="wk-plan" data-id="">${pl ? "" : "📅 "}Riposo</button></div>
-      <span class="small" style="opacity:.75">Cambia solo questo giorno. Il programma fisso lo trovi in Piano.</span></div>`;
+  if (S.wkSel && wDays().length && S.wkSel > today()) { // giorno futuro: cosa è previsto secondo il programma (che slitta da solo)
+    const pl = plannedOn(S.wkSel); const pd = pl && wDays().find(d => d.id === pl);
+    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: ${pd ? "in programma " + esc(pd.name) : "riposo"}</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
+      <span class="small" style="opacity:.8">Il programma è ideale: se ti alleni prima o salti un giorno, le sedute e i riposi che restano slittano da soli.</span>
+      ${pd ? `<div class="wk-opts"><button class="wk-o rm" data-act="wk-skip" data-id="${pd.id}">Salta ${esc(shortName(pd.name))} questa settimana</button></div>` : ""}
+      ${skipBox()}</div>`;
   } else if (S.wkSel && wDays().length) { // tocco una seduta = la assegno a quel giorno; le serie registrate restano tutte salvate
     const L = S.days[S.wkSel]; const w = (L && L.w) || {};
     const asg = (w.dayId && (w.done || setsFor(L, wDays().find(d => d.id === w.dayId)) > 0)) ? w.dayId : ((sessionsOn(S.wkSel).filter(x => x.finished || x.sets).slice(-1)[0] || {}).day || {}).id || null;
@@ -2168,7 +2185,7 @@ function schedCard() {
   const o = schedObj() || {};
   return `<details class="card" data-pnl="sched" ${pnlOpen("sched")}><summary>📅 Programma della settimana <span class="small muted" style="font-weight:500;margin-left:auto">${hasSched() ? weekTarget(today()) + " allenamenti" : "rotazione"}</span></summary>
     <div class="stack" style="margin-top:12px;gap:8px">
-      <span class="small muted">${hasSched() ? "Ogni giorno la Home ti propone la seduta in programma; nei giorni di riposo ti lascia in pace. Per spostare o saltare un singolo giorno usa i giorni nella card della Home." : "Senza programma l'app propone le sedute in ordine, una dopo l'altra. Assegna una seduta ai giorni in cui ti alleni: gli altri saranno di riposo."}</span>
+      <span class="small muted">${hasSched() ? "È il tuo programma ideale: se ti alleni in un giorno di riposo o salti un allenamento, le sedute e i riposi che restano slittano da soli nei giorni dopo. Dalla card della Home puoi anche saltare una seduta per questa settimana." : "Senza programma l'app propone le sedute in ordine, una dopo l'altra. Assegna una seduta ai giorni in cui ti alleni: gli altri saranno di riposo."}</span>
       ${WEEK_ORDER.map(g => `<label class="sch-r"><span>${DOW[g]}</span><select class="in" data-sched="${g}"><option value="">💤 Riposo</option>${wDays().map(d => `<option value="${d.id}" ${o[g] === d.id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select></label>`).join("")}
       ${hasSched() ? `<button class="btn ghost sm" data-act="sched-clear" style="align-self:flex-start">Togli il programma (torna alla rotazione)</button>` : ""}
     </div></details>`;
@@ -2700,7 +2717,7 @@ document.addEventListener("click", ev => {
     case "rv-del": S.review.items.splice(+b.dataset.i, 1); render(); return;
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
-    case "sched-clear": { const W = plan().workout; delete W.schedule; delete W.moves; store.saveProfile(); render(); toast("Programma tolto: torno alla rotazione"); return; }
+    case "sched-clear": { const W = plan().workout; delete W.schedule; delete W.moves; delete W.skips; store.saveProfile(); render(); toast("Programma tolto: torno alla rotazione"); return; }
     case "theme-set": { S.profile.user = S.profile.user || {}; S.profile.user.theme = b.dataset.k; store.saveProfile(); render(); return; }
     case "home-style-set": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = b.dataset.k; store.saveProfile(); render(); return; }
     case "home-style": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = homeStyle() === "neo" ? "classic" : "neo"; store.saveProfile(); S.homeEnter = true; render(); window.scrollTo(0, 0); toast(homeStyle() === "neo" ? "Stile futuristico ✨" : "Stile classico"); return; }
@@ -2737,13 +2754,10 @@ document.addEventListener("click", ev => {
       else if (S.wkSel) { S.wkClosed.add(d); S.wkSel = null; }
       else { S.wkClosed.delete(d); S.wkSel = wDays().length ? d : null; }
       render(); return; }
-    case "wk-plan": { const W = plan().workout; W.moves = W.moves || {}; const d = S.wkSel; const id = b.dataset.id;
-      const base = hasSched() ? ((schedObj()[parseD(d).getDay()] && wDays().find(x => x.id === schedObj()[parseD(d).getDay()])) ? schedObj()[parseD(d).getDay()] : null) : null;
-      if ((id || null) === base) delete W.moves[d]; else W.moves[d] = id || "rest"; cleanMoves(); store.saveProfile(); render(); toast(id ? "📅 " + (wDays().find(x => x.id === id) || {}).name + " · " + fmtDay(d, { weekday: "long" }) : "Riposo · " + fmtDay(d, { weekday: "long" })); return; }
-    case "wk-move-open": S.wkMove = true; render(); return;
-    case "wk-move-x": S.wkMove = false; render(); return;
-    case "wk-move": { const W = plan().workout; W.moves = W.moves || {}; const pl = plannedOn(today()); if (!pl) return; W.moves[b.dataset.d] = pl; W.moves[today()] = "rest"; S.wkMove = false; S.selDay = null; cleanMoves(); store.saveProfile(); render(); toast(`↪ ${(wDays().find(x => x.id === pl) || {}).name} spostata a ${fmtDay(b.dataset.d, { weekday: "long" })}`); return; }
-    case "wk-skip": { const W = plan().workout; W.moves = W.moves || {}; W.moves[today()] = "rest"; S.selDay = null; cleanMoves(); store.saveProfile(); render(); toast("Saltata: questa settimana un allenamento in meno"); return; }
+    case "wk-skip": { const W = plan().workout; W.skips = W.skips || {}; const wk = dstr(weekStart(today())); (W.skips[wk] = W.skips[wk] || []).push(b.dataset.id);
+      for (const k in W.skips) if (k < dstr(new Date(Date.now() - 60 * 864e5))) delete W.skips[k];
+      S.selDay = null; store.saveProfile(); render(); toast("Saltata: questa settimana un allenamento in meno"); return; }
+    case "wk-unskip": { const W = plan().workout; const wk = dstr(weekStart(today())); const sk = (W.skips || {})[wk] || []; sk.splice(+b.dataset.i, 1); S.selDay = null; store.saveProfile(); render(); toast("Ripristinata"); return; }
     case "wk-close": (S.wkClosed = S.wkClosed || new Set()).add(S.wkSel); S.wkSel = null; S.wkAdd = false; render(); return;
     case "wk-add": S.wkAdd = true; render(); return;
     case "wk-mark": {
