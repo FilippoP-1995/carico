@@ -93,8 +93,9 @@ export function dueMessages(u, now) {
   const st = (c.today && c.today.date === L.date) ? c.today : { eaten: [], wDone: false };
   const seed = u.id + L.date + L.hm; const out = [];
   const at = r => r && r.on && r.t === L.hm;
-  if (at(R.work) && (!R.work.days || R.work.days.includes(L.wd)) && !st.wDone)
-    out.push({ title: "🏋️ Allenamento", body: fill(pick(B.work, seed + "w"), { next: c.next || "il tuo allenamento" }), tag: "work", go: "allenamento" });
+  const planned = c.plan && Object.prototype.hasOwnProperty.call(c.plan, L.date) ? c.plan[L.date] : undefined; // con il programma: solo nei giorni con una seduta
+  if (at(R.work) && !st.wDone && (planned !== undefined ? !!planned : (!R.work.days || R.work.days.includes(L.wd))))
+    out.push({ title: "🏋️ Allenamento", body: fill(pick(B.work, seed + "w"), { next: planned || c.next || "il tuo allenamento" }), tag: "work", go: "allenamento" });
   for (const [k, r] of Object.entries(R.meals || {})) {
     if (at(r) && !(st.eaten || []).includes(k))
       out.push({ title: "🍽️ " + (r.name || "Pasto"), body: fill(pick(B.meal, seed + k), { meal: (r.name || "il pasto").toLowerCase() }), tag: "meal-" + k, go: "dieta" });

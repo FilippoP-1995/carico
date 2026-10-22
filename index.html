@@ -158,6 +158,8 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .wk-sh{font-weight:700;font-size:14px;display:flex;justify-content:space-between;gap:8px}.wk-sh small{font-weight:500;opacity:.7}
 .wk-x{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;opacity:.9}.wk-x b{font-variant-numeric:tabular-nums;text-align:right}
 .wk-add{border:1px dashed rgba(255,255,255,.25);background:none;color:inherit;font:inherit;font-size:13px;font-weight:600;border-radius:99px;padding:7px 12px;align-self:flex-start;opacity:.85}
+.wd .wp{font-size:9.5px;font-weight:800;line-height:1;opacity:.85;letter-spacing:.02em;margin-top:-1px}.wd .wp.rest{opacity:.4}
+.sch-r{display:flex;align-items:center;gap:10px}.sch-r>span{flex:0 0 92px;font-weight:600;font-size:14.5px}.sch-r select{flex:1;font-size:16px}
 .wd.now span{text-decoration:underline;text-underline-offset:3px}
 .wd i{display:block;width:18px;height:4px;border-radius:2px;background:var(--hero-track)}
 .wd i.w{background:var(--hero-a)} .wd i.m{background:var(--hero-d)}
@@ -822,7 +824,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "8.2 · 22 ottobre";
+const APP_VERSION = "8.3 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1185,6 +1187,36 @@ function lastSessionLine(day) {
   return `🕘 Ultima volta: <b>${esc(when)}</b> · ⏱ durata <b>${dur || "non registrata"}</b> · ${r.sets} serie${r.vol ? ` · ${r.vol >= 10000 ? fmtN(Math.round(r.vol / 100) / 10) + " t" : fmtI(Math.round(r.vol)) + " kg"}` : ""}`;
 }
 function sessionDates() { return sortedDates().filter(d => isSession(S.days[d])); }
+/* ---------- programma settimanale: seduta o riposo per ogni giorno, con spostamenti per data ---------- */
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+function schedObj() { return (plan().workout || {}).schedule || null; }
+function hasSched() { const o = schedObj(); return !!o && Object.keys(o).length > 0; }
+function plannedOn(date) { // id della seduta prevista, null = riposo, undefined = nessun programma (rotazione)
+  const W = plan().workout || {}; const mv = (W.moves || {})[date];
+  if (mv !== undefined) return mv === "rest" ? null : (wDays().find(d => d.id === mv) ? mv : null);
+  if (!hasSched()) return undefined;
+  const v = schedObj()[parseD(date).getDay()]; return v && wDays().find(d => d.id === v) ? v : null;
+}
+function weekTarget(date) { // allenamenti previsti nella settimana di "date"
+  if (!hasSched()) return wDays().length || 3;
+  const ws = weekStart(date || S.date); let n = 0;
+  for (let i = 0; i < 7; i++) { const d = new Date(ws); d.setDate(ws.getDate() + i); if (plannedOn(dstr(d))) n++; }
+  return Math.max(n, 0);
+}
+function shortName(name) { const m = /\b(?:seduta|giorno|day|allenamento|scheda)\s+([A-Z0-9]{1,2})\b/i.exec(name || ""); if (m) return m[1].toUpperCase(); const n = /\b([A-Z])\b/.exec(name || ""); return n ? n[1] : String(name || "?").trim().slice(0, 2); }
+function restToday() { if (!hasSched() || plannedOn(S.date) !== null) return false; return !sessionsOn(S.date).some(x => x.finished || x.sets); }
+function nextPlanned(from) { for (let i = 1; i <= 7; i++) { const d = parseD(from); d.setDate(d.getDate() + i); const ds = dstr(d); const p = plannedOn(ds); if (p) return { date: ds, day: wDays().find(x => x.id === p) }; } return null; }
+function freeDays(from) { const out = []; for (let i = 1; i <= 7; i++) { const d = parseD(from); d.setDate(d.getDate() + i); const ds = dstr(d); if (!plannedOn(ds)) out.push(ds); } return out; }
+function cleanMoves() { const W = plan().workout || {}; if (!W.moves) return; const lim = new Date(); lim.setDate(lim.getDate() - 60); const ls = dstr(lim); for (const k in W.moves) if (k < ls) delete W.moves[k]; }
+function moveBox(date, asg) { // oggi: se non mi sono allenato posso spostare o saltare la seduta in programma
+  if (!hasSched() || date !== today() || asg) return "";
+  const pl = plannedOn(date); if (!pl) return ""; const pd = wDays().find(d => d.id === pl);
+  const fd = freeDays(date);
+  return `<div class="wk-s"><div class="wk-sh">📅 In programma oggi: ${esc(pd.name)}</div>
+    ${S.wkMove ? `<span class="small" style="opacity:.8">Spostala in un giorno di riposo:</span><div class="wk-opts">${fd.length ? fd.map(d => `<button class="wk-o" data-act="wk-move" data-d="${d}">${esc(fmtDay(d, { weekday: "short", day: "numeric" }))}</button>`).join("") : `<span class="small">Nessun giorno libero nei prossimi 7 giorni.</span>`}<button class="wk-o rm" data-act="wk-move-x">Annulla</button></div>`
+      : `<div class="wk-opts"><button class="wk-o" data-act="wk-move-open">↪ Sposta a un altro giorno</button><button class="wk-o rm" data-act="wk-skip">Salta (una volta in meno)</button></div>`}
+  </div>`;
+}
 function assignedOn(d) { // la seduta fatta in quel giorno (quella assegnata, o l'ultima con serie)
   const L = S.days[d]; if (!L || !L.w) return null; const w = L.w; const ad = w.dayId && wDays().find(x => x.id === w.dayId);
   if (ad && (w.done || setsFor(L, ad) > 0)) return ad.id;
@@ -1194,6 +1226,7 @@ function suggestedDay() {
   const days = wDays(); if (!days.length) return null;
   // oggi conta solo una seduta davvero iniziata (serie segnate o fatta), non una aperta e chiusa
   const l = peekLog(); const td = l && l.w && l.w.dayId && days.find(d => d.id === l.w.dayId); if (td && (l.w.done || setsFor(l, td) > 0)) return td.id;
+  if (hasSched()) { const pl = plannedOn(S.date); if (pl) return pl; }
   const past = sessionDates().filter(d => d < S.date).reverse();
   for (const d of past) {
     const id = assignedOn(d); const i = days.findIndex(x => x.id === id);
@@ -1447,7 +1480,7 @@ function summaryCard() {
   const hasDiet = variants().length > 0; const t = hasDiet ? dayTotals() : zeroT(); const Tg = hasDiet ? targetsFor() : {};
   // settimana
   const ws = weekStart(S.date); const wsS = dstr(ws); const we = new Date(ws); we.setDate(ws.getDate() + 7); const weS = dstr(we);
-  const sess = sessionDates(); const weekN = sess.filter(d => d >= wsS && d < weS).length; const target = wDays().length || 3;
+  const sess = sessionDates(); const weekN = sess.filter(d => d >= wsS && d < weS).length; const target = weekTarget(S.date);
   // serie di giorni attivi
   let streak = 0; const cur = parseD(S.date); if (!dayHasActivity(S.date)) cur.setDate(cur.getDate() - 1);
   while (dayHasActivity(dstr(cur))) { streak++; cur.setDate(cur.getDate() - 1); }
@@ -1464,9 +1497,15 @@ function summaryCard() {
   const names = ["L", "M", "M", "G", "V", "S", "D"];
   const strip = names.map((n, i) => { const d = new Date(ws); d.setDate(ws.getDate() + i); const ds = dstr(d); const L = S.days[ds];
     const w = isSession(L); const m = L && L.m && Object.keys(L.m.eaten || {}).length > 0;
-    return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span><i class="${w ? "w" : ""}"></i><i class="${m ? "m" : ""}"></i></button>`; }).join("");
+    const pl = hasSched() ? plannedOn(ds) : undefined; const plTag = pl === undefined ? "" : `<small class="wp ${pl ? "" : "rest"}">${pl ? esc(shortName((wDays().find(x => x.id === pl) || {}).name)) : "·"}</small>`;
+    return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() && !hasSched() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span>${plTag}<i class="${w ? "w" : ""}"></i><i class="${m ? "m" : ""}"></i></button>`; }).join("");
   let wkPick = "";
-  if (S.wkSel && wDays().length) { // tocco una seduta = la assegno a quel giorno; le serie registrate restano tutte salvate
+  if (S.wkSel && wDays().length && S.wkSel > today()) { // giorno futuro: cosa è in programma
+    const pl = plannedOn(S.wkSel);
+    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: cosa hai in programma?</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
+      <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${pl === d.id ? "on" : ""}" data-act="wk-plan" data-id="${d.id}">${pl === d.id ? "📅 " : ""}${esc(d.name)}</button>`).join("")}<button class="wk-o rm ${pl ? "" : "on"}" data-act="wk-plan" data-id="">${pl ? "" : "📅 "}Riposo</button></div>
+      <span class="small" style="opacity:.75">Cambia solo questo giorno. Il programma fisso lo trovi in Piano.</span></div>`;
+  } else if (S.wkSel && wDays().length) { // tocco una seduta = la assegno a quel giorno; le serie registrate restano tutte salvate
     const L = S.days[S.wkSel]; const w = (L && L.w) || {};
     const asg = (w.dayId && (w.done || setsFor(L, wDays().find(d => d.id === w.dayId)) > 0)) ? w.dayId : ((sessionsOn(S.wkSel).filter(x => x.finished || x.sets).slice(-1)[0] || {}).day || {}).id || null;
     const ad = asg && wDays().find(d => d.id === asg);
@@ -1477,6 +1516,7 @@ function summaryCard() {
       <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${asg === d.id ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${asg === d.id ? "✓ " : ""}${esc(d.name)}</button>`).join("")}<button class="wk-o rm ${!asg ? "on" : ""}" data-act="wk-mark" data-id="">${!asg ? "✓ " : ""}Nessun allenamento</button></div>
       ${!asg && L && L.hidden ? `<span class="small" style="opacity:.75">Le serie di questo giorno sono conservate: riassegnando la seduta tornano.</span>` : ""}
       ${detail ? `<div class="wk-s">${detail}</div>` : ""}
+      ${moveBox(S.wkSel, asg)}
     </div>`; }
   // frase del giorno
   let insight = "";
@@ -1492,7 +1532,7 @@ function summaryCard() {
 </div>
     <div class="hs-row">${badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet })}<div class="streak" title="Giorni di fila con almeno un allenamento o un pasto segnato"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 1.5.7 2.5 1.6 3C10.2 8.6 11 5.5 12 3z"/></svg><b>${streak}</b><span>${streak === 1 ? "giorno" : "giorni"}<br>di fila</span></div></div>
     <div class="rings">
-      ${ring(tot ? done / tot : 0, "var(--hero-a)", "Allenamento", tot ? `${done}/${tot}` : "–")}
+      ${restToday() ? ring(0, "var(--hero-a)", "Allenamento", "💤") : ring(tot ? done / tot : 0, "var(--hero-a)", "Allenamento", tot ? `${done}/${tot}` : "–")}
       ${ring(Tg.kcal ? t.kcal / Tg.kcal : 0, t.kcal > (Tg.kcal || 1e9) * 1.05 ? "var(--danger)" : "var(--hero-d)", "Calorie", Tg.kcal ? fmtI(t.kcal / Tg.kcal * 100) + "%" : (hasDiet ? fmtI(t.kcal) : "–"))}
       ${ring(weekN / target, "var(--hero-g)", "Settimana", `${weekN}/${target}`)}
     </div>
@@ -1531,7 +1571,12 @@ function vOggi() {
   if (!wDays().length && !variants().length) return `<h2>Benvenuto</h2>` + noPlan();
   const out = [summaryCard()]; const cc = checkCard(); if (cc) out.push(cc); if ((S.profile.user || {}).hkOn) out.push(hkCard());
   const hs = homeSession(); const day = hs && hs.day;
-  if (day) {
+  if (day && restToday()) { const np = nextPlanned(S.date);
+    out.push(`<div class="card hero"><div class="row between"><span class="eyebrow">Allenamento di oggi</span><span class="tag">Riposo</span></div>
+      <div class="big">Oggi riposo 😴</div>
+      <p class="small muted" style="margin:0">${np ? `Prossimo allenamento: <b>${esc(np.day.name)}</b> · ${esc(fmtDay(np.date, { weekday: "long", day: "numeric" }))}` : "Nessun allenamento in programma nei prossimi giorni."}</p>
+      <div class="row"><button class="btn" style="flex:1" data-go="allenamento">Mi alleno lo stesso</button></div></div>`); }
+  else if (day) {
     const done = hs.done; const tot = hs.tot; const finished = hs.finished;
     out.push(`<div class="card hero">
       <div class="row between"><span class="eyebrow">Allenamento di oggi</span>${finished ? `<span class="tag" style="background:var(--ok-soft);color:var(--ok)">Fatto</span>` : `<span class="tag b">${(day.exercises || []).length} ${(day.exercises || []).length === 1 ? "esercizio" : "esercizi"}</span>`}</div>
@@ -2116,6 +2161,16 @@ function archiveCard() {
       </div></details>`).join("")}
     </div></details>`;
 }
+function schedCard() {
+  if (!wDays().length) return "";
+  const o = schedObj() || {};
+  return `<details class="card" data-pnl="sched" ${pnlOpen("sched")}><summary>📅 Programma della settimana <span class="small muted" style="font-weight:500;margin-left:auto">${hasSched() ? weekTarget(today()) + " allenamenti" : "rotazione"}</span></summary>
+    <div class="stack" style="margin-top:12px;gap:8px">
+      <span class="small muted">${hasSched() ? "Ogni giorno la Home ti propone la seduta in programma; nei giorni di riposo ti lascia in pace. Per spostare o saltare un singolo giorno usa i giorni nella card della Home." : "Senza programma l'app propone le sedute in ordine, una dopo l'altra. Assegna una seduta ai giorni in cui ti alleni: gli altri saranno di riposo."}</span>
+      ${WEEK_ORDER.map(g => `<label class="sch-r"><span>${DOW[g]}</span><select class="in" data-sched="${g}"><option value="">💤 Riposo</option>${wDays().map(d => `<option value="${d.id}" ${o[g] === d.id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select></label>`).join("")}
+      ${hasSched() ? `<button class="btn ghost sm" data-act="sched-clear" style="align-self:flex-start">Togli il programma (torna alla rotazione)</button>` : ""}
+    </div></details>`;
+}
 function vPiano() {
   const busy = S.importBusy;
   const p = S.pending;
@@ -2142,6 +2197,7 @@ function vPiano() {
         ${S.confirmRepl ? replaceBox(p) : `<div class="row"><button class="btn primary" data-act="import-save" style="flex:1">Salva nel piano</button><button class="btn" data-act="import-cancel">Scarta</button></div>`}` : ""}
     </div>
 
+    ${schedCard()}
     ${archiveCard()}
     <details class="card" data-pnl="w" ${pnlOpen("w")}><summary>Scheda di allenamento <span class="small muted" style="font-weight:500;margin-left:auto">${days.length} giorni</span></summary>
       <div class="stack" style="margin-top:12px">
@@ -2546,6 +2602,7 @@ document.addEventListener("input", ev => {
 });
 document.addEventListener("change", ev => {
   const el = ev.target; const P = plan();
+  if (el.dataset && el.dataset.sched !== undefined) { const W = P.workout; W.schedule = W.schedule || {}; W.schedule[el.dataset.sched] = el.value || null; if (!Object.values(W.schedule).some(Boolean)) delete W.schedule; S.selDay = null; store.saveProfile(); render(); return; }
   if (el.id === "fileIn") { handleFiles(el.files); el.value = ""; return; }
   if (el.id === "labelIn") { if (el.files[0]) scanLabel(el.files[0]); el.value = ""; return; }
   if (el.id === "pkUnit" && S.picker) { const c = S.picker.cand; const g = pickGrams(S.picker); S.picker.unit = el.value; S.picker.qty = el.value === "pz" ? Math.max(1, Math.round(g / c.unit.g * 2) / 2) : Math.round(g); render(); return; }
@@ -2641,6 +2698,7 @@ document.addEventListener("click", ev => {
     case "rv-del": S.review.items.splice(+b.dataset.i, 1); render(); return;
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
+    case "sched-clear": { const W = plan().workout; delete W.schedule; delete W.moves; store.saveProfile(); render(); toast("Programma tolto: torno alla rotazione"); return; }
     case "theme-set": { S.profile.user = S.profile.user || {}; S.profile.user.theme = b.dataset.k; store.saveProfile(); render(); return; }
     case "home-style-set": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = b.dataset.k; store.saveProfile(); render(); return; }
     case "home-style": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = homeStyle() === "neo" ? "classic" : "neo"; store.saveProfile(); S.homeEnter = true; render(); window.scrollTo(0, 0); toast(homeStyle() === "neo" ? "Stile futuristico ✨" : "Stile classico"); return; }
@@ -2670,12 +2728,20 @@ document.addEventListener("click", ev => {
     case "sarge": openCoach(); return;
     case "me-tone": { S.profile.user = S.profile.user || {}; S.profile.user.tone = b.dataset.k; store.saveProfile(); render(); toast("Tono del Coach: " + TONES[b.dataset.k].label); return; }
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
-    case "wk-day": { const d = b.dataset.d; if (d > today()) return;
+    case "wk-day": { const d = b.dataset.d;
+      if (d > today()) { if (!hasSched()) return; S.wkSel = S.wkSel === d ? null : d; render(); return; } // giorni futuri: solo pianificazione
       S.wkClosed = S.wkClosed || new Set();
       if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; S.wkSel = wDays().length && !S.wkClosed.has(d) ? d : null; }
       else if (S.wkSel) { S.wkClosed.add(d); S.wkSel = null; }
       else { S.wkClosed.delete(d); S.wkSel = wDays().length ? d : null; }
       render(); return; }
+    case "wk-plan": { const W = plan().workout; W.moves = W.moves || {}; const d = S.wkSel; const id = b.dataset.id;
+      const base = hasSched() ? ((schedObj()[parseD(d).getDay()] && wDays().find(x => x.id === schedObj()[parseD(d).getDay()])) ? schedObj()[parseD(d).getDay()] : null) : null;
+      if ((id || null) === base) delete W.moves[d]; else W.moves[d] = id || "rest"; cleanMoves(); store.saveProfile(); render(); toast(id ? "📅 " + (wDays().find(x => x.id === id) || {}).name + " · " + fmtDay(d, { weekday: "long" }) : "Riposo · " + fmtDay(d, { weekday: "long" })); return; }
+    case "wk-move-open": S.wkMove = true; render(); return;
+    case "wk-move-x": S.wkMove = false; render(); return;
+    case "wk-move": { const W = plan().workout; W.moves = W.moves || {}; const pl = plannedOn(today()); if (!pl) return; W.moves[b.dataset.d] = pl; W.moves[today()] = "rest"; S.wkMove = false; S.selDay = null; cleanMoves(); store.saveProfile(); render(); toast(`↪ ${(wDays().find(x => x.id === pl) || {}).name} spostata a ${fmtDay(b.dataset.d, { weekday: "long" })}`); return; }
+    case "wk-skip": { const W = plan().workout; W.moves = W.moves || {}; W.moves[today()] = "rest"; S.selDay = null; cleanMoves(); store.saveProfile(); render(); toast("Saltata: questa settimana un allenamento in meno"); return; }
     case "wk-close": (S.wkClosed = S.wkClosed || new Set()).add(S.wkSel); S.wkSel = null; S.wkAdd = false; render(); return;
     case "wk-add": S.wkAdd = true; render(); return;
     case "wk-mark": {
@@ -2860,6 +2926,8 @@ function applyPending() {
   if (p.workout) {
     const keep = S.keepLoads !== false;
     planMatches(p.workout).forEach(({ nu, old }) => { if (keep) { if (norm(nu.name) !== norm(old.name)) nu.alias = [...new Set([old.name, ...(old.alias || [])])]; } else nu.since = today(); });
+    const oldDays = wDays(); const oldS = P.workout.schedule;
+    if (oldS) { const sc = {}; for (const g in oldS) { const i = oldDays.findIndex(d => d.id === oldS[g]); if (i >= 0 && p.workout.days[i]) sc[g] = p.workout.days[i].id; } if (Object.keys(sc).length) p.workout.schedule = sc; }
     archivePlan("workout"); p.workout.since = today(); P.workout = p.workout; S.selDay = null;
   }
   if (p.diet) { const customs = []; (P.diet.variants || []).forEach(v => (v.meals || []).forEach(m => { if (m.custom && !customs.some(c => slug(c.name) === slug(m.name))) customs.push(m); }));
@@ -3454,6 +3522,7 @@ function dayTypeFor(date) {
   if (l && l.m && l.m.dayType) return { t: l.m.dayType, auto: false };
   if (isSession(l)) return { t: "on", auto: true, why: "allenamento registrato" };
   if (date < today()) return { t: "off", auto: true, why: "nessun allenamento" };
+  if (hasSched()) { const pl = plannedOn(date); return pl ? { t: "on", auto: true, why: "allenamento in programma" } : { t: "off", auto: true, why: "giorno di riposo in programma" }; }
   const [a, b] = weekRange(date); const done = sessionDates().filter(d => d >= a && d < b && d !== date).length;
   const target = wDays().length || 3;
   return done < target ? { t: "on", auto: true, why: "ti mancano allenamenti questa settimana" } : { t: "off", auto: true, why: "obiettivo settimanale già raggiunto" };
@@ -3517,7 +3586,7 @@ function weekStats() {
   const pst = new Date(st); pst.setDate(pst.getDate() - 7); const pstart = dstr(pst);
   const inR = (d, a, b) => d >= a && d <= b;
   const L = [`Settimana dal ${fmtDay(start)} al ${fmtDay(end)}.`];
-  const sess = sessionDates(); const ws = sess.filter(d => inR(d, start, end)); const target = wDays().length || 3;
+  const sess = sessionDates(); const ws = sess.filter(d => inR(d, start, end)); const target = weekTarget(end);
   L.push(`Allenamenti: ${ws.length} su ${target} previsti${ws.length ? " (" + ws.map(d => fmtDay(d, { weekday: "short" }) + " " + (S.days[d].w.dayName || "")).join("; ") + ")" : ""}.`);
   const vol = ds => ds.reduce((a, d) => a + sessionVolume(d), 0); const v1 = vol(ws), v0 = vol(sess.filter(d => d >= pstart && d < start));
   if (v1 || v0) L.push(`Volume sollevato: ${fmtI(v1)} kg (settimana prima ${fmtI(v0)} kg).`);
@@ -3787,7 +3856,9 @@ function coachContext() {
   if (days.length) {
     L.push("\nSCHEDA DI ALLENAMENTO:");
     days.forEach(d => L.push(`- ${d.name}: ` + (d.exercises || []).map(e => `${e.name} ${e.sets}x${e.reps || "?"}${e.rest ? " rec " + e.rest + "s" : ""}${e.load ? " (" + e.load + ")" : ""}`).join("; ")));
-    const cd = currentDay(); if (cd) L.push("Seduta prevista oggi secondo la rotazione: " + cd.name);
+    if (hasSched()) { L.push("Programma settimanale: " + WEEK_ORDER.map(g => DOW[g].slice(0, 3) + " " + ((wDays().find(d => d.id === schedObj()[g]) || {}).name || "riposo")).join(", ") + ".");
+      const pl = plannedOn(today()); L.push(pl ? "Oggi in programma: " + (wDays().find(d => d.id === pl) || {}).name : "Oggi è giorno di riposo."); L.push(`Allenamenti previsti questa settimana: ${weekTarget(today())}.`); }
+    else { const cd = currentDay(); if (cd) L.push("Seduta prevista oggi secondo la rotazione: " + cd.name); }
   } else L.push("\nNessuna scheda di allenamento caricata.");
   const sess = sessionDates().slice(-15);
   if (sess.length) {
@@ -4164,7 +4235,8 @@ function ntPayload() {
   const meals = {}; const names = {}; slots().forEach(sl => names[sl.key] = sl.name);
   for (const k in n.rem.meals) if (names[k]) meals[k] = { ...n.rem.meals[k], name: names[k] };
   const tone = coachTone();
-  return { tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Rome", next: d ? d.name : "", checkDay: checkDay(),
+  let planMap; if (hasSched()) { planMap = {}; for (let i = 0; i < 8; i++) { const x = new Date(); x.setDate(x.getDate() + i); const ds = dstr(x); const pl = plannedOn(ds); planMap[ds] = pl ? (wDays().find(y => y.id === pl) || {}).name || "" : ""; } }
+  return { tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Rome", next: d ? d.name : "", checkDay: checkDay(), plan: planMap,
     coachTitle: tone === "cazzaro" ? "🍻 Il Cazzaro" : tone === "roast" ? "🔥 Il Mental Coach" : "💬 Il Coach",
     rem: { ...n.rem, meals, work: wDays().length ? n.rem.work : { ...n.rem.work, on: false } }, coach: n.coach, bank: ntBank(), today: { date: t, eaten, wDone } };
 }
