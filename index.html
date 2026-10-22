@@ -872,7 +872,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "10.6 · 22 ottobre";
+const APP_VERSION = "10.7 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2444,6 +2444,12 @@ function vPiano() {
       ${S.confirmReset ? `<div class="confirm"><span class="small" style="flex:1;min-width:160px">Elimino piano, allenamenti, pasti e pesi? Non si può annullare.</span><button class="btn danger" data-act="reset-yes">Elimina</button><button class="btn" data-act="reset-no">Annulla</button></div>`
         : `<button class="btn ghost danger" data-act="reset">Elimina tutti i dati</button>`}
     </div>
+    ${IN_CLAUDE ? "" : `<div class="card stack">
+      <div class="row between"><span class="eyebrow">Aggiornamenti</span><span class="small muted">Versione <b>${esc(APP_VERSION)}</b></span></div>
+      <button class="btn" data-act="force-upd" ${S.updBusy ? "disabled" : ""}>${S.updBusy ? '<span class="spin"></span> Controllo…' : "🔄 Cerca aggiornamenti e ricarica"}</button>
+      ${S.updMsg ? `<div class="status">${esc(S.updMsg)}</div>` : ""}
+      <span class="small muted">I tuoi dati non si toccano: ricarica solo l'app.</span>
+    </div>`}
   </div>`;
 }
 
@@ -2898,6 +2904,15 @@ document.addEventListener("click", ev => {
     case "mf-dedupe": { const F = S.profile.foods || []; const out = []; let n = 0; F.forEach(f => { const ex = out.find(o => o.per100 && f.per100 && sameFood(o, f)); if (ex) { n++; if (!ex.unit && f.unit) ex.unit = f.unit; if (!ex.code && f.code) ex.code = f.code; } else out.push(f); }); S.profile.foods = out; store.saveProfile(); render(); toast(`Uniti ${n} ${n === 1 ? "doppione" : "doppioni"}`); return; }
     case "sched-clear": { const W = plan().workout; delete W.schedule; delete W.moves; delete W.skips; store.saveProfile(); render(); toast("Programma tolto: torno alla rotazione"); return; }
     case "w-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.innerHTML = "Elimina?"; return; } S.profile.weights = (S.profile.weights || []).filter(w => w.d !== b.dataset.d); S.wHistOpen = true; store.saveProfile(); render(); toast("Pesata eliminata"); return; }
+    case "force-upd": {
+      S.updBusy = true; S.updMsg = null; render();
+      const reload = v => location.replace(location.pathname + "?v=" + encodeURIComponent(v || "x") + "&t=" + Date.now());
+      fetch("version.json?t=" + Date.now(), { cache: "no-store" }).then(r => r.json()).then(j => {
+        if (vnum(j.v) > vnum(APP_VERSION)) { S.updMsg = `Trovata la ${j.v}: aggiorno…`; render(); setTimeout(() => reload(j.v), 400); return; }
+        S.updBusy = false; S.updMsg = `Hai già l'ultima versione pubblicata (${j.v}). Se ti ho appena detto che ce n'è una nuova, GitHub ci mette qualche minuto a pubblicarla: riprova tra poco.`; render();
+      }).catch(() => { S.updMsg = "Non riesco a controllare, ricarico comunque…"; render(); setTimeout(() => reload(), 400); });
+      return;
+    }
     case "theme-set": { S.profile.user = S.profile.user || {}; S.profile.user.theme = b.dataset.k; store.saveProfile(); render(); return; }
     case "home-style-set": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = b.dataset.k; store.saveProfile(); render(); return; }
     case "home-style": { S.profile.user = S.profile.user || {}; S.profile.user.homeStyle = homeStyle() === "neo" ? "classic" : "neo"; store.saveProfile(); S.homeEnter = true; render(); window.scrollTo(0, 0); toast(homeStyle() === "neo" ? "Stile futuristico ✨" : "Stile classico"); return; }
@@ -4426,7 +4441,7 @@ document.addEventListener("click", ev => {
 
 
 /* ---------- aggiornamento automatico (versione sul sito) ---------- */
-const vnum = v => parseFloat(String(v || "0").replace(",", ".")) || 0;
+const vnum = v => { const m = String(v || "").match(/(\d+)[.,](\d+)/); return m ? +m[1] * 1000 + +m[2] : 0; }; // 10.10 > 10.9
 let updShown = false;
 async function checkUpdate() {
   if (IN_CLAUDE || location.protocol === "file:" || updShown) return;
