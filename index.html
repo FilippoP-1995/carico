@@ -901,7 +901,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "10.8 · 22 ottobre";
+const APP_VERSION = "10.9 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1282,7 +1282,7 @@ function weekProjection(date) { // il programma è ideale: quello che fai consum
   const ws = weekStart(date); const days = []; for (let i = 0; i < 7; i++) { const d = new Date(ws); d.setDate(ws.getDate() + i); days.push(dstr(d)); }
   const t = today(); const ideal = weekSlots(date);
   const doneOn = days.map(ds => ds <= t && isSession(S.days[ds]) ? assignedOn(ds) : null);
-  const trainedToday = days.includes(t) && !!doneOn[days.indexOf(t)];
+  const trainedToday = days.includes(t) && (!!doneOn[days.indexOf(t)] || !!(S.days[t] && S.days[t].rest));
   let start = days.findIndex(ds => ds > t || (ds === t && !trainedToday)); if (start < 0) start = 7;
   const done = doneOn.slice(0, start).filter(Boolean); const missed = [];
   for (let i = 0; i < start; i++) { const sId = ideal[i]; if (!sId) continue; const k = done.indexOf(sId); if (k >= 0) done.splice(k, 1); else missed.push(sId); }
@@ -1301,7 +1301,7 @@ function weekTarget(date) { // allenamenti previsti nella settimana (programma m
   return weekSlots(date || S.date).filter(Boolean).length;
 }
 function shortName(name) { const m = /\b(?:seduta|giorno|day|allenamento|scheda)\s+([A-Z0-9]{1,2})\b/i.exec(name || ""); if (m) return m[1].toUpperCase(); const n = /\b([A-Z])\b/.exec(name || ""); return n ? n[1] : String(name || "?").trim().slice(0, 2); }
-function restToday() { if (!hasSched() || plannedOn(S.date) !== null) return false; return !sessionsOn(S.date).some(x => x.finished || x.sets); }
+function restToday() { const L0 = S.days[S.date]; if (L0 && L0.rest && !isSession(L0)) return true; if (!hasSched() || plannedOn(S.date) !== null) return false; return !sessionsOn(S.date).some(x => x.finished || x.sets); }
 function nextPlanned(from) { for (let i = 1; i <= 7; i++) { const d = parseD(from); d.setDate(d.getDate() + i); const ds = dstr(d); const p = plannedOn(ds); if (p) return { date: ds, day: wDays().find(x => x.id === p) }; } return null; }
 function freeDays(from) { const out = []; for (let i = 1; i <= 7; i++) { const d = parseD(from); d.setDate(d.getDate() + i); const ds = dstr(d); if (!plannedOn(ds)) out.push(ds); } return out; }
 function cleanMoves() { const W = plan().workout || {}; if (!W.moves) return; const lim = new Date(); lim.setDate(lim.getDate() - 60); const ls = dstr(lim); for (const k in W.moves) if (k < ls) delete W.moves[k]; }
@@ -1610,8 +1610,9 @@ function summaryCard() {
     const w = isSession(L); const m = L && L.m && Object.keys(L.m.eaten || {}).length > 0;
     const doneId = ds <= today() && w ? assignedOn(ds) : null; // giorni passati: la seduta fatta davvero, anche se era riposo
     const pl = hasSched() ? plannedOn(ds) : undefined; const showId = doneId || pl;
-    const plTag = (pl === undefined && !doneId) ? "" : `<small class="wp ${showId ? "" : "rest"} ${doneId ? "done" : ""}">${showId ? esc(shortName((wDays().find(x => x.id === showId) || {}).name)) : "💤"}</small>`;
-    return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() && !hasSched() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span>${plTag}<i class="bar-w"><b style="width:${dayWorkPct(ds)}%"></b></i><i class="bar-m"><b style="width:${dayMealPct(ds)}%"></b></i></button>`; }).join("");
+    const rest = !showId && (pl !== undefined || !!(L && L.rest));
+    const plTag = (pl === undefined && !doneId && !rest) ? "" : `<small class="wp ${showId ? "" : "rest"} ${doneId ? "done" : ""}">${showId ? esc(shortName((wDays().find(x => x.id === showId) || {}).name)) : "💤"}</small>`;
+    return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() && !hasSched() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span>${plTag}<i class="bar-w" ${rest ? 'style="visibility:hidden"' : ""}><b style="width:${dayWorkPct(ds)}%"></b></i><i class="bar-m"><b style="width:${dayMealPct(ds)}%"></b></i></button>`; }).join("");
   let wkPick = "";
   // pannellino del giorno selezionato: si apre e chiude con la freccetta, di base chiuso
   S.wkOpen = S.wkOpen || new Set();
@@ -2991,11 +2992,11 @@ document.addEventListener("click", ev => {
       const d = S.wkSel; if (!d) return; const l = dayLog(d); const id = b.dataset.id; const wd = wDays().find(x => x.id === id);
       if (!wd) { // il giorno non conta come allenamento, ma le serie restano conservate e tornano riassegnando la seduta
         if (setsDone(l) > 0 || l.w.done || (l.runs || []).length || l.w.also) { l.hidden = { w: JSON.parse(JSON.stringify(l.w)), runs: l.runs ? JSON.parse(JSON.stringify(l.runs)) : undefined }; }
-        l.w = { dayId: null, ex: {}, done: false }; delete l.runs; toast("Giorno senza allenamento (le serie restano conservate)");
+        l.w = { dayId: null, ex: {}, done: false }; delete l.runs; l.rest = true; toast("💤 Riposo: la seduta in programma slitta al prossimo giorno utile");
       }
       else {
         if (l.hidden) { const h = l.hidden; l.w = h.w; if (h.runs) l.runs = h.runs; delete l.hidden; }
-        const prev = l.w.dayId; useSession(l, wd); l.w.done = true;
+        delete l.rest; const prev = l.w.dayId; useSession(l, wd); l.w.done = true;
         if (prev && prev !== wd.id) { // la seduta di prima non è più quella del giorno, ma le sue serie restano salvate
           l.w.doneAlso = (l.w.doneAlso || []).filter(x => x !== prev);
           const pd = wDays().find(x => x.id === prev); if (!pd || setsFor({ w: { ex: l.w.ex } }, pd) === 0) l.w.also = (l.w.also || []).filter(x => x !== prev);
