@@ -825,7 +825,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.1 · 22 ottobre";
+const APP_VERSION = "9.2 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3929,8 +3929,15 @@ function md(t) {
   }
   return out + (ul ? "</ul>" : "");
 }
+const TONE_REMIND = {
+  roast: "(Rispondimi da Mental Coach: frase a effetto, parolacce, spingimi. Niente tono da assistente.)",
+  cazzaro: "(Rispondimi da Cazzaro: battute, parolacce, da amico di palestra. Niente tono da assistente.)",
+  wild: "(Rispondimi senza filtri, da amico vero, con qualche parolaccia.)",
+};
 AI.chat = async function (turns, { onText, signal, images = [], deep = false } = {}) {
-  const ctx = COACH_RULES + "\n\n" + TONES[coachTone()].txt + "\n\nDATI DELL'UTENTE:\n" + coachContext();
+  const tone = coachTone();
+  const ctx = COACH_RULES + "\n\nDATI DELL'UTENTE:\n" + coachContext() + "\n\n=== TONO E PERSONAGGIO (PRIORITÀ MASSIMA: vale per OGNI risposta, anche brevi, anche per registrare un pasto o fare conti) ===\n" + TONES[tone].txt + (TONE_REMIND[tone] ? "\nNelle risposte brevi il tono non si taglia: la frase a effetto e il linguaggio del personaggio stanno dentro le 80 parole, a costo di togliere dettagli." : "");
+  if (TONE_REMIND[tone] && turns.length) { const last = turns[turns.length - 1]; if (last.role === "user") turns = turns.slice(0, -1).concat([{ ...last, content: last.content + "\n\n" + TONE_REMIND[tone] }]); }
   if (this.sample) {
     const input = [{ role: "user", content: ctx }, ...turns];
     const o = { cache: false, signal, onText: ({ text }) => onText && onText(text) }; if (!deep) o.modelTier = "quick"; if (images.length) o.images = images;
