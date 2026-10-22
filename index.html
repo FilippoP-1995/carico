@@ -822,7 +822,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "8.1 · 22 ottobre";
+const APP_VERSION = "8.2 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1185,12 +1185,18 @@ function lastSessionLine(day) {
   return `🕘 Ultima volta: <b>${esc(when)}</b> · ⏱ durata <b>${dur || "non registrata"}</b> · ${r.sets} serie${r.vol ? ` · ${r.vol >= 10000 ? fmtN(Math.round(r.vol / 100) / 10) + " t" : fmtI(Math.round(r.vol)) + " kg"}` : ""}`;
 }
 function sessionDates() { return sortedDates().filter(d => isSession(S.days[d])); }
+function assignedOn(d) { // la seduta fatta in quel giorno (quella assegnata, o l'ultima con serie)
+  const L = S.days[d]; if (!L || !L.w) return null; const w = L.w; const ad = w.dayId && wDays().find(x => x.id === w.dayId);
+  if (ad && (w.done || setsFor(L, ad) > 0)) return ad.id;
+  const ss = sessionsOn(d).filter(x => x.finished || x.sets); return ss.length ? ss[ss.length - 1].day.id : w.dayId || null;
+}
 function suggestedDay() {
   const days = wDays(); if (!days.length) return null;
-  const l = peekLog(); if (l && l.w && l.w.dayId && days.find(d => d.id === l.w.dayId)) return l.w.dayId;
+  // oggi conta solo una seduta davvero iniziata (serie segnate o fatta), non una aperta e chiusa
+  const l = peekLog(); const td = l && l.w && l.w.dayId && days.find(d => d.id === l.w.dayId); if (td && (l.w.done || setsFor(l, td) > 0)) return td.id;
   const past = sessionDates().filter(d => d < S.date).reverse();
   for (const d of past) {
-    const id = S.days[d].w.dayId; const i = days.findIndex(x => x.id === id);
+    const id = assignedOn(d); const i = days.findIndex(x => x.id === id);
     if (i >= 0) return days[(i + 1) % days.length].id;
     const name = norm(S.days[d].w.dayName); const j = days.findIndex(x => norm(x.name) === name);
     if (j >= 0) return days[(j + 1) % days.length].id;
@@ -2983,7 +2989,7 @@ function discardSession(l, day) { // toglie la seduta day da questa data, senza 
 function shortSession() { const l = dayLog(); const day = lvDay(); if (LV.keepShort || !l.w.start || setsFor(l, day) === 0) return false; return ((l.w.end || lastSetAt(l, day) || Date.now()) - l.w.start) < 5 * 60000; }
 function lvCloseAsk() {
   const l = dayLog(); const day = lvDay();
-  if (l.w.dayId === day.id && setsFor(l, day) === 0 && !l.w.done) { delete l.w.start; delete l.w.end; if (!(LV.archived && restoreRun(l, day)) && (l.w.also || []).length) discardSession(l, day); store.saveDay(S.date); closeLive(); return; }
+  if (l.w.dayId === day.id && setsFor(l, day) === 0 && !l.w.done) { delete l.w.start; delete l.w.end; if (!(LV.archived && restoreRun(l, day))) { if ((l.w.also || []).length) discardSession(l, day); else if (setsDone(l) === 0 && !l.w.done) l.w = { dayId: null, ex: {}, done: false }; } S.selDay = null; store.saveDay(S.date); closeLive(); return; }
   if (shortSession()) { LV.ask = "close"; renderLive(); return; }
   closeLive();
 }
@@ -4085,6 +4091,8 @@ setTimeout(checkUpdate, 1500);
 
 /* cambio giorno se l'app resta aperta oltre la mezzanotte */
 let TODAY_REF = today();
+let HIDDEN_AT = 0;
+document.addEventListener("visibilitychange", () => { if (document.hidden) { HIDDEN_AT = Date.now(); return; } if (HIDDEN_AT && Date.now() - HIDDEN_AT > 2 * 3600e3 && TODAY_REF === today()) { S.selDay = null; S.wkSel = null; render(); } });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && TODAY_REF !== today()) { if (S.date === TODAY_REF) S.date = today(); TODAY_REF = today(); S.selDay = null; S.selVariant = null; render(); } });
 
 /* ---------- notifiche push (server Cloudflare, app installata sulla Home) ---------- */
