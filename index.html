@@ -599,6 +599,7 @@ html.neo-dark .macros>div,html.neo-dark .ip-day{background:rgba(255,255,255,.04)
 .mf-h>span{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.mf-h b{font-size:14.5px}.mf-h small{font-size:12px;color:var(--muted)}
 .mf-h svg{width:16px;height:16px;flex:none;transition:transform .2s}.mf.open .mf-h svg{transform:rotate(180deg)}
 .mf .stack{padding-left:12px!important;padding-right:12px!important}
+.bf-need{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:12px;padding:10px 12px}
 .home-style{align-self:center;border:1px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;border-radius:99px;padding:7px 14px;margin:2px auto 0}
 @media (prefers-reduced-motion:reduce){.neo-home *,.neo-home *::before,.neo-home *::after,html.neo-home body::before{animation:none!important}}
 .lv-ask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,8,16,.7);backdrop-filter:blur(6px)}
@@ -831,7 +832,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.5 · 22 ottobre";
+const APP_VERSION = "9.6 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2152,6 +2153,7 @@ function vProgressi() {
       ${ws.length ? `<details class="w-hist" ${S.wHistOpen ? "open" : ""}><summary class="small" style="cursor:pointer;font-weight:600">Tutte le pesate (${ws.length})</summary><div class="stack" style="gap:2px;margin-top:6px">${ws.slice().reverse().slice(0, 60).map(w => `<div class="w-row"><span>${esc(fmtDay(w.d, { weekday: "short", day: "numeric", month: "short", year: "numeric" }))}</span><b>${fmtN(w.kg)} kg</b><button class="rm" data-act="w-del" data-d="${w.d}" aria-label="Elimina pesata">${ICON_X}</button></div>`).join("")}</div></details>` : ""}
     </div>
     ${measCard()}
+    ${bfCard()}
     <div class="card stack">
       <div class="row between"><span class="eyebrow">📋 Check settimanali</span><button class="btn ghost sm" data-act="check-run">Fai il check ora</button></div>
       <span class="small muted">Ogni ${DOW[checkDay()].toLowerCase()} il Coach fa il punto della settimana (giorno modificabile in Piano → Il tuo profilo).</span>
@@ -2325,6 +2327,7 @@ function vPiano() {
       <div class="stack" style="margin-top:12px">
         <label class="f">Nome<input class="in" data-e="user" data-k="name" value="${esc((S.profile.user || {}).name || "")}" placeholder="Il tuo nome"></label>
         <div class="f">Obiettivo<div class="chips" style="flex-wrap:wrap;margin-top:4px">${Object.entries(GOALS).map(([k, v]) => `<button class="chip sm ${(S.profile.user || {}).goal === k ? "on-acc" : ""}" aria-pressed="${(S.profile.user || {}).goal === k}" data-act="me-goal" data-k="${k}">${GOAL_EMOJI[k]} ${esc(v)}</button>`).join("")}</div></div>
+        <div class="row" style="gap:8px"><label class="f" style="flex:1">Altezza (cm)<input class="in" inputmode="numeric" data-e="user" data-k="height" value="${esc(fmtN(num((S.profile.user || {}).height)))}" placeholder="es. 178"></label><label class="f" style="flex:1">Anno di nascita<input class="in" inputmode="numeric" data-e="user" data-k="birthYear" value="${esc((S.profile.user || {}).birthYear || "")}" placeholder="es. 1995"></label></div>
         <label class="f">Peso obiettivo (kg)<input class="in" inputmode="decimal" data-e="user" data-k="targetKg" value="${esc(fmtN(num((S.profile.user || {}).targetKg)))}" placeholder="es. 75"></label>
         <div class="f">⌚ Anelli di Salute (tramite Comandi rapidi)<div class="chips" style="margin-top:4px"><button class="chip sm ${(S.profile.user || {}).hkOn ? "on-acc" : ""}" data-act="me-hk" data-k="1">Attivi</button><button class="chip sm ${(S.profile.user || {}).hkOn ? "" : "on-acc"}" data-act="me-hk" data-k="">Disattivati</button></div></div>
         ${(S.profile.user || {}).hkOn ? `<div class="f">⌚ Obiettivi anelli<div class="grid4" style="grid-template-columns:repeat(3,1fr);margin-top:4px">
@@ -2700,7 +2703,7 @@ document.addEventListener("change", ev => {
     }
   }
   if (e === "diet-notes") P.diet.notes = el.value;
-  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = ["targetKg", "waterGoal", "moveGoal", "exGoal", "stepGoal"].includes(el.dataset.k) ? (num(el.value) || "") : el.value.trim().slice(0, el.dataset.k === "playlist" ? 300 : 40); store.saveProfile(); render(); return; }
+  if (e === "user") { S.profile.user = S.profile.user || {}; S.profile.user[el.dataset.k] = ["targetKg", "waterGoal", "moveGoal", "exGoal", "stepGoal", "height", "birthYear"].includes(el.dataset.k) ? (num(el.value) || "") : el.value.trim().slice(0, el.dataset.k === "playlist" ? 300 : 40); store.saveProfile(); render(); return; }
   if (e === "lvl") { const lv = (P.diet.levels || []).find(x => x.id === el.dataset.id); if (lv) { if (el.dataset.s) { lv[el.dataset.s] = lv[el.dataset.s] || {}; lv[el.dataset.s][el.dataset.k] = num(el.value) || ""; } else lv[el.dataset.k] = el.value.trim(); } store.saveProfile(); render(); return; }
   if (e === "supp") { const x = supps().find(y => y.id === el.dataset.id); if (x) x[el.dataset.k] = el.value.trim().slice(0, 40); store.saveProfile(); return; }
   store.saveProfile();
@@ -2719,6 +2722,7 @@ document.addEventListener("submit", ev => {
   else if (f.dataset.form === "supp") { const n = $("#suppName").value.trim(); if (!n) { toast("Scrivi il nome dell'integratore"); return; } S.profile.supps = [...supps(), { id: uid(), name: n.slice(0, 40), dose: $("#suppDose").value.trim().slice(0, 20) }]; store.saveProfile(); render(); }
   else if (f.dataset.form === "meas") {
     const fd = new FormData(f); const e = { d: S.date }; let any = false; MEAS.forEach(([k]) => { const v = num(fd.get(k)); if (v && v > 10 && v < 300) { e[k] = v; any = true; } });
+    plicheFor().forEach(([k]) => { const v = num(fd.get(k)); if (v && v >= 2 && v < 80) { e[k] = v; any = true; } });
     if (!any) { toast("Inserisci almeno una misura in cm"); return; }
     S.profile.measures = (S.profile.measures || []).filter(m => m.d !== S.date).concat(e); store.saveProfile(); S.measOpen = false; render(); toast("📏 Misure salvate");
   }
@@ -3610,7 +3614,50 @@ const waterGoal = () => num((S.profile.user || {}).waterGoal) || 2;
 const supps = () => S.profile.supps || [];
 function hydro(date = S.date) { const l = S.days[date]; return (l && l.h) || { w: 0, s: {} }; }
 function hydroLog(date = S.date) { const l = dayLog(date); l.h = l.h || { w: 0, s: {} }; l.h.s = l.h.s || {}; return l.h; }
-const MEAS = [["vita", "Vita"], ["fianchi", "Fianchi"], ["petto", "Petto"], ["braccio", "Braccio"], ["coscia", "Coscia"]];
+const MEAS = [["vita", "Vita"], ["fianchi", "Fianchi"], ["collo", "Collo"], ["petto", "Petto"], ["braccio", "Braccio"], ["coscia", "Coscia"]];
+const PLICHE_M = [["pl_petto", "Petto"], ["pl_addome", "Addome"], ["pl_coscia", "Coscia"]];
+const PLICHE_F = [["pl_tricipite", "Tricipite"], ["pl_soprailiaca", "Soprailiaca"], ["pl_coscia", "Coscia"]];
+const plicheFor = () => (S.profile.user || {}).sex === "f" ? PLICHE_F : PLICHE_M;
+/* ---------- percentuale di grasso (BF) ---------- */
+function userAge(date) { const by = num((S.profile.user || {}).birthYear); if (!by || by < 1900) return null; return parseD(date || today()).getFullYear() - by; }
+function weightAt(d) { const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1); let w = null; for (const x of ws) { if (x.d <= d) w = x.kg; else break; } return w != null ? w : (ws[0] ? ws[0].kg : null); }
+function bfAt(m) { // il metodo più preciso possibile con i dati di quel giorno
+  const U = S.profile.user || {}; const f = U.sex === "f"; const h = num(U.height); const age = userAge(m.d);
+  const P = plicheFor().map(([k]) => num(m[k])); if (age && P.every(v => v)) { const Sm = P.reduce((a, b) => a + b, 0);
+    const bd = f ? 1.0994921 - 0.0009929 * Sm + 0.0000023 * Sm * Sm - 0.0001392 * age : 1.10938 - 0.0008267 * Sm + 0.0000016 * Sm * Sm - 0.0002574 * age;
+    return { v: 495 / bd - 450, m: "jp" }; }
+  const w = num(m.vita), n = num(m.collo), hip = num(m.fianchi);
+  if (h && w && n && (!f || hip)) { const v = f ? 495 / (1.29579 - 0.35004 * Math.log10(w + hip - n) + 0.22100 * Math.log10(h)) - 450 : 495 / (1.0324 - 0.19077 * Math.log10(w - n) + 0.15456 * Math.log10(h)) - 450; if (isFinite(v)) return { v, m: "navy" }; }
+  const kg = num(m.kg) || weightAt(m.d); if (h && age && kg) { const bmi = kg / Math.pow(h / 100, 2); return { v: 1.2 * bmi + 0.23 * age - 10.8 * (f ? 0 : 1) - 5.4, m: "bmi" }; }
+  return null;
+}
+const BF_M = { jp: ["Plicometria Jackson-Pollock 3 pliche", "la più precisa senza strumenti da laboratorio (circa ±3%)"], navy: ["Formula della Marina USA", "da metro da sarta: buona se misuri sempre negli stessi punti (circa ±3–4%)"], bmi: ["Stima da peso, altezza ed età", "solo indicativa: non distingue muscoli e grasso"] };
+function bfSeries() { // punti per il grafico, tutti con lo stesso metodo (il migliore disponibile per l'ultima misura)
+  const ms = measures(); const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
+  const all = ms.map(m => ({ d: m.d, r: bfAt(m) })).filter(x => x.r);
+  let method = all.length ? all[all.length - 1].r.m : null; let pts = all.filter(x => x.r.m === method);
+  if (!pts.length) { const est = ws.map(w => ({ d: w.d, r: bfAt({ d: w.d, kg: w.kg }) })).filter(x => x.r); if (est.length) { method = "bmi"; pts = est; } }
+  return { method, pts: pts.map(x => ({ d: x.d, v: Math.round(x.r.v * 10) / 10 })) };
+}
+function bfMissing() {
+  const U = S.profile.user || {}; const f = U.sex === "f"; const last = measures().slice(-1)[0] || {}; const miss = [];
+  if (!num(U.height)) miss.push("altezza"); if (!num(last.collo)) miss.push("collo"); if (!num(last.vita)) miss.push("vita"); if (f && !num(last.fianchi)) miss.push("fianchi");
+  return miss;
+}
+function bfCard() {
+  const U = S.profile.user || {}; const { method, pts } = bfSeries(); const last = pts[pts.length - 1]; const first = pts[0];
+  const miss = bfMissing(); const kg = last ? weightAt(last.d) : null;
+  const inputs = `${!num(U.height) ? `<label class="f">Altezza (cm)<input class="in" inputmode="numeric" data-e="user" data-k="height" placeholder="es. 178"></label>` : ""}${!num(U.birthYear) ? `<label class="f">Anno di nascita<input class="in" inputmode="numeric" data-e="user" data-k="birthYear" placeholder="es. 1995"></label>` : ""}`;
+  return `<div class="card stack">
+    <div class="row between"><span class="eyebrow">🔥 Massa grassa (BF)</span>${last ? `<span class="num" style="font-size:22px">${fmtN(last.v)}%</span>` : ""}</div>
+    ${last ? `<span class="small muted">${esc(BF_M[method][0])} · ${esc(fmtDay(last.d, { day: "numeric", month: "short" }))}${kg ? ` · grasso ${fmtN(Math.round(kg * last.v / 10) / 10)} kg · massa magra ${fmtN(Math.round(kg * (100 - last.v) / 10) / 10)} kg` : ""}${first && first !== last ? ` · ${last.v - first.v > 0 ? "+" : "−"}${fmtN(Math.abs(Math.round((last.v - first.v) * 10) / 10))} punti dal ${esc(fmtDay(first.d, { day: "numeric", month: "short" }))}` : ""}</span>
+      ${lineChart(pts.map(p => ({ y: p.v, l: fmtDay(p.d, { day: "numeric", month: "short" }) })), "%")}
+      <span class="small muted">Precisione: ${esc(BF_M[method][1])}.</span>` : `<p class="small muted" style="margin:0">Per calcolare la percentuale di grasso mi servono alcuni dati.</p>`}
+    ${method !== "jp" ? `<div class="bf-need">${method === "navy" ? `<span class="small">Per una stima più precisa: misura le <b>3 pliche</b> col plicometro (${plicheFor().map(x => x[1].toLowerCase()).join(", ")}) in Misure → ＋ Registra${!num(U.birthYear) ? ", e inserisci l'anno di nascita" : ""}.</span>`
+      : `<span class="small">${miss.length ? `Per la formula della Marina USA mancano: <b>${miss.join(", ")}</b>.${miss.some(x => x !== "altezza") ? " Collo, vita e fianchi si inseriscono in Misure corporee → ＋ Registra." : ""}` : ""}${!last && !num(U.birthYear) ? " Con altezza e anno di nascita intanto faccio una stima indicativa dal peso." : ""}</span>`}
+      ${inputs ? `<div class="grid4" style="grid-template-columns:1fr 1fr">${inputs}</div>` : ""}</div>` : ""}
+  </div>`;
+}
 function measures() { return (S.profile.measures || []).slice().sort((a, b) => a.d < b.d ? -1 : 1); }
 function hydroCard() {
   const h = hydro(); const g = waterGoal(); const L = (h.w || 0) / 1000; const pct = Math.min(100, L / g * 100);
@@ -3638,7 +3685,8 @@ function measCard() {
   return `<div class="card stack">
     <div class="row between"><span class="eyebrow">📏 Misure corporee</span><button class="btn ghost sm" data-act="meas-open">${S.measOpen ? "Chiudi" : "＋ Registra"}</button></div>
     ${S.measOpen ? `<form class="stack" data-form="meas" style="gap:8px"><div class="meas-grid">${MEAS.map(([k, l]) => `<label class="f">${l} (cm)<input class="in" inputmode="decimal" name="${k}" value="${esc(fmtN(num(today_[k])))}" placeholder="${last && num(last[k]) ? esc(fmtN(num(last[k]))) : "–"}"></label>`).join("")}</div>
-      <p class="small muted" style="margin:0">Misura al mattino, a digiuno, sempre negli stessi punti (vita all'altezza dell'ombelico).</p>
+      <details ${plicheFor().some(([k]) => num(today_[k])) ? "open" : ""}><summary class="small" style="cursor:pointer;font-weight:600">Pliche col plicometro (mm) · per la BF più precisa</summary><div class="meas-grid" style="margin-top:8px">${plicheFor().map(([k, l]) => `<label class="f">${l} (mm)<input class="in" inputmode="decimal" name="${k}" value="${esc(fmtN(num(today_[k])))}"></label>`).join("")}</div></details>
+      <p class="small muted" style="margin:0">Misura al mattino, a digiuno, sempre negli stessi punti (vita all'altezza dell'ombelico, collo sotto il pomo d'Adamo). Le pliche sul lato destro, pizzicando la pelle in verticale.</p>
       <button class="btn primary">Salva misure di ${esc(fmtDay(S.date, { day: "numeric", month: "long" }))}</button></form>` : ""}
     ${last ? `<div class="meas-vals">${MEAS.map(([k, l]) => { const v = num(last[k]); if (v == null) return ""; const pv = prev && num(prev[k]); const d = pv != null ? v - pv : null; return `<button class="mv ${S.measK === k ? "on" : ""}" data-act="meas-k" data-k="${k}"><span>${l}</span><b>${fmtN(v)}</b>${d != null && Math.abs(d) >= 0.1 ? `<small class="${d < 0 ? "dn" : "up"}">${d > 0 ? "+" : "−"}${fmtN(Math.abs(Math.round(d * 10) / 10))}</small>` : "<small>&nbsp;</small>"}</button>`; }).join("")}</div>
       ${lineChart(pts, MEAS.find(x => x[0] === S.measK)[1])}
@@ -3836,7 +3884,7 @@ document.addEventListener("click", ev => { const b = ev.target.closest("[data-ac
 const GOALS = { cut: "Perdere grasso", bulk: "Mettere massa", recomp: "Ricomposizione corporea", fit: "Restare in forma" };
 const GOAL_EMOJI = { cut: "🔥", bulk: "💪", recomp: "⚖️", fit: "🏃" };
 const userName = () => String((S.profile.user || {}).name || "").trim().split(/\s+/)[0] || "";
-const OB = { name: "", goal: "", kg: "", tkg: "", sex: "" };
+const OB = { name: "", goal: "", kg: "", tkg: "", sex: "", h: "", by: "" };
 function renderOnb() {
   $("#onb").innerHTML = `<div class="lv-in onb">
     <div class="onb-logo"><div class="plates"><i style="height:44px;background:var(--danger)"></i><i style="height:38px;background:var(--hero-a)"></i><i style="height:32px;background:var(--hero-d)"></i><i style="height:26px;background:var(--hero-g)"></i></div><div class="brand" style="color:var(--hero-ink)">Car<span>i</span>co</div></div>
@@ -3849,6 +3897,10 @@ function renderOnb() {
         <label class="onb-f"><span>Peso attuale <small>(facoltativo)</small></span><div class="onb-u"><input id="obKg" inputmode="decimal" value="${esc(OB.kg)}" placeholder="78,5"><em>kg</em></div></label>
         <label class="onb-f"><span>Peso obiettivo <small>(facoltativo)</small></span><div class="onb-u"><input id="obTkg" inputmode="decimal" value="${esc(OB.tkg)}" placeholder="75"><em>kg</em></div></label>
       </div>
+      <div class="onb-two">
+        <label class="onb-f"><span>Altezza <small>(facoltativa)</small></span><div class="onb-u"><input id="obH" inputmode="numeric" value="${esc(OB.h)}" placeholder="178"><em>cm</em></div></label>
+        <label class="onb-f"><span>Anno di nascita <small>(facoltativo)</small></span><div class="onb-u"><input id="obBy" inputmode="numeric" value="${esc(OB.by)}" placeholder="1995"></div></label>
+      </div>
       <button class="lv-go" type="submit">Iniziamo 🚀</button>
       <button class="onb-skip" type="button" data-act="ob-skip">Salta per ora</button>
     </form>
@@ -3857,11 +3909,11 @@ function renderOnb() {
 function showOnboarding() { if (S.profile.user) return; ovOpen("onb"); renderOnb(); setTimeout(() => { const n = $("#obName"); n && n.focus(); }, 300); }
 function saveOnb(skip) {
   if (!skip) {
-    OB.name = ($("#obName") || {}).value || OB.name; OB.kg = ($("#obKg") || {}).value || OB.kg; OB.tkg = ($("#obTkg") || {}).value || OB.tkg;
+    OB.name = ($("#obName") || {}).value || OB.name; OB.kg = ($("#obKg") || {}).value || OB.kg; OB.tkg = ($("#obTkg") || {}).value || OB.tkg; OB.h = ($("#obH") || {}).value || OB.h; OB.by = ($("#obBy") || {}).value || OB.by;
     if (!OB.name.trim()) { toast("Scrivi il tuo nome"); $("#obName").focus(); return; }
     if (!OB.sex) { toast("Scegli uomo o donna"); return; }
   }
-  S.profile.user = { name: skip ? "" : OB.name.trim().slice(0, 40), sex: skip ? "" : OB.sex, goal: skip ? "" : OB.goal, targetKg: skip ? "" : (num(OB.tkg) || ""), tone: "cazzaro" };
+  S.profile.user = { name: skip ? "" : OB.name.trim().slice(0, 40), sex: skip ? "" : OB.sex, goal: skip ? "" : OB.goal, targetKg: skip ? "" : (num(OB.tkg) || ""), height: skip ? "" : (num(OB.h) > 100 && num(OB.h) < 250 ? num(OB.h) : ""), birthYear: skip ? "" : (num(OB.by) > 1920 && num(OB.by) < 2020 ? num(OB.by) : ""), tone: "cazzaro" };
   const kg = num(OB.kg);
   if (!skip && kg && kg > 20 && kg < 400) { const ws = S.profile.weights = S.profile.weights || []; const ex = ws.find(w => w.d === S.date); if (ex) ex.kg = kg; else ws.push({ d: S.date, kg }); ws.sort((a, b) => a.d < b.d ? -1 : 1); }
   store.saveProfile(); ovClose("onb"); render();
@@ -3924,6 +3976,7 @@ function coachContext0() {
   L.push(U.sex === "f" ? "L'utente è una DONNA: rivolgiti a lei al femminile, accordando aggettivi, participi e insulti al femminile (es. \"sei pronta\", \"smidollata\", \"mollacciona\")." : "L'utente è un uomo: rivolgiti a lui al maschile.");
   if (U.name || U.goal || U.targetKg) L.push(`Utente: ${U.name || "senza nome"}${U.goal ? ". Obiettivo: " + (GOALS[U.goal] || U.goal) : ""}${num(U.targetKg) ? ". Peso obiettivo: " + fmtN(num(U.targetKg)) + " kg" : ""}. Chiamalo per nome ogni tanto, senza esagerare.`);
   { const F = (S.profile.foods || []).filter(f => f.per100).slice(0, 60); if (F.length) L.push("ALIMENTI SALVATI DALL'UTENTE (da etichette e codici a barre, valori per 100 g: kcal/proteine/carboidrati/grassi; usali quando ne parla, senza chiedergli di rimandare l'etichetta):\n" + F.map(f => `- ${f.name}: ${fmtN(f.per100.kcal)} kcal, P ${fmtN(f.per100.p)} g, C ${fmtN(f.per100.c)} g, G ${fmtN(f.per100.f)} g${f.unit ? ` (1 ${f.unit.n} = ${fmtN(f.unit.g)} g)` : ""}`).join("\n")); }
+  { const b = bfSeries(); if (b.pts.length) { const l = b.pts[b.pts.length - 1]; L.push(`Massa grassa (BF): ${fmtN(l.v)}% il ${l.d} (${BF_M[b.method][0]})${b.pts.length > 1 ? `, prima ${fmtN(b.pts[0].v)}% il ${b.pts[0].d}` : ""}.`); } const U2 = S.profile.user || {}; if (num(U2.height)) L.push(`Altezza: ${num(U2.height)} cm.`); if (userAge()) L.push(`Età: ${userAge()} anni.`); }
   { const MEM = S.profile.mem || []; if (MEM.length) L.push("MEMORIA DEL COACH (cose che l'utente ti ha detto nelle chat precedenti: tienine conto quando servono, senza elencarle ogni volta):\n" + MEM.map(m => "- " + m.t + " (" + m.d + ")").join("\n")); }
   L.push("Data e ora: " + now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + ", " + pad(now.getHours()) + ":" + pad(now.getMinutes()));
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
