@@ -826,7 +826,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.3 · 22 ottobre";
+const APP_VERSION = "9.4 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1922,10 +1922,11 @@ function searchFoods(q) {
   const stem = t => t.length > 3 ? t.replace(/[aeiou]$/, "") : t; // uova/uovo, mele/mela
   const score = name => { const words = deacc(name).split(/[\s(),%-]+/).filter(Boolean); let sc = 0; for (const t of terms) { const st = stem(t); if (words.some(w => w === t || stem(w) === st)) sc += 3; else if (words.some(w => w.startsWith(st))) sc += 2; else if (deacc(name).includes(st)) sc += 1; else return 0; } if (deacc(name).startsWith(stem(terms[0]))) sc += 1; return sc; };
   const cands = [];
-  (S.profile.foods || []).forEach(f => { const sc = score(f.name); if (sc) cands.push({ ...f, src: "mine", sc: sc + 3 }); });
+  (S.profile.foods || []).forEach(f => { const sc = score(f.name); if (sc >= 2) cands.push({ ...f, src: "mine", sc: sc + 3, tier: 0 }); });
   recentFoods().forEach(it => { const sc = score(it.food); if (!sc) return; const g = String(it.qty || "").match(/^\s*(\d+(?:[.,]\d+)?)\s*(g|ml)\b/i); const c = { name: it.food, src: "recent", sc: sc + 1 }; if (g && num(g[1])) { const gr = num(g[1]); c.per100 = {}; MK.forEach(k => c.per100[k] = (num(it[k]) || 0) / gr * 100); c.defG = gr; } else c.fixed = it; cands.push(c); });
   FOODS.forEach(f => { const sc = score(f.name); if (sc) cands.push({ ...f, sc }); });
-  cands.sort((a, b) => b.sc - a.sc || a.name.length - b.name.length);
+  cands.forEach(c => { if (c.tier == null) c.tier = c.src === "recent" ? 1 : 2; });
+  cands.sort((a, b) => a.tier - b.tier || b.sc - a.sc || a.name.length - b.name.length);
   const seen = {}; const out = [];
   for (const c of cands) { const k = deacc(c.name); if (seen[k]) continue; seen[k] = 1; c.qHint = qty; c.uHint = unit; out.push(c); if (out.length >= 7) break; }
   return out;
@@ -1938,7 +1939,7 @@ function sugHtml(key) {
   const q = (S.drafts[key] || "").trim();
   if (q.length < 2) { S.sug[key] = []; return `<p class="small muted" style="margin:0">Cerca un alimento (es. "pollo", "150 g riso") oppure fotografa l'etichetta.</p>`; }
   const list = S.sug[key] = searchFoods(q);
-  return `${list.map((c, i) => `<button class="sg" data-act="sug" data-key="${esc(key)}" data-i="${i}"><span class="sgn">${esc(c.name)}${c.src === "mine" ? ` <span class="tag b">${c.from === "label" ? "etichetta" : "mio"}</span>` : c.src === "recent" ? ` <span class="tag">recente</span>` : ""}</span><span class="sgd">${candDesc(c)}</span></button>`).join("")}
+  return `${list.map((c, i) => `<button class="sg" data-act="sug" data-key="${esc(key)}" data-i="${i}"><span class="sgn">${esc(c.name)}${c.src === "mine" ? ` <span class="tag b">${c.from === "label" ? "etichetta" : c.from === "coach" ? "coach" : "mio"}</span>` : c.src === "recent" ? ` <span class="tag">recente</span>` : ""}</span><span class="sgd">${candDesc(c)}</span></button>`).join("")}
     <button class="sg ai" data-act="ai-add" data-key="${esc(key)}"><span class="sgn">✦ Calcola con l'AI: “${esc(q.length > 50 ? q.slice(0, 50) + "…" : q)}”</span><span class="sgd">Anche più alimenti insieme, es. "2 uova, 60 g pane, un caffè"</span></button>`;
 }
 function pickGrams(pk) { const q = num(pk.qty) || 0; return pk.unit === "pz" && pk.cand.unit ? q * pk.cand.unit.g : q; }
@@ -4175,6 +4176,11 @@ document.addEventListener("click", ev => {
   else if (a === "ca-save") {
     const m = CH.msgs[+b.dataset.mi]; if (!m || !m.action || !m.action.sel || m.action.done) return;
     if (!variants().length && m.action.sel !== "extra") { toast("Carica prima un piano alimentare"); return; }
+    m.action.items.forEach(x => { const g = String(x.qty || "").match(/^\s*(\d+(?:[.,]\d+)?)\s*(g|ml)\b/i); const gr = g && num(g[1]); if (!gr || num(x.kcal) == null) return;
+      if ((S.profile.foods || []).some(f => norm(f.name) === norm(x.food))) return;
+      const food = { id: uid(), name: String(x.food).slice(0, 80), from: "coach", per100: {} }; MK.forEach(k2 => food.per100[k2] = Math.round((num(x[k2]) || 0) / gr * 1000) / 10);
+      S.profile.foods = [food, ...(S.profile.foods || [])].slice(0, 300); });
+    store.saveProfile();
     const k = m.action.sel; const keep = S.date; S.date = today(); try { addItemsTo(k === "extra" ? "extra" : "m:" + k, m.action.items.map(x => ({ ...x }))); } finally { S.date = keep; } if (keep !== today()) toast("Registrato su oggi, " + fmtDay(today(), { weekday: "long", day: "numeric" }));
     m.action.done = k; saveChat(); renderCoach();
     const ms = $("#msgs"); if (ms) ms.scrollTop = ms.scrollHeight;
