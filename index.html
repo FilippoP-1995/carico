@@ -825,7 +825,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "8.6 · 22 ottobre";
+const APP_VERSION = "8.7 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2469,7 +2469,7 @@ ${(m.items || []).map(it => `- ${it.qty || ""} ${it.food}: ${fmtI(it.kcal)} kcal
 Totale originale: ${fmtI(o.kcal)} kcal, P ${fmtI(o.p)} g, C ${fmtI(o.c)} g, G ${fmtI(o.f)} g.
 ${existing.length ? "Varianti già create, da non ripetere: " + existing.map(a => a.name + " (" + (a.items || []).map(x => x.food).join(", ") + ")").join("; ") + "\n" : ""}Preferenze dell'utente: ${hint ? hint.slice(0, 300) : "nessuna"}.
 Usa alimenti comuni in Italia, adatti a questo momento della giornata, facili da preparare. Quantità in grammi (a crudo per pasta, riso, carne) o in unità chiare. Per ogni alimento indica i macro per la quantità.
-Rispondi solo con JSON: {"name":"Nome breve del pasto","items":[{"food":"...","qty":"120 g","kcal":0,"p":0,"c":0,"f":0}]}`);
+Rispondi solo con JSON: {"name":"Nome breve del pasto","items":[{"food":"...","qty":"120 g","kcal":0,"p":0,"c":0,"f":0}]}`, { tier: "quick" });
   const items = (r && Array.isArray(r.items) ? r.items : []).filter(x => x && (x.food || x.name)).map(cleanItem);
   if (!items.length) throw { code: "invalid_json" };
   return { id: uid(), name: r.name ? String(r.name).slice(0, 80) : "Variante", items };
@@ -2580,7 +2580,7 @@ async function scanLabel(file) {
   if (!AI.canImages()) { toast("Qui non posso leggere le foto.", 4000); return; }
   S.busy[key] = "Leggo l'etichetta…"; render();
   try {
-    const r = await AI.json(LABEL_PROMPT, { images: [file] });
+    const r = await AI.json(LABEL_PROMPT, { images: [file], tier: "quick" });
     if (!r || r.error || num(r.kcal) == null) { S.busy[key] = false; render(); toast(r && r.error ? "Etichetta non leggibile: " + r.error : "Non trovo i valori nutrizionali. Riprova con una foto dritta e nitida della tabella.", 5000); return; }
     const food = { id: uid(), name: String(r.name || "Alimento").slice(0, 80), from: "label", per100: {} };
     MK.forEach(k => food.per100[k] = num(r[k]) || 0);
@@ -3367,7 +3367,7 @@ async function scanPlate(file) {
   if (!AI.canImages()) { toast("Qui non posso leggere le foto.", 4000); return; }
   S.busy[key] = "Guardo il piatto…"; render();
   try {
-    const r = await AI.json(PLATE_PROMPT, { images: [file] });
+    const r = await AI.json(PLATE_PROMPT, { images: [file], tier: "quick" });
     const items = (r && Array.isArray(r.items) ? r.items : []).filter(x => x && x.food);
     if (!items.length) { S.busy[key] = false; render(); toast(r && r.error ? "Non vedo cibo nella foto: " + r.error : "Non riesco a riconoscere il piatto. Prova con una foto dall'alto e più luce.", 5000); return; }
     S.review = { key, note: r.note ? String(r.note) : "", items: items.map(x => { const g = num(x.grams) || 100; const o = { food: String(x.food), g0: g, g }; MK.forEach(k => o[k] = num(x[k]) || 0); return o; }) };
@@ -3839,7 +3839,7 @@ Regole fisse: le frecciate sul fisico non devono mai tradursi in consigli di man
 };
 const coachTone = () => TONES[(S.profile.user || {}).tone] ? (S.profile.user || {}).tone : "roast";
 const COACH_RULES = `Sei il coach dentro Carico, un'app per chi va in palestra. Parli italiano, sei diretto, motivante ma onesto: se qualcosa non va lo dici.
-Rispondi in modo breve e pratico, adatto allo schermo di un telefono (di solito meno di 150 parole), con elenchi puntati quando aiutano. Usa **grassetto** solo per i punti chiave.
+RISPOSTE BREVI: massimo 80 parole (3-5 frasi o un elenco di 3-5 punti), adatte allo schermo di un telefono. Vai dritto al punto, niente premesse né riepiloghi. Solo se l'utente chiede esplicitamente un piano, una dieta o una spiegazione dettagliata puoi arrivare a 150 parole. Usa elenchi puntati quando aiutano. Usa **grassetto** solo per i punti chiave.
 Basati sui dati dell'utente qui sotto. Se un dato manca dillo e fai una stima ragionevole spiegando le ipotesi.
 - "Cosa faccio oggi": indica la seduta prevista, gli esercizi e i carichi da provare in base alle ultime volte (progressione graduale).
 - Sostituzione di un pasto: proponi alternative con quantità in grammi e macro simili all'originale, con il totale.
@@ -3922,11 +3922,11 @@ function md(t) {
   }
   return out + (ul ? "</ul>" : "");
 }
-AI.chat = async function (turns, { onText, signal, images = [] } = {}) {
+AI.chat = async function (turns, { onText, signal, images = [], deep = false } = {}) {
   const ctx = COACH_RULES + "\n\n" + TONES[coachTone()].txt + "\n\nDATI DELL'UTENTE:\n" + coachContext();
   if (this.sample) {
     const input = [{ role: "user", content: ctx }, ...turns];
-    const o = { cache: false, signal, onText: ({ text }) => onText && onText(text) }; if (images.length) o.images = images;
+    const o = { cache: false, signal, onText: ({ text }) => onText && onText(text) }; if (!deep) o.modelTier = "quick"; if (images.length) o.images = images;
     const r = await this.sample(input, o);
     return r.text;
   }
@@ -3936,7 +3936,7 @@ AI.chat = async function (turns, { onText, signal, images = [] } = {}) {
   if (images.length && msgs.length) { const last = msgs[msgs.length - 1]; const content = []; for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } }); content.push({ type: "text", text: last.content }); last.content = content; }
   let res;
   try {
-    res = await this.post({ model: "claude-sonnet-5-5", max_tokens: 2000, stream: true, system: ctx, messages: msgs }, signal);
+    res = await this.post({ model: deep ? "claude-sonnet-5-5" : "claude-haiku-5-5", max_tokens: deep ? 2000 : 900, stream: true, system: ctx, messages: msgs }, signal);
   } catch (e) { if (e && e.code) throw e; throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
   if (!res.ok) { const pe = await this.errOf(res.clone()); if (pe) throw pe; let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {} throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail }; }
   let text = "";
@@ -4027,7 +4027,7 @@ function labelsFromPhotos(blobs) { // etichette nutrizionali mandate in chat: sa
   MEM_BUSY = MEM_BUSY.then(async () => {
     const r = await AI.json(`Guarda queste foto. Per OGNI foto che mostra un'etichetta nutrizionale (tabella "Valori nutrizionali") di un prodotto, leggi i valori PER 100 g (o 100 ml): kcal (non kJ), proteine, carboidrati totali, grassi totali. Se c'è solo il valore per porzione, calcolalo per 100 g. Per il nome usa marca e prodotto se si vedono, altrimenti una descrizione breve. Se è indicata una porzione riportala.
 Ignora le foto che non sono etichette nutrizionali (piatti, fisico, schede…).
-Rispondi solo con JSON: {"labels":[{"name":"...","kcal":0,"p":0,"c":0,"f":0,"portion_name":null,"portion_g":null}]} (lista vuota se non ci sono etichette).`, { images: blobs, maxTokens: 1500 }).catch(() => null);
+Rispondi solo con JSON: {"labels":[{"name":"...","kcal":0,"p":0,"c":0,"f":0,"portion_name":null,"portion_g":null}]} (lista vuota se non ci sono etichette).`, { images: blobs, maxTokens: 1500, tier: "quick" }).catch(() => null);
     const L = (r && Array.isArray(r.labels) ? r.labels : []).filter(x => x && x.name && num(x.kcal) != null);
     if (!L.length) return;
     const names = [];
@@ -4090,7 +4090,7 @@ async function coachSend(text, opts = {}) {
   let raf = 0;
   const paint = () => { raf = 0; const b = $("#lastBub"); const vis = splitAction(ans.content).text; if (b && vis) { b.innerHTML = md(vis); const ms = $("#msgs"); if (ms.scrollHeight - ms.scrollTop - ms.clientHeight < 160) ms.scrollTop = ms.scrollHeight; } };
   try {
-    const full = await AI.chat(turns, { signal: CH.ctl.signal, images: att.map(a => a.blob), onText: t => { ans.content = t; if (!raf) raf = requestAnimationFrame(paint); } });
+    const full = await AI.chat(turns, { signal: CH.ctl.signal, deep: !!opts.check, images: att.map(a => a.blob), onText: t => { ans.content = t; if (!raf) raf = requestAnimationFrame(paint); } });
     ans.content = full || ans.content;
     const sp = splitAction(ans.content); if (sp.action) { ans.action = sp.action; ans.content = sp.text || "Ecco il pasto da registrare:"; } else ans.content = sp.text || ans.content;
     if (!ans.content) { ans.content = "Non ho ricevuto risposta. Riprova."; ans.err = true; }
