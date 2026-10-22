@@ -850,7 +850,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "10.0 · 22 ottobre";
+const APP_VERSION = "10.1 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -862,7 +862,7 @@ const S = {
   profile: EMPTY_PROFILE(), days: {}, tab: "oggi", date: today(),
   selDay: null, selVariant: null, progEx: null, confirmReset: false,
   importBusy: false, importMsg: null, importErr: false, pending: null, ctl: null,
-  busy: {}, drafts: {}, altOpen: null, dataMsg: null,
+  busy: {}, drafts: {}, altOpen: null, varBuild: null, dataMsg: null,
   openEx: new Set(), openMeals: new Set(), exInit: null, mealInit: null, sug: {}, picker: null, labelKey: null,
 };
 
@@ -1103,7 +1103,7 @@ function mealLog() { const l = peekLog(); const m = (l && l.m) || {}; return { e
 function optLabel(sl, id) {
   if (id === "manual") return "Scritto da me";
   const i = sl.options.findIndex(o => o.id === id); if (i >= 0) return sl.options.length > 1 ? "Variante " + (i + 1) : "Scheda";
-  const a = sl.alts.find(x => x.id === id); return a ? (a.name || "Variante AI") : "Scheda";
+  const a = sl.alts.find(x => x.id === id); return a ? (a.name || (a.manual ? "Variante mia" : "Variante AI")) : "Scheda";
 }
 function slotPick(ml, sl) {
   const p = ml.pick[sl.key];
@@ -2074,21 +2074,29 @@ function mealCard(sl, ml, nextKey) {
     return `<div class="delta">Rispetto alla variante 1: ${parts.length ? parts.join(" · ") : `<span class="even">macro in linea</span>`}</div>`;
   };
   const opts = sl.options.map((o, i) => optBlock(sl, o.id, sl.options.length > 1 ? "Variante " + (i + 1) : "Scheda", o.vname && !/^(variante|opzione)\s*\d+$/i.test(o.vname.trim()) ? o.vname : "", o.items, pick.id === o.id, ""))
-    .concat(sl.alts.map(a => optBlock(sl, a.id, a.name || "Variante AI", "Creata con l'AI, stessi macro", a.items || [], pick.id === a.id,
-      `${pick.id === a.id ? deltaOf(a.items) : ""}<button class="btn ghost sm" data-act="alt-del" data-m="${sl.key}" data-a="${a.id}">Elimina</button>`))).join("");
+    .concat(sl.alts.map(a => optBlock(sl, a.id, a.name || (a.manual ? "Variante mia" : "Variante AI"), a.manual ? "Creata da te · resta nel piano" : "Creata con l'AI, stessi macro", a.items || [], pick.id === a.id,
+      `${pick.id === a.id ? deltaOf(a.items) : ""}<div class="row">${a.manual ? `<button class="btn ghost sm" data-act="var-edit" data-m="${sl.key}" data-a="${a.id}">Modifica</button>` : ""}<button class="btn ghost sm" data-act="alt-del" data-m="${sl.key}" data-a="${a.id}">Elimina</button></div>`))).join("");
   const manualItems = ml.manual[sl.key] || [];
   const manual = optBlock(sl, "manual", "Scrivo io", "Cosa hai mangiato davvero", manualItems, pick.id === "manual",
-    pick.id === "manual" ? `${manualItems.length ? `<ul class="items">${manualItems.map((it, i) => itemLi(it, `<button class="mv" data-act="man-move" data-m="${sl.key}" data-i="${i}" aria-label="Sposta ${esc(it.food)} in un altro pasto">⇄</button><button class="rm" data-act="man-del" data-m="${sl.key}" data-i="${i}" aria-label="Togli ${esc(it.food)}">${ICON_X}</button>`)).join("")}</ul>${movePicker(sl.key)}${deltaOf(manualItems)}` : ""}${foodAdder("m:" + sl.key)}` : "");
+    pick.id === "manual" ? `${manualItems.length ? `<ul class="items">${manualItems.map((it, i) => itemLi(it, `<button class="mv" data-act="man-move" data-m="${sl.key}" data-i="${i}" aria-label="Sposta ${esc(it.food)} in un altro pasto">⇄</button><button class="rm" data-act="man-del" data-m="${sl.key}" data-i="${i}" aria-label="Togli ${esc(it.food)}">${ICON_X}</button>`)).join("")}</ul>${movePicker(sl.key)}${deltaOf(manualItems)}<button class="btn ghost sm" data-act="var-from-manual" data-m="${sl.key}">☆ Salva come variante fissa nel piano</button>` : ""}${foodAdder("m:" + sl.key)}` : "");
   const busyAlt = S.busy["alt:" + sl.key];
   const altForm = S.altOpen === sl.key ? `<div class="stack" style="background:var(--diet-soft);border-radius:12px;padding:12px">
       <span class="small" style="font-weight:600">Nuova variante con gli stessi macro di "${esc(optLabel(sl, pick.kind === "opt" ? pick.id : sl.options[0] && sl.options[0].id))}"</span>
       <input class="in" id="altHint" value="${esc(S.drafts["alt:" + sl.key] || "")}" placeholder="Preferenze (facoltativo): es. senza latticini, veloce" ${busyAlt ? "disabled" : ""}>
       <div class="row"><button class="btn diet sm" style="flex:1" data-act="alt-make" data-m="${sl.key}" ${busyAlt ? "disabled" : ""}>${busyAlt ? '<span class="spin"></span> Creo la variante…' : "Crea variante"}</button><button class="btn sm" data-act="alt-close">Chiudi</button></div>
     </div>` : `<button class="btn ghost sm add-alt" data-act="alt-open" data-m="${sl.key}">+ Crea un'altra variante con l'AI</button>`;
+  const vb = S.varBuild && S.varBuild.m === sl.key ? S.varBuild : null;
+  const varForm = vb ? `<div class="stack varb" style="background:var(--diet-soft);border-radius:12px;padding:12px">
+      <span class="small" style="font-weight:600">${vb.id ? "Modifica variante" : "Nuova variante a mano"} · resta nel piano per tutti i giorni</span>
+      <input class="in" id="varName" value="${esc(vb.name || "")}" placeholder="Nome (es. Colazione salata)" autocomplete="off">
+      ${vb.items.length ? `<ul class="items">${vb.items.map((it, i) => itemLi(it, `<button class="rm" data-act="vb-del" data-i="${i}" aria-label="Togli ${esc(it.food)}">${ICON_X}</button>`)).join("")}</ul>${(t => t.known ? `<div class="small muted">Totale: <b>${fmtI(t.kcal)} kcal</b> · P ${fmtI(t.p)} · C ${fmtI(t.c)} · G ${fmtI(t.f)}</div>` : "")(sumItems(vb.items))}${deltaOf(vb.items)}` : `<span class="small muted">Aggiungi gli alimenti qui sotto: cerca, foto etichetta o codice a barre.</span>`}
+      ${foodAdder("v:" + sl.key)}
+      <div class="row"><button class="btn diet sm" style="flex:1" data-act="vb-save" ${vb.items.length ? "" : "disabled"}>Salva variante</button><button class="btn sm" data-act="vb-close">Annulla</button></div>
+    </div>` : `<button class="btn ghost sm add-alt" data-act="var-new" data-m="${sl.key}">+ Crea una variante a mano</button>`;
   return `<div class="card meal open ${eaten ? "eaten" : ""} ${sl.key === nextKey ? "next" : ""}">
     ${head}
     <div class="opts">${manual}${opts}</div>
-    ${sl.custom ? `<div class="row between"><span class="small muted">Pasto aggiunto da te</span><button class="btn ghost sm" data-act="meal-custom-del" data-m="${sl.key}">Elimina questo pasto</button></div>` : altForm}
+    ${sl.custom ? `<div class="row between"><span class="small muted">Pasto aggiunto da te</span><button class="btn ghost sm" data-act="meal-custom-del" data-m="${sl.key}">Elimina questo pasto</button></div>${varForm}` : altForm + varForm}
   </div>`;
 }
 
@@ -2635,6 +2643,11 @@ function setField(el) {
 }
 
 function addItemsTo(key, items) {
+  if (key.startsWith("v:")) {
+    if (S.varBuild) S.varBuild.items.push(...items);
+    S.drafts[key] = ""; S.picker = null; S.review = null; render();
+    setTimeout(() => { const el = document.getElementById("in-" + key); el && el.focus({ preventScroll: true }); }, 30); return;
+  }
   const l = dayLog();
   if (key === "extra") l.m.extra.push(...items);
   else { const mid = key.slice(2); (l.m.manual[mid] = l.m.manual[mid] || []).push(...items); l.m.pick[mid] = "manual"; l.m.eaten[mid] = true; }
@@ -2704,6 +2717,7 @@ document.addEventListener("input", ev => {
   else if (el.id && el.id.startsWith("in-")) { const k = el.id.slice(3); S.drafts[k] = el.value; const box = document.getElementById("sug-" + k); if (box) box.innerHTML = sugHtml(k); }
   else if (el.id === "pkQty" && S.picker) { S.picker.qty = el.value; const pv = $("#pkPrev"); if (pv) pv.innerHTML = macLine(pickMac(S.picker)); }
   else if (el.id === "pkName" && S.picker) S.picker.name = el.value;
+  else if (el.id === "varName" && S.varBuild) S.varBuild.name = el.value;
   else if (el.id === "altHint" && S.altOpen) S.drafts["alt:" + S.altOpen] = el.value;
 });
 document.addEventListener("change", ev => {
@@ -2937,6 +2951,27 @@ document.addEventListener("click", ev => {
     }
     case "alt-open": S.altOpen = S.altOpen === b.dataset.m ? null : b.dataset.m; render(); setTimeout(() => { const h = $("#altHint"); h && h.focus(); }, 30); return;
     case "alt-close": S.altOpen = null; render(); return;
+    case "var-new": case "var-from-manual": case "var-edit": {
+      const k = b.dataset.m; const sl = findSlot(k); if (!sl) return;
+      const va = a === "var-edit" ? sl.alts.find(x => x.id === b.dataset.a) : null;
+      const src = va ? va.items || [] : a === "var-from-manual" ? mealLog().manual[k] || [] : [];
+      const nMine = sl.alts.filter(x => x.manual).length;
+      S.varBuild = { m: k, id: va ? va.id : null, name: va ? va.name || "" : "Variante mia" + (nMine ? " " + (nMine + 1) : ""), items: src.map(x => ({ ...x })) };
+      S.altOpen = null; S.picker = null; S.review = null; S.openMeals.add(k); render();
+      setTimeout(() => { const el = $(".varb"); el && el.scrollIntoView({ block: "center", behavior: "smooth" }); }, 30); return;
+    }
+    case "vb-del": if (S.varBuild) { S.varBuild.items.splice(+b.dataset.i, 1); render(); } return;
+    case "vb-close": S.varBuild = null; S.picker = null; S.review = null; render(); return;
+    case "vb-save": {
+      const vb = S.varBuild; if (!vb || !vb.items.length) return;
+      const D = plan().diet; D.alts = D.alts || {}; const L = D.alts[vb.m] = D.alts[vb.m] || [];
+      const name = (vb.name || "").trim() || "Variante mia";
+      const ex = vb.id && L.find(x => x.id === vb.id);
+      if (ex) { ex.name = name; ex.items = vb.items; ex.manual = true; }
+      else { const id = uid(); L.push({ id, name, items: vb.items, manual: true }); const l = dayLog(); l.m.pick[vb.m] = id; store.saveDay(S.date); }
+      store.saveProfile(); S.varBuild = null; S.picker = null; S.review = null; render();
+      toast(ex ? "Variante aggiornata" : "Variante salvata nel piano"); return;
+    }
     case "alt-make": {
       const sl = findSlot(b.dataset.m); if (!sl) return;
       if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
