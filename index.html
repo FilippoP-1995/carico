@@ -179,7 +179,12 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .quote.sarge .qk{color:#ff8f86}
 .sg-more{font-size:12.5px;color:var(--hero-mut);font-weight:600;margin-top:4px}
 .quote .qk{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--hero-mut)}
-.badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center;flex:1;min-width:0}
+.badges{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;flex:1;min-width:0;overflow-x:auto;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent);padding:3px 18px 3px 2px;margin:-3px 0}
+.badges::-webkit-scrollbar{display:none}
+.badges>*{flex:none}
+.hero-sum .quote.sarge{height:128px;overflow:hidden;justify-content:flex-start}
+.hero-sum .quote.sarge .qt{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;min-height:0}
+.hero-sum .quote.sarge>*{flex:none}
 .hs-row{display:flex;align-items:center;gap:8px;margin-top:-2px}
 .hs-row .streak{flex:none;padding:4px 9px}
 .badge-main{display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:700;padding:5px 13px 5px 5px;border-radius:99px;background:linear-gradient(135deg,rgba(242,191,69,.22),rgba(125,156,255,.18));border:1px solid rgba(242,191,69,.45);box-shadow:0 6px 20px rgba(242,191,69,.15);animation:pop .5s cubic-bezier(.2,.9,.3,1.4)}
@@ -845,7 +850,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.9 · 22 ottobre";
+const APP_VERSION = "10.0 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1409,7 +1414,7 @@ function render() {
   $("#hdrDate").innerHTML = esc(fmtDay(S.date)) + (past ? ' <span class="back">· oggi ↩</span>' : ""); $("#hdrDate").classList.toggle("past", past); $("#dayNext").disabled = !past;
   const v = $("#view");
   const y = window.scrollY;
-  v.innerHTML = (S.date !== today() && S.tab !== "piano" ? `<div class="pastbar"><span>📅 Stai registrando <b>${esc(fmtDay(S.date))}</b></span><button data-act="day-today">Torna a oggi</button></div>` : "") + ({ oggi: vOggi, allenamento: vAllenamento, dieta: vDieta, progressi: vProgressi, piano: vPiano }[S.tab])();
+  v.innerHTML = (S.date !== today() && S.tab !== "piano" && S.tab !== "oggi" ? `<div class="pastbar"><span>📅 Stai registrando <b>${esc(fmtDay(S.date))}</b></span><button data-act="day-today">Torna a oggi</button></div>` : "") + ({ oggi: vOggi, allenamento: vAllenamento, dieta: vDieta, progressi: vProgressi, piano: vPiano }[S.tab])();
   window.scrollTo(0, y);
   const neo = homeStyle() === "neo"; // stile futuristico su tutta l'app
   document.documentElement.classList.toggle("neo-home", neo); applyTheme();
@@ -1478,7 +1483,7 @@ function dayHeadline() { // cambia ogni giorno alle 6:00
 }
 function badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet }) {
   const b = [];
-  if (sessionsOn(S.date).some(x => x.finished)) b.push("💪 Allenamento di oggi fatto");
+  if (sessionsOn(S.date).some(x => x.finished)) b.push(S.date === today() ? "💪 Allenamento di oggi fatto" : "💪 Allenamento fatto");
   if (streak >= 3) b.push(`🔥 ${streak} giorni di fila`);
   if (pr) b.push("🏆 Nuovo record");
   if (weekN >= target) b.push("✅ Settimana completata");
@@ -1606,7 +1611,7 @@ function summaryCard() {
       ${stat(hasDiet ? fmtI(t.p) + "<small> g</small>" : "–", "Proteine", hasDiet && Tg.p ? (t.p >= Tg.p * .95 ? "✅ centrate" : `mancano ${fmtI(Tg.p - t.p)}`) : "")}
       ${stat(sess.filter(d => d.slice(0, 7) === S.date.slice(0, 7)).length, "Nel mese", sess.length ? `${sess.length} totali` : "allenamenti")}
     </div>
-    ${coachTone() === "roast" || coachTone() === "cazzaro" ? `<button class="quote sarge" data-act="sarge"><span class="qk">${coachTone() === "cazzaro" ? "🍻 Il Cazzaro dice" : "🔥 Il Mental Coach dice"}</span>${esc(femTxt(roastLine({ day, l, t, Tg, hasDiet, streak })))}<span class="sg-more">Rispondigli →</span></button>` : `<div class="quote"><span class="qk">Frase del giorno</span>${esc(dailyQuote())}</div>`}
+    ${coachTone() === "roast" || coachTone() === "cazzaro" ? `<button class="quote sarge" data-act="sarge"><span class="qk">${coachTone() === "cazzaro" ? "🍻 Il Cazzaro dice" : "🔥 Il Mental Coach dice"}</span><span class="qt">${esc(femTxt(roastLine({ day, l, t, Tg, hasDiet, streak })))}</span><span class="sg-more">Rispondigli →</span></button>` : `<div class="quote"><span class="qk">Frase del giorno</span>${esc(dailyQuote())}</div>`}
   </section>`;
 }
 
