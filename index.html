@@ -605,6 +605,14 @@ html.neo-dark .macros>div,html.neo-dark .ip-day{background:rgba(255,255,255,.04)
 .wk-tog svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;transition:transform .2s}.wk-tog.open svg{transform:rotate(180deg)}
 .wk-tog span:first-letter{text-transform:uppercase}
 .bf-need{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:12px;padding:10px 12px}
+.neo-home .hero-sum::before{animation-delay:calc(var(--ph1,0s) * -1)}
+.neo-home .hero-sum::after{animation-delay:calc(var(--ph2,0s) * -1)}
+.neo-home .hs-hi{animation-delay:calc(var(--ph3,0s) * -1)}
+.hero-sum{touch-action:pan-y}
+.hero-sum.in-next>*{animation:heroNext .28s cubic-bezier(.2,.8,.2,1) both}
+.hero-sum.in-prev>*{animation:heroPrev .28s cubic-bezier(.2,.8,.2,1) both}
+@keyframes heroNext{from{opacity:.25;transform:translateX(34px)}to{opacity:1;transform:none}}
+@keyframes heroPrev{from{opacity:.25;transform:translateX(-34px)}to{opacity:1;transform:none}}
 .home-style{align-self:center;border:1px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;border-radius:99px;padding:7px 14px;margin:2px auto 0}
 @media (prefers-reduced-motion:reduce){.neo-home *,.neo-home *::before,.neo-home *::after,html.neo-home body::before{animation:none!important}}
 .lv-ask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,8,16,.7);backdrop-filter:blur(6px)}
@@ -837,7 +845,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.8 · 22 ottobre";
+const APP_VERSION = "9.9 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1405,6 +1413,7 @@ function render() {
   window.scrollTo(0, y);
   const neo = homeStyle() === "neo"; // stile futuristico su tutta l'app
   document.documentElement.classList.toggle("neo-home", neo); applyTheme();
+  if (S.heroDir) { const h = v.querySelector(".hero-sum"); if (h) h.classList.add("in-" + S.heroDir); S.heroDir = null; }
   if (neo && S.homeEnter && S.tab === "oggi") { const hs = v.querySelector(".hero-sum"); if (hs) countUp(hs); S.homeEnter = false; }
   if (neo && S.viewEnter && S.tab !== "oggi") { v.classList.remove("view-in"); void v.offsetWidth; v.classList.add("view-in"); setTimeout(() => v.classList.remove("view-in"), 700); }
   S.viewEnter = false;
@@ -1580,7 +1589,8 @@ function summaryCard() {
   else if (!sess.length) insight = `Completa il primo allenamento: qui vedrai record, volume e costanza`;
   else insight = `${weekN} di ${target} allenamenti questa settimana. Continua così`;
   const stat = (v, l, sub) => `<div class="hs"><span class="hv">${v}</span><span class="hl">${l}</span>${sub ? `<span class="hsub">${sub}</span>` : ""}</div>`;
-  return `<section class="hero-sum">
+  const tsec = Date.now() / 1000;
+  return `<section class="hero-sum" style="--ph1:${(tsec % 16).toFixed(2)}s;--ph2:${(tsec % 7).toFixed(2)}s;--ph3:${(tsec % 6).toFixed(2)}s">
     <div class="hs-top"><div><div class="hs-hi">${hi}</div></div>
 </div>
     <div class="hs-row">${badgesHtml({ streak, pr, weekN, target, sess, day, l, t, Tg, hasDiet })}<div class="streak" title="Giorni di fila con almeno un allenamento o un pasto segnato"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 1.5.7 2.5 1.6 3C10.2 8.6 11 5.5 12 3z"/></svg><b>${streak}</b><span>${streak === 1 ? "giorno" : "giorni"}<br>di fila</span></div></div>
@@ -2832,7 +2842,7 @@ document.addEventListener("click", ev => {
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
     case "wk-day": { const d = b.dataset.d;
       if (d > today()) { if (!hasSched()) return; S.wkFocus = d; render(); return; } // giorni futuri: solo il programma
-      S.wkFocus = null; if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; }
+      S.wkFocus = null; if (d !== S.date) { S.heroDir = d > S.date ? "next" : "prev"; S.date = d; S.selDay = null; S.picker = null; S.review = null; }
       render(); return; }
     case "wk-tog": { S.wkOpen = S.wkOpen || new Set(); const d = b.dataset.d; if (S.wkOpen.has(d)) S.wkOpen.delete(d); else S.wkOpen.add(d); render(); return; }
     case "wk-skip": { const W = plan().workout; W.skips = W.skips || {}; const wk = dstr(weekStart(today())); (W.skips[wk] = W.skips[wk] || []).push(b.dataset.id);
@@ -4327,6 +4337,17 @@ setTimeout(checkUpdate, 1500);
 
 /* cambio giorno se l'app resta aperta oltre la mezzanotte */
 let TODAY_REF = today();
+(function heroSwipe() {
+  let st = null;
+  document.addEventListener("touchstart", e => { const h = e.target.closest && e.target.closest(".hero-sum"); if (!h || S.tab !== "oggi" || e.touches.length !== 1) { st = null; return; } st = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() }; }, { passive: true });
+  document.addEventListener("touchend", e => {
+    if (!st) return; const t = e.changedTouches[0]; const dx = t.clientX - st.x, dy = t.clientY - st.y; const fast = Date.now() - st.t < 700; st = null;
+    if (!fast || Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    const d = parseD(S.date); d.setDate(d.getDate() + (dx < 0 ? 1 : -1)); const nd = dstr(d);
+    if (nd > today()) { const h = $(".hero-sum"); if (h) { h.classList.remove("in-next"); void h.offsetWidth; h.classList.add("in-prev"); } return; }
+    S.heroDir = dx < 0 ? "next" : "prev"; S.date = nd; S.selDay = null; S.picker = null; S.review = null; S.wkFocus = null; render();
+  }, { passive: true });
+})();
 let HIDDEN_AT = 0;
 document.addEventListener("visibilitychange", () => { if (document.hidden) { HIDDEN_AT = Date.now(); return; } if (HIDDEN_AT && Date.now() - HIDDEN_AT > 2 * 3600e3 && TODAY_REF === today()) { S.selDay = null; S.wkSel = null; render(); } });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && TODAY_REF !== today()) { if (S.date === TODAY_REF) S.date = today(); TODAY_REF = today(); S.selDay = null; S.selVariant = null; render(); } });
