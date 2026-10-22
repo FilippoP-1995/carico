@@ -825,7 +825,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "8.8 · 22 ottobre";
+const APP_VERSION = "8.9 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -937,6 +937,12 @@ const AI = {
   ready() { return !!(this.sample || this.key() || this.code()); },
   canImages() { return this.sample ? !!(this.limits && this.limits.images) : !!(this.key() || this.code()); },
   async post(body, signal) { // chiave personale → Anthropic diretto; altrimenti codice invito → server condiviso
+    if (/haiku/.test(body.model || "") && !body.thinking && !this.noThinkParam) body = { ...body, thinking: { type: "disabled" } };
+    let res = await this.post1(body, signal);
+    if (body.thinking && res.status === 400) { let t = ""; try { t = await res.clone().text(); } catch (e) {} if (/thinking/i.test(t)) { this.noThinkParam = true; const b2 = { ...body }; delete b2.thinking; res = await this.post1(b2, signal); } }
+    return res;
+  },
+  async post1(body, signal) {
     const key = this.key();
     if (key) return fetch("https://api.anthropic.com/v1/messages", { method: "POST", signal, headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" }, body: JSON.stringify(body) });
     const url = await ntUrl(); if (!url) throw { code: "no_server" };
@@ -3936,7 +3942,7 @@ AI.chat = async function (turns, { onText, signal, images = [], deep = false } =
   if (images.length && msgs.length) { const last = msgs[msgs.length - 1]; const content = []; for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } }); content.push({ type: "text", text: last.content }); last.content = content; }
   let res;
   try {
-    res = await this.post({ model: deep ? "claude-sonnet-5-5" : "claude-haiku-5-5", max_tokens: deep ? 2000 : 1600, stream: true, system: ctx, messages: msgs }, signal);
+    res = await this.post({ model: deep ? "claude-sonnet-5-5" : "claude-haiku-5-5", max_tokens: deep ? 2000 : 4000, stream: true, system: ctx, messages: msgs }, signal);
   } catch (e) { if (e && e.code) throw e; throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
   if (!res.ok) { const pe = await this.errOf(res.clone()); if (pe) throw pe; let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {} throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail }; }
   let text = "";
@@ -4066,7 +4072,7 @@ Regole:
 - Se un fatto nuovo aggiorna o contraddice uno vecchio, aggiorna quello vecchio invece di aggiungerne un altro.
 - Frasi brevi in terza persona, max 110 caratteri (es. "Ha un fastidio alla spalla destra nelle spinte sopra la testa").
 - Quasi sempre non c'è niente da salvare: in quel caso liste vuote.
-Rispondi solo con JSON: {"add":["…"],"update":[{"id":"…","t":"…"}],"remove":["id"]}`, { tier: "quick", maxTokens: 800 }).catch(() => null);
+Rispondi solo con JSON: {"add":["…"],"update":[{"id":"…","t":"…"}],"remove":["id"]}`, { tier: "quick", maxTokens: 2000 }).catch(() => null);
     if (!r) return;
     let list = (S.profile.mem || []).slice(); const added = [];
     (r.remove || []).forEach(id => { list = list.filter(m => m.id !== String(id)); });
