@@ -594,6 +594,11 @@ html.neo-dark .toast{background:rgba(22,30,60,.94);color:#eef2ff;border:1px soli
 html.neo-dark .set.done{background:linear-gradient(90deg,rgba(34,211,183,.16),rgba(77,141,255,.06))}
 html.neo-dark .macros>div,html.neo-dark .ip-day{background:rgba(255,255,255,.04);border:1px solid var(--line)}
 .w-row{display:flex;align-items:center;gap:10px;font-size:14px;padding:5px 0;border-bottom:1px dashed var(--line)}.w-row span{flex:1;color:var(--muted)}.w-row .rm{border:0;background:none;color:var(--muted);padding:2px 4px;font:inherit;font-size:12.5px;font-weight:700}.w-row .rm svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2}
+.mf{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mf-h{width:100%;display:flex;align-items:center;gap:8px;text-align:left;border:0;background:none;color:inherit;font:inherit;padding:10px 12px}
+.mf-h>span{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.mf-h b{font-size:14.5px}.mf-h small{font-size:12px;color:var(--muted)}
+.mf-h svg{width:16px;height:16px;flex:none;transition:transform .2s}.mf.open .mf-h svg{transform:rotate(180deg)}
+.mf .stack{padding-left:12px!important;padding-right:12px!important}
 .home-style{align-self:center;border:1px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;border-radius:99px;padding:7px 14px;margin:2px auto 0}
 @media (prefers-reduced-motion:reduce){.neo-home *,.neo-home *::before,.neo-home *::after,html.neo-home body::before{animation:none!important}}
 .lv-ask{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:rgba(5,8,16,.7);backdrop-filter:blur(6px)}
@@ -826,7 +831,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.4 · 22 ottobre";
+const APP_VERSION = "9.5 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1931,9 +1936,22 @@ function searchFoods(q) {
   for (const c of cands) { const k = deacc(c.name); if (seen[k]) continue; seen[k] = 1; c.qHint = qty; c.uHint = unit; out.push(c); if (out.length >= 7) break; }
   return out;
 }
+function unitLabel(u) { const n = String((u && u.n) || "porzione").trim(); return /^\d/.test(n) ? `porzione (${n})` : "1 " + n; }
+function sameFood(a, b) { // stesso prodotto letto due volte (nome simile o stessi valori)
+  const w = x => new Set(deacc(x).split(/[^a-z0-9]+/).filter(t => t.length > 2));
+  const A = w(a.name), B = w(b.name); const inter = [...A].filter(t => B.has(t)).length; const sim = inter / Math.max(1, Math.min(A.size, B.size));
+  const pa = a.per100 || {}, pb = b.per100 || {}; const sameMac = ["kcal", "p", "c", "f"].every(k => Math.abs((num(pa[k]) || 0) - (num(pb[k]) || 0)) <= (k === "kcal" ? 3 : 0.6));
+  return (sim >= 0.8 && Math.abs((num(pa.kcal) || 0) - (num(pb.kcal) || 0)) <= 15) || (sameMac && sim >= 0.4);
+}
+function saveMyFood(food) { // aggiunge o aggiorna, senza doppioni
+  const list = S.profile.foods = S.profile.foods || [];
+  const ex = list.find(f => norm(f.name) === norm(food.name) || (food.per100 && f.per100 && sameFood(f, food)));
+  if (ex) { ex.per100 = food.per100; if (food.unit) ex.unit = food.unit; if (food.code && !ex.code) ex.code = food.code; return ex; }
+  list.unshift(food); if (list.length > 300) list.length = 300; return food;
+}
 function candDesc(c) {
   if (c.fixed) return `${esc(c.fixed.qty || "porzione")}: ${fmtI(c.fixed.kcal)} kcal · P ${fmtI(c.fixed.p)} · C ${fmtI(c.fixed.c)} · G ${fmtI(c.fixed.f)}`;
-  const p = c.per100; return `100 g: ${fmtI(p.kcal)} kcal · P ${fmtN(Math.round(p.p * 10) / 10)} · C ${fmtN(Math.round(p.c * 10) / 10)} · G ${fmtN(Math.round(p.f * 10) / 10)}${c.unit ? ` · 1 ${esc(c.unit.n)} = ${fmtN(c.unit.g)} g` : ""}`;
+  const p = c.per100; return `100 g: ${fmtI(p.kcal)} kcal · P ${fmtN(Math.round(p.p * 10) / 10)} · C ${fmtN(Math.round(p.c * 10) / 10)} · G ${fmtN(Math.round(p.f * 10) / 10)}${c.unit ? ` · ${esc(unitLabel(c.unit))} = ${fmtN(c.unit.g)} g` : ""}`;
 }
 function sugHtml(key) {
   const q = (S.drafts[key] || "").trim();
@@ -2200,6 +2218,26 @@ function schedCard() {
       ${hasSched() ? `<button class="btn ghost sm" data-act="sched-clear" style="align-self:flex-start">Togli il programma (torna alla rotazione)</button>` : ""}
     </div></details>`;
 }
+function myFoodsCard() {
+  const F = S.profile.foods || []; if (!F.length) return "";
+  const q = norm(S.mfQ || ""); const list = F.filter(f => !q || norm(f.name).includes(q));
+  const src = f => f.from === "label" ? "etichetta" : f.from === "coach" ? "coach" : f.code ? "codice a barre" : "mio";
+  const dups = []; F.forEach((a, i) => F.slice(i + 1).forEach(b => { if (a.per100 && b.per100 && sameFood(a, b)) dups.push([a.id, b.id]); }));
+  return `<details class="card" data-pnl="myfoods" ${pnlOpen("myfoods")}><summary>🥫 I miei alimenti <span class="small muted" style="font-weight:500;margin-left:auto">${F.length}</span></summary>
+    <div class="stack" style="margin-top:12px;gap:8px">
+      <span class="small muted">Quelli letti da etichette, codici a barre o salvati dal coach. Escono per primi quando scrivi un alimento. Valori per 100 g.</span>
+      ${dups.length ? `<button class="btn sm" data-act="mf-dedupe">🧹 Unisci ${dups.length} ${dups.length === 1 ? "doppione" : "doppioni"}</button>` : ""}
+      <input class="in" id="mfQ" placeholder="Cerca tra i tuoi alimenti" value="${esc(S.mfQ || "")}" style="font-size:16px">
+      ${list.slice(0, 80).map(f => { const p = f.per100 || {}; const open = S.mfOpen === f.id;
+        return `<div class="mf ${open ? "open" : ""}"><button class="mf-h" data-act="mf-open" data-id="${f.id}"><span><b>${esc(f.name)}</b><small>${src(f)} · ${fmtI(p.kcal)} kcal · P ${fmtN(p.p)} · C ${fmtN(p.c)} · G ${fmtN(p.f)}${f.unit ? ` · ${esc(unitLabel(f.unit))} = ${fmtN(f.unit.g)} g` : ""}</small></span>${ICON_CHEV}</button>
+        ${open ? `<div class="stack" style="gap:8px;padding:4px 2px 10px">
+          <label class="f">Nome<input class="in" data-mf="${f.id}" data-k="name" value="${esc(f.name)}"></label>
+          <div class="grid4">${[["kcal", "kcal"], ["p", "Prot. g"], ["c", "Carb. g"], ["f", "Grassi g"]].map(([k, l]) => `<label class="f">${l}<input class="in" inputmode="decimal" data-mf="${f.id}" data-k="${k}" value="${esc(fmtN(p[k]))}"></label>`).join("")}</div>
+          <div class="row" style="gap:8px"><label class="f" style="flex:1">Porzione (facoltativa)<input class="in" data-mf="${f.id}" data-k="un" value="${esc((f.unit && f.unit.n) || "")}" placeholder="es. vasetto"></label><label class="f" style="flex:0 0 90px">grammi<input class="in" inputmode="decimal" data-mf="${f.id}" data-k="ug" value="${esc(f.unit ? fmtN(f.unit.g) : "")}"></label></div>
+          <button class="btn ghost sm" data-act="mf-del" data-id="${f.id}" style="align-self:flex-start">Elimina</button></div>` : ""}</div>`; }).join("")}
+      ${list.length > 80 ? `<span class="small muted">…e altri ${list.length - 80}: usa la ricerca.</span>` : ""}
+    </div></details>`;
+}
 function vPiano() {
   const busy = S.importBusy;
   const p = S.pending;
@@ -2226,6 +2264,7 @@ function vPiano() {
         ${S.confirmRepl ? replaceBox(p) : `<div class="row"><button class="btn primary" data-act="import-save" style="flex:1">Salva nel piano</button><button class="btn" data-act="import-cancel">Scarta</button></div>`}` : ""}
     </div>
 
+    ${myFoodsCard()}
     ${schedCard()}
     ${archiveCard()}
     <details class="card" data-pnl="w" ${pnlOpen("w")}><summary>Scheda di allenamento <span class="small muted" style="font-weight:500;margin-left:auto">${days.length} giorni</span></summary>
@@ -2594,9 +2633,9 @@ async function scanLabel(file) {
     const food = { id: uid(), name: String(r.name || "Alimento").slice(0, 80), from: "label", per100: {} };
     MK.forEach(k => food.per100[k] = num(r[k]) || 0);
     if (num(r.portion_g)) food.unit = { n: String(r.portion_name || "porzione").slice(0, 30), g: num(r.portion_g) };
-    S.profile.foods = [food, ...(S.profile.foods || [])].slice(0, 300); store.saveProfile();
+    const sv = saveMyFood(food); store.saveProfile();
     S.busy[key] = false;
-    S.picker = { key, cand: { ...food, src: "mine", isNew: true }, name: food.name, qty: food.unit ? 1 : 100, unit: food.unit ? "pz" : "g" };
+    S.picker = { key, cand: { ...sv, src: "mine", isNew: true }, name: sv.name, qty: food.unit ? 1 : 100, unit: food.unit ? "pz" : "g" };
     render(); toast("Etichetta letta e salvata nei tuoi alimenti");
   } catch (e) { S.busy[key] = false; render(); const m = aiErr(e); if (m) toast(m, 4500); }
 }
@@ -2631,6 +2670,11 @@ document.addEventListener("input", ev => {
 });
 document.addEventListener("change", ev => {
   const el = ev.target; const P = plan();
+  if (el.dataset && el.dataset.mf) { const f = (S.profile.foods || []).find(x => x.id === el.dataset.mf); if (!f) return; const k = el.dataset.k; const v = el.value.trim();
+    if (k === "name") { if (v) f.name = v.slice(0, 80); }
+    else if (k === "un" || k === "ug") { const n = k === "un" ? v : ((f.unit && f.unit.n) || "porzione"); const g = k === "ug" ? num(v) : (f.unit && f.unit.g); if (n && g) f.unit = { n: n.slice(0, 30), g }; else if (!v) delete f.unit; }
+    else { f.per100 = f.per100 || {}; f.per100[k] = num(v) || 0; }
+    store.saveProfile(); return; }
   if (el.dataset && el.dataset.sched !== undefined) { const W = P.workout; W.schedule = W.schedule || {}; W.schedule[el.dataset.sched] = el.value || null; if (!Object.values(W.schedule).some(Boolean)) delete W.schedule; S.selDay = null; store.saveProfile(); render(); return; }
   if (el.id === "fileIn") { handleFiles(el.files); el.value = ""; return; }
   if (el.id === "labelIn") { if (el.files[0]) scanLabel(el.files[0]); el.value = ""; return; }
@@ -2728,6 +2772,9 @@ document.addEventListener("click", ev => {
     case "rv-del": S.review.items.splice(+b.dataset.i, 1); render(); return;
     case "rv-cancel": S.review = null; render(); return;
     case "rv-add": { const rv = S.review; S.review = null; addItemsTo(rv.key, rv.items.filter(x => x.g > 0).map(x => { const m = revMac(x); const o = { food: x.food, qty: fmtN(x.g) + " g", src: "plate" }; MK.forEach(k => o[k] = Math.round(m[k] * 10) / 10); return o; })); return; }
+    case "mf-open": S.mfOpen = S.mfOpen === b.dataset.id ? null : b.dataset.id; render(); return;
+    case "mf-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per eliminare"; return; } S.profile.foods = (S.profile.foods || []).filter(f => f.id !== b.dataset.id); S.mfOpen = null; store.saveProfile(); render(); toast("Alimento eliminato"); return; }
+    case "mf-dedupe": { const F = S.profile.foods || []; const out = []; let n = 0; F.forEach(f => { const ex = out.find(o => o.per100 && f.per100 && sameFood(o, f)); if (ex) { n++; if (!ex.unit && f.unit) ex.unit = f.unit; if (!ex.code && f.code) ex.code = f.code; } else out.push(f); }); S.profile.foods = out; store.saveProfile(); render(); toast(`Uniti ${n} ${n === 1 ? "doppione" : "doppioni"}`); return; }
     case "sched-clear": { const W = plan().workout; delete W.schedule; delete W.moves; delete W.skips; store.saveProfile(); render(); toast("Programma tolto: torno alla rotazione"); return; }
     case "w-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.innerHTML = "Elimina?"; return; } S.profile.weights = (S.profile.weights || []).filter(w => w.d !== b.dataset.d); S.wHistOpen = true; store.saveProfile(); render(); toast("Pesata eliminata"); return; }
     case "theme-set": { S.profile.user = S.profile.user || {}; S.profile.user.theme = b.dataset.k; store.saveProfile(); render(); return; }
@@ -3364,6 +3411,7 @@ document.addEventListener("click", ev => {
   else if (a === "ask-back") { LV.ask = null; renderLive(); }
   else if (a === "lv-review") { LV.phase = "set"; LV.exIdx = 0; LV.setIdx = 0; LV.doneGroup = null; lvDefaults(); renderLive(); }
 }, true);
+document.addEventListener("input", ev => { if (ev.target.id === "mfQ") { S.mfQ = ev.target.value; const pos = ev.target.selectionStart; render(); const n = $("#mfQ"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } return; } });
 document.addEventListener("input", ev => { const nk = ev.target.dataset && ev.target.dataset.note; if (nk) { setNote(nk, ev.target.value); return; }
   const sx = ev.target.dataset && ev.target.dataset.ssx; if (sx) { const v = LV.ssv[sx] = LV.ssv[sx] || {}; v[ev.target.dataset.ssf] = ev.target.dataset.ssf === "kg" ? String(num(ev.target.value) ?? "") : String(parseInt(ev.target.value) || ""); return; } if (ev.target.id === "lvKg") LV.kg = String(num(ev.target.value) ?? ""); else if (ev.target.id === "lvReps") LV.reps = String(parseInt(ev.target.value) || ""); });
 
@@ -3463,9 +3511,9 @@ async function onCode(code) {
     const name = [(p.product_name_it || p.product_name || "Prodotto").trim(), (p.brands || "").split(",")[0].trim()].filter(Boolean).join(" · ").slice(0, 80);
     const food = { id: uid(), name, from: "barcode", code, per100: { kcal: Math.round(kcal), p: num(n.proteins_100g) || 0, c: num(n.carbohydrates_100g) || 0, f: num(n.fat_100g) || 0 } };
     const sq = num(p.serving_quantity); if (sq) food.unit = { n: "porzione", g: sq };
-    S.profile.foods = [food, ...(S.profile.foods || [])].slice(0, 300); store.saveProfile();
+    const sv = saveMyFood(food); store.saveProfile();
     closeScanner();
-    S.picker = { key: SC.key, cand: { ...food, src: "mine" }, name: food.name, qty: food.unit ? 1 : 100, unit: food.unit ? "pz" : "g" }; render();
+    S.picker = { key: SC.key, cand: { ...sv, src: "mine" }, name: sv.name, qty: food.unit ? 1 : 100, unit: food.unit ? "pz" : "g" }; render();
     toast("Trovato: " + name);
   } catch (e) { scSetMsg("Non riesco a contattare il database dei prodotti. Controlla la connessione.", true); }
 }
@@ -4056,9 +4104,7 @@ Rispondi solo con JSON: {"labels":[{"name":"...","kcal":0,"p":0,"c":0,"f":0,"por
       const food = { id: uid(), name: String(x.name).slice(0, 80), from: "label", per100: {} };
       MK.forEach(k => food.per100[k] = num(x[k]) || 0);
       if (num(x.portion_g)) food.unit = { n: String(x.portion_name || "porzione").slice(0, 30), g: num(x.portion_g) };
-      const ex = (S.profile.foods || []).find(f => norm(f.name) === norm(food.name));
-      if (ex) { ex.per100 = food.per100; if (food.unit) ex.unit = food.unit; }
-      else S.profile.foods = [food, ...(S.profile.foods || [])].slice(0, 300);
+      saveMyFood(food);
       names.push(food.name);
     });
     store.saveProfile();
@@ -4179,7 +4225,7 @@ document.addEventListener("click", ev => {
     m.action.items.forEach(x => { const g = String(x.qty || "").match(/^\s*(\d+(?:[.,]\d+)?)\s*(g|ml)\b/i); const gr = g && num(g[1]); if (!gr || num(x.kcal) == null) return;
       if ((S.profile.foods || []).some(f => norm(f.name) === norm(x.food))) return;
       const food = { id: uid(), name: String(x.food).slice(0, 80), from: "coach", per100: {} }; MK.forEach(k2 => food.per100[k2] = Math.round((num(x[k2]) || 0) / gr * 1000) / 10);
-      S.profile.foods = [food, ...(S.profile.foods || [])].slice(0, 300); });
+      saveMyFood(food); });
     store.saveProfile();
     const k = m.action.sel; const keep = S.date; S.date = today(); try { addItemsTo(k === "extra" ? "extra" : "m:" + k, m.action.items.map(x => ({ ...x }))); } finally { S.date = keep; } if (keep !== today()) toast("Registrato su oggi, " + fmtDay(today(), { weekday: "long", day: "numeric" }));
     m.action.done = k; saveChat(); renderCoach();
