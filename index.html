@@ -825,7 +825,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.0 · 22 ottobre";
+const APP_VERSION = "9.1 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3858,7 +3858,7 @@ FOTO: l'utente può allegare foto. Capisci da solo di cosa si tratta e comportat
 - Foto di una scheda di allenamento o di un esercizio: valuta struttura, volume, esercizi e cosa migliorare, senza stravolgere il lavoro del trainer.
 - Foto del fisico, anche "prima e dopo": confronta con onestà i cambiamenti visibili (spalle, braccia, addome, vita, postura), dicendo cosa è migliorato e cosa no, e collega il giudizio ai suoi dati (peso, allenamenti, aderenza alla dieta). Le foto sono indicative: luce, posa e angolo cambiano molto, dillo se influiscono.
 Se la foto non è chiara chiedi di rifarla.
-REGISTRARE UN PASTO: se l'utente ti chiede di registrare, segnare o aggiungere alla dieta qualcosa che ha mangiato, non dire che l'hai già fatto. Scrivi una frase breve di riepilogo e poi, alla fine del messaggio, un blocco esattamente in questo formato:
+REGISTRARE UN PASTO: se l'utente ti chiede di registrare, segnare o aggiungere alla dieta qualcosa che ha mangiato, non dire che l'hai già fatto e non scrivere mai elenchi tipo "[Proposta di registrazione: …]": l'unico modo per registrare è il blocco qui sotto, che l'app trasforma in una scheda con il pulsante per salvare. Scrivi una frase breve di riepilogo e poi, alla fine del messaggio, un blocco esattamente in questo formato:
 \`\`\`carico-pasto
 {"slot": "chiave-del-pasto oppure null", "items": [{"food": "Petto di pollo (cotto)", "qty": "150 g", "kcal": 248, "p": 46, "c": 0, "f": 5}]}
 \`\`\`
@@ -4096,7 +4096,7 @@ async function coachSend(text, opts = {}) {
   CH.msgs.push(um); CH.draft = ""; CH.att = [];
   const stamp = m => { if (!m.at) return ""; const d = new Date(m.at); const ds = dstr(d); return ds === today() ? "" : `[messaggio di ${fmtDay(ds, { weekday: "long", day: "numeric", month: "long" })}, ore ${pad(d.getHours())}:${pad(d.getMinutes())}] `; };
   const old = CH.msgs.slice(-20).some(m => m !== um && (!m.at || dstr(new Date(m.at)) !== today()));
-  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: (m.role === "user" ? stamp(m) : "") + (m === um && old ? `[NUOVO GIORNO: oggi è ${fmtDay(today(), { weekday: "long", day: "numeric", month: "long" })}, ore ${pad(new Date().getHours())}:${pad(new Date().getMinutes())}. I messaggi precedenti sono di giorni passati: non trattarli come cose di oggi.] ` : "") + (m.full || m.content) + ((m.imgs || m.nimg) && m !== um ? `\n[In questo messaggio l'utente aveva allegato ${(m.imgs || []).length || m.nimg} foto]` : "") + (m.action ? `\n[Proposta di registrazione: ${m.action.items.map(x => x.qty + " " + x.food).join(", ")}${m.action.done ? " — registrata in " + m.action.done : " — non ancora confermata"}]` : "") }));
+  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: (m.role === "user" ? stamp(m) : "") + (m === um && old ? `[NUOVO GIORNO: oggi è ${fmtDay(today(), { weekday: "long", day: "numeric", month: "long" })}, ore ${pad(new Date().getHours())}:${pad(new Date().getMinutes())}. I messaggi precedenti sono di giorni passati: non trattarli come cose di oggi.] ` : "") + (m.full || m.content) + ((m.imgs || m.nimg) && m !== um ? `\n[In questo messaggio l'utente aveva allegato ${(m.imgs || []).length || m.nimg} foto]` : "") + (m.action ? "\n```carico-pasto\n" + JSON.stringify({ slot: m.action.done || m.action.sel || null, items: m.action.items.map(x => ({ food: x.food, qty: x.qty, kcal: x.kcal, p: x.p, c: x.c, f: x.f })) }) + "\n```" + (m.action.done ? "\n(L'utente ha poi confermato e la registrazione è stata salvata.)" : "") : "") }));
   const ans = { role: "assistant", content: "", at: Date.now() }; CH.msgs.push(ans); CH.busy = true; CH.ctl = new AbortController(); renderCoach();
   let raf = 0;
   const paint = () => { raf = 0; const b = $("#lastBub"); const vis = splitAction(ans.content).text; if (b && vis) { b.innerHTML = md(vis); const ms = $("#msgs"); if (ms.scrollHeight - ms.scrollTop - ms.clientHeight < 160) ms.scrollTop = ms.scrollHeight; } };
