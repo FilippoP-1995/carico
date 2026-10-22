@@ -360,6 +360,7 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .wk-opts{display:flex;flex-wrap:wrap;gap:6px}
 .wk-o{border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--hero-ink);border-radius:99px;padding:7px 12px;font-size:13px;font-weight:600}
 .wk-o.on{background:var(--hero-a);border-color:var(--hero-a);color:#0b1020}
+.wk-o.rm.on{color:#0b1020;opacity:1}
 .wk-o.rm{color:var(--hero-mut)}
 .shop-var{display:flex;flex-direction:column;gap:0;padding:6px 12px}
 .sv-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
@@ -600,6 +601,9 @@ html.neo-dark .macros>div,html.neo-dark .ip-day{background:rgba(255,255,255,.04)
 .mf-h>span{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}.mf-h b{font-size:14.5px}.mf-h small{font-size:12px;color:var(--muted)}
 .mf-h svg{width:16px;height:16px;flex:none;transition:transform .2s}.mf.open .mf-h svg{transform:rotate(180deg)}
 .mf .stack{padding-left:12px!important;padding-right:12px!important}
+.wk-tog{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:inherit;font:inherit;font-size:13px;font-weight:700;border-radius:12px;padding:8px 12px}
+.wk-tog svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;transition:transform .2s}.wk-tog.open svg{transform:rotate(180deg)}
+.wk-tog span:first-letter{text-transform:uppercase}
 .bf-need{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:12px;padding:10px 12px}
 .home-style{align-self:center;border:1px dashed var(--line);background:none;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;border-radius:99px;padding:7px 14px;margin:2px auto 0}
 @media (prefers-reduced-motion:reduce){.neo-home *,.neo-home *::before,.neo-home *::after,html.neo-home body::before{animation:none!important}}
@@ -833,7 +837,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "9.7 · 22 ottobre";
+const APP_VERSION = "9.8 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1405,7 +1409,7 @@ function render() {
   if (neo && S.viewEnter && S.tab !== "oggi") { v.classList.remove("view-in"); void v.offsetWidth; v.classList.add("view-in"); setTimeout(() => v.classList.remove("view-in"), 700); }
   S.viewEnter = false;
 }
-function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; if (S.tab === "oggi" && tab !== "oggi") { S.wkClosed = new Set(); S.wkSel = null; } if (tab !== S.tab) S.viewEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
+function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; if (S.tab === "oggi" && tab !== "oggi") { S.wkOpen = new Set(); S.wkSel = null; S.wkFocus = null; } if (tab !== S.tab) S.viewEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
 
 function noPlan(kind) {
   return `<div class="card empty">
@@ -1543,9 +1547,14 @@ function summaryCard() {
     const plTag = (pl === undefined && !doneId) ? "" : `<small class="wp ${showId ? "" : "rest"} ${doneId ? "done" : ""}">${showId ? esc(shortName((wDays().find(x => x.id === showId) || {}).name)) : "💤"}</small>`;
     return `<button class="wd ${ds === S.date ? "today" : ""} ${ds === today() && ds !== S.date ? "now" : ""} ${ds > today() ? "future" : ""} ${S.wkSel === ds ? "sel" : ""}" data-act="wk-day" data-d="${ds}" ${ds > today() && !hasSched() ? "disabled" : ""} aria-label="${esc(fmtDay(ds))}"><span>${n}</span>${plTag}<i class="bar-w"><b style="width:${dayWorkPct(ds)}%"></b></i><i class="bar-m"><b style="width:${dayMealPct(ds)}%"></b></i></button>`; }).join("");
   let wkPick = "";
+  // pannellino del giorno selezionato: si apre e chiude con la freccetta, di base chiuso
+  S.wkOpen = S.wkOpen || new Set();
+  const wkFocus = S.wkFocus && S.wkFocus > today() && hasSched() ? S.wkFocus : S.date;
+  S.wkSel = wDays().length && S.wkOpen.has(wkFocus) ? wkFocus : null;
+  const wkTog = wDays().length ? `<button class="wk-tog ${S.wkSel ? "open" : ""}" data-act="wk-tog" data-d="${wkFocus}" aria-expanded="${!!S.wkSel}"><span>${wkFocus > today() ? "📅 Programma" : "🏋️ Allenamento"} di ${esc(fmtDay(wkFocus, { weekday: "long", day: "numeric" }))}</span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>` : "";
   if (S.wkSel && wDays().length && S.wkSel > today()) { // giorno futuro: cosa è previsto secondo il programma (che slitta da solo)
     const pl = plannedOn(S.wkSel); const pd = pl && wDays().find(d => d.id === pl);
-    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: ${pd ? "in programma " + esc(pd.name) : "riposo"}</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
+    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: ${pd ? "in programma " + esc(pd.name) : "riposo"}</span></div>
       <span class="small" style="opacity:.8">Il programma è ideale: se ti alleni prima o salti un giorno, le sedute e i riposi che restano slittano da soli.</span>
       ${pd ? `<div class="wk-opts"><button class="wk-o rm" data-act="wk-skip" data-id="${pd.id}">Salta ${esc(shortName(pd.name))} questa settimana</button></div>` : ""}
       ${skipBox()}</div>`;
@@ -1556,7 +1565,7 @@ function summaryCard() {
     const ss = asg ? sessionsOn(S.wkSel).filter(x => x.day.id === asg) : [];
     const ex = {}; ss.forEach(x => Object.assign(ex, x.ex));
     const detail = ad ? (ad.exercises || []).map(e => { const sd = ((ex[e.id] || {}).s || []).filter(z => z && z.done); return sd.length ? `<div class="wk-x"><span>${esc(e.name)}</span><b>${sd.map(z => `${esc(z.kg || "–")}×${esc(z.reps || "–")}`).join(" · ")}</b></div>` : ""; }).join("") : "";
-    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: quale allenamento hai fatto?</span><button data-act="wk-close" aria-label="Chiudi">${ICON_X}</button></div>
+    wkPick = `<div class="wk-pick"><div class="wk-t"><span><span class="cap">${esc(fmtDay(S.wkSel))}</span>: quale allenamento hai fatto?</span></div>
       <div class="wk-opts">${wDays().map(d => `<button class="wk-o ${asg === d.id ? "on" : ""}" data-act="wk-mark" data-id="${d.id}">${asg === d.id ? "✓ " : ""}${esc(d.name)}</button>`).join("")}<button class="wk-o rm ${!asg ? "on" : ""}" data-act="wk-mark" data-id="">${!asg ? "✓ " : ""}Nessun allenamento</button></div>
       ${!asg && L && L.hidden ? `<span class="small" style="opacity:.75">Le serie di questo giorno sono conservate: riassegnando la seduta tornano.</span>` : ""}
       ${detail ? `<div class="wk-s">${detail}</div>` : ""}
@@ -1580,7 +1589,7 @@ function summaryCard() {
       ${ring(Tg.kcal ? t.kcal / Tg.kcal : 0, t.kcal > (Tg.kcal || 1e9) * 1.05 ? "var(--danger)" : "var(--hero-d)", "Calorie", Tg.kcal ? fmtI(t.kcal / Tg.kcal * 100) + "%" : (hasDiet ? fmtI(t.kcal) : "–"))}
       ${ring(weekN / target, "var(--hero-g)", "Settimana", `${weekN}/${target}`)}
     </div>
-    <div class="week">${strip}</div>${wkPick}
+    <div class="week">${strip}</div>${wkTog}${wkPick}
     <div class="hs-grid">
       ${stat(lastW ? fmtN(lastW.kg) + "<small> kg</small>" : "–", "Peso", (() => { const tg = num((S.profile.user || {}).targetKg); const parts = []; if (dW != null) parts.push(`${dW > 0 ? "+" : ""}${fmtN(dW)} in 30gg`); if (tg && lastW) { const r = Math.round((lastW.kg - tg) * 10) / 10; parts.push(Math.abs(r) < 0.3 ? "🎯 raggiunto" : `🎯 ${r > 0 ? "−" : "+"}${fmtN(Math.abs(r))} kg`); } return parts.join("<br>") || (lastW ? "ultima pesata" : "pesati e segnalo"); })())}
       ${stat(vol ? (vol >= 10000 ? fmtN(Math.round(vol / 100) / 10) + "<small> t</small>" : fmtI(vol) + "<small> kg</small>") : "–", "Volume", pvol ? `${vol >= pvol ? "+" : "−"}${fmtI(Math.abs(vol - pvol) / pvol * 100)}% vs scorsa` : "kg × rip.")}
@@ -2822,17 +2831,15 @@ document.addEventListener("click", ev => {
     case "me-tone": { S.profile.user = S.profile.user || {}; S.profile.user.tone = b.dataset.k; store.saveProfile(); render(); toast("Tono del Coach: " + TONES[b.dataset.k].label); return; }
     case "me-goal": { S.profile.user = S.profile.user || {}; S.profile.user.goal = S.profile.user.goal === b.dataset.k ? "" : b.dataset.k; store.saveProfile(); render(); return; }
     case "wk-day": { const d = b.dataset.d;
-      if (d > today()) { if (!hasSched()) return; S.wkSel = S.wkSel === d ? null : d; render(); return; } // giorni futuri: solo pianificazione
-      S.wkClosed = S.wkClosed || new Set();
-      if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; S.wkSel = wDays().length && !S.wkClosed.has(d) ? d : null; }
-      else if (S.wkSel) { S.wkClosed.add(d); S.wkSel = null; }
-      else { S.wkClosed.delete(d); S.wkSel = wDays().length ? d : null; }
+      if (d > today()) { if (!hasSched()) return; S.wkFocus = d; render(); return; } // giorni futuri: solo il programma
+      S.wkFocus = null; if (d !== S.date) { S.date = d; S.selDay = null; S.picker = null; S.review = null; }
       render(); return; }
+    case "wk-tog": { S.wkOpen = S.wkOpen || new Set(); const d = b.dataset.d; if (S.wkOpen.has(d)) S.wkOpen.delete(d); else S.wkOpen.add(d); render(); return; }
     case "wk-skip": { const W = plan().workout; W.skips = W.skips || {}; const wk = dstr(weekStart(today())); (W.skips[wk] = W.skips[wk] || []).push(b.dataset.id);
       for (const k in W.skips) if (k < dstr(new Date(Date.now() - 60 * 864e5))) delete W.skips[k];
       S.selDay = null; store.saveProfile(); render(); toast("Saltata: questa settimana un allenamento in meno"); return; }
     case "wk-unskip": { const W = plan().workout; const wk = dstr(weekStart(today())); const sk = (W.skips || {})[wk] || []; sk.splice(+b.dataset.i, 1); S.selDay = null; store.saveProfile(); render(); toast("Ripristinata"); return; }
-    case "wk-close": (S.wkClosed = S.wkClosed || new Set()).add(S.wkSel); S.wkSel = null; S.wkAdd = false; render(); return;
+    case "wk-close": if (S.wkOpen) S.wkOpen.delete(S.wkSel); S.wkAdd = false; render(); return;
     case "wk-add": S.wkAdd = true; render(); return;
     case "wk-mark": {
       const d = S.wkSel; if (!d) return; const l = dayLog(d); const id = b.dataset.id; const wd = wDays().find(x => x.id === id);
