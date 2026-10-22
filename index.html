@@ -825,7 +825,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "8.7 · 22 ottobre";
+const APP_VERSION = "8.8 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3936,12 +3936,12 @@ AI.chat = async function (turns, { onText, signal, images = [], deep = false } =
   if (images.length && msgs.length) { const last = msgs[msgs.length - 1]; const content = []; for (const b of images) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: await toJpegB64(b) } }); content.push({ type: "text", text: last.content }); last.content = content; }
   let res;
   try {
-    res = await this.post({ model: deep ? "claude-sonnet-5-5" : "claude-haiku-5-5", max_tokens: deep ? 2000 : 900, stream: true, system: ctx, messages: msgs }, signal);
+    res = await this.post({ model: deep ? "claude-sonnet-5-5" : "claude-haiku-5-5", max_tokens: deep ? 2000 : 1600, stream: true, system: ctx, messages: msgs }, signal);
   } catch (e) { if (e && e.code) throw e; throw { code: e && e.name === "AbortError" ? "cancelled" : "network" }; }
   if (!res.ok) { const pe = await this.errOf(res.clone()); if (pe) throw pe; let detail = ""; try { const ej = await res.json(); detail = (ej.error && ej.error.message) || ""; } catch (e) {} throw { code: res.status === 401 || res.status === 403 ? "bad_key" : res.status === 429 ? "rate_limited" : /credit|balance|billing/i.test(detail) ? "no_credit" : res.status === 529 ? "overloaded" : "upstream_error", detail: res.status + " " + detail }; }
   let text = "";
   if (!res.body || !res.body.getReader) { const j = await res.json(); text = (j.content || []).filter(x => x.type === "text").map(x => x.text).join(""); onText && onText(text); return text; }
-  const rd = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+  const rd = res.body.getReader(); const dec = new TextDecoder(); let buf = ""; AI.lastStop = "";
   try {
     for (;;) {
       const { done, value } = await rd.read(); if (done) break;
@@ -3951,6 +3951,7 @@ AI.chat = async function (turns, { onText, signal, images = [], deep = false } =
         if (!line.startsWith("data:")) continue;
         let ev; try { ev = JSON.parse(line.slice(5)); } catch (e) { continue; }
         if (ev.type === "content_block_delta" && ev.delta && ev.delta.type === "text_delta") { text += ev.delta.text; onText && onText(text); }
+        else if (ev.type === "message_delta" && ev.delta && ev.delta.stop_reason) AI.lastStop = ev.delta.stop_reason;
         else if (ev.type === "error") throw { code: ev.error && ev.error.type === "overloaded_error" ? "overloaded" : "upstream_error", detail: ev.error && ev.error.message, text };
       }
     }
@@ -3962,7 +3963,8 @@ const ACT_RE = /```\s*carico-pasto\s*([\s\S]*?)(```|$)/i;
 function splitAction(text) {
   const m = String(text || "").match(ACT_RE); if (!m) return { text, action: null };
   const clean = text.slice(0, m.index).trim();
-  if (!m[2]) return { text: clean, action: null, pending: true };
+  if (!m[2]) { // blocco non chiuso (risposta interrotta): provo comunque a leggerlo
+    const v0 = parseJsonLoose(m[1]); if (!v0 || !Array.isArray(v0.items)) return { text: clean, action: null, pending: true }; }
   const v = parseJsonLoose(m[1]); const items = (v && Array.isArray(v.items) ? v.items : []).filter(x => x && x.food).map(x => ({ ...cleanItem(x), src: "coach" }));
   if (!items.length) return { text: clean, action: null };
   const keys = variants().length ? slots().map(sl => sl.key) : [];
@@ -4092,8 +4094,11 @@ async function coachSend(text, opts = {}) {
   try {
     const full = await AI.chat(turns, { signal: CH.ctl.signal, deep: !!opts.check, images: att.map(a => a.blob), onText: t => { ans.content = t; if (!raf) raf = requestAnimationFrame(paint); } });
     ans.content = full || ans.content;
-    const sp = splitAction(ans.content); if (sp.action) { ans.action = sp.action; ans.content = sp.text || "Ecco il pasto da registrare:"; } else ans.content = sp.text || ans.content;
-    if (!ans.content) { ans.content = "Non ho ricevuto risposta. Riprova."; ans.err = true; }
+    const raw = ans.content; const sp = splitAction(raw);
+    if (sp.action) { ans.action = sp.action; ans.content = sp.text || "Ecco il pasto da registrare:"; }
+    else if (sp.pending) ans.content = (sp.text ? sp.text + "\n\n" : "") + "_La proposta di registrazione si è interrotta: scrivimi \"registralo\" e te la rifaccio._";
+    else ans.content = sp.text || raw.replace(/```[\s\S]*?(```|$)/g, "").trim() || raw;
+    if (!ans.content) { ans.content = "Non ho ricevuto risposta" + (AI.lastStop && AI.lastStop !== "end_turn" ? ` (motivo: ${AI.lastStop})` : "") + ". Riprova."; ans.err = true; }
   } catch (e) {
     if (e && e.code === "cancelled") { if (!ans.content) CH.msgs.pop(); }
     else { const m = aiErr(e); if (e && e.text) ans.content = e.text + "\n\n(" + (m || "risposta interrotta") + ")"; else { ans.content = (m || "Errore") + (e && e.detail ? " (" + String(e.detail).slice(0, 120) + ")" : ""); ans.err = true; } }
