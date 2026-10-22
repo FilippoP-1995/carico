@@ -732,6 +732,23 @@ input.small,textarea.small,select.small,.in.small{font-size:16px}
 .tag.b{background:var(--accent-soft);color:var(--accent)}
 .addf{display:flex;gap:8px}
 .addf .in{flex:1}
+.mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mtile{background:var(--surface-2);border-radius:12px;padding:9px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.mtile .num{font-size:21px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.mtile small{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.mtile em{font-style:normal;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.mbar{display:block;width:100%;height:5px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:2px}
+.mbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#f6c453,var(--diet));transition:width .4s}
+.mtile.good .mbar i{background:var(--ok)}.mtile.over .mbar i{background:var(--danger)}.mtile.over .num{color:var(--danger)}
+.mstrip{position:fixed;left:0;right:0;z-index:6;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:8px;padding:6px max(16px,env(safe-area-inset-left,0px)) 8px;background:var(--bg);border-bottom:1px solid var(--line);box-shadow:0 8px 18px -14px rgba(0,0,0,.5);opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .18s,transform .18s}
+.mstrip.on{opacity:1;transform:none}
+.mstrip .ms{position:relative;font-size:12.5px;white-space:nowrap;padding-bottom:5px;font-variant-numeric:tabular-nums;overflow:hidden}
+.mstrip .ms em{font-style:normal;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.03em}.mstrip .ms small{color:var(--muted);font-size:11px}
+.mstrip .ms i{position:absolute;left:0;bottom:0;height:3px;border-radius:2px;background:var(--diet)}
+.mstrip .ms::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:2px;background:var(--line);z-index:-1}
+.mstrip .ms.good i{background:var(--ok)}.mstrip .ms.over i{background:var(--danger)}.mstrip .ms.over b{color:var(--danger)}
+html.neo-dark .mtile{background:rgba(255,255,255,.04);border:1px solid var(--line)}
+html.neo-dark .mstrip{background:rgba(6,9,20,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .macros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .macros div{background:var(--surface-2);border-radius:10px;padding:8px;text-align:center}
 .macros .num{font-size:22px;display:block}
@@ -818,6 +835,7 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 <input id="plateIn" type="file" accept="image/*" hidden>
 <input id="codeIn" type="file" accept="image/*" capture="environment" hidden>
 <input id="coachImg" type="file" accept="image/*" multiple hidden>
+<div id="mstrip" class="mstrip" aria-hidden="true"></div>
 <nav class="tabs" aria-label="Sezioni">
   <div class="in-nav">
     <button data-tab="oggi"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Oggi</button>
@@ -852,7 +870,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "10.3 · 22 ottobre";
+const APP_VERSION = "10.4 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1424,6 +1442,7 @@ function render() {
   if (neo && S.homeEnter && S.tab === "oggi") { const hs = v.querySelector(".hero-sum"); if (hs) countUp(hs); S.homeEnter = false; }
   if (neo && S.viewEnter && S.tab !== "oggi") { v.classList.remove("view-in"); void v.offsetWidth; v.classList.add("view-in"); setTimeout(() => v.classList.remove("view-in"), 700); }
   S.viewEnter = false;
+  S.stripKey = String(Date.now()); stripSync();
 }
 function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; if (S.tab === "oggi" && tab !== "oggi") { S.wkOpen = new Set(); S.wkSel = null; S.wkFocus = null; } if (tab !== S.tab) S.viewEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
 
@@ -2102,6 +2121,28 @@ function mealCard(sl, ml, nextKey) {
   </div>`;
 }
 
+const MSHORT = { kcal: "kcal", p: "Prot.", c: "Carb.", f: "Grassi" };
+function macroState(t, Tg, k) { const tgt = Tg[k]; if (!tgt) return { pct: 0, cls: "" }; const pct = t[k] / tgt * 100;
+  return { pct, cls: t[k] > tgt * 1.05 + (k === "kcal" ? 20 : 3) ? "over" : pct >= 95 ? "good" : "" }; }
+function macroTiles() { // mangiato / obiettivo, in cima alla Dieta
+  const t = dayTotals(), Tg = targetsFor(); const has = MK.some(k => Tg[k]); const st = statusMsg(t, Tg);
+  return `<div class="mtiles" id="mtiles">${MK.map(k => { const m = macroState(t, Tg, k);
+      return `<div class="mtile ${m.cls}"><span class="num">${fmtI(t[k])}</span><small>${Tg[k] ? "di " + fmtI(Tg[k]) + (k === "kcal" ? "" : " g") : (k === "kcal" ? "kcal" : "g")}</small><span class="mbar"><i style="width:${Math.min(100, m.pct)}%"></i></span><em>${MSHORT[k]}</em></div>`; }).join("")}</div>
+    ${st ? `<div class="alert ${st.cls}" style="margin:0">${esc(st.text)}</div>` : ""}
+    ${has ? "" : `<span class="small muted">Inserisci gli obiettivi in Piano per vedere quanto ti manca.</span>`}`;
+}
+function macroStrip() { // versione compatta che resta in alto mentre scorri i pasti
+  const t = dayTotals(), Tg = targetsFor();
+  return MK.map(k => { const m = macroState(t, Tg, k); return `<span class="ms ${m.cls}"><em>${k === "kcal" ? "kcal" : k === "p" ? "P" : k === "c" ? "C" : "G"}</em> <b>${fmtI(t[k])}</b>${Tg[k] ? `<small>/${fmtI(Tg[k])}</small>` : ""}<i style="width:${Math.min(100, m.pct)}%"></i></span>`; }).join("");
+}
+function stripSync() {
+  const el = document.getElementById("mstrip"); if (!el) return;
+  const tiles = S.tab === "dieta" && document.getElementById("mtiles");
+  const hdr = document.querySelector("header.top"); const top = hdr ? hdr.getBoundingClientRect().bottom : 0;
+  const show = !!tiles && tiles.getBoundingClientRect().bottom < top + 4 && !document.documentElement.classList.contains("kb");
+  if (show) { el.style.top = Math.max(0, top) + "px"; if (el.dataset.k !== S.stripKey) { el.innerHTML = macroStrip(); el.dataset.k = S.stripKey; } }
+  el.classList.toggle("on", show);
+}
 function totalsCard() {
   const t = dayTotals(), Tg = targetsFor(); const st = statusMsg(t, Tg);
   const rows = MK.map(k => {
@@ -2129,11 +2170,7 @@ function vDieta() {
   return `<h2>Dieta</h2>
     <div class="stack" style="margin-top:10px">
     ${dayTypeBar()}
-    ${MK.some(k => Tg[k]) ? `<div class="macros">
-      <div><span class="num">${fmtI(Tg.kcal)}</span><small>kcal</small></div>
-      <div><span class="num">${fmtI(Tg.p)}</span><small>Prot. g</small></div>
-      <div><span class="num">${fmtI(Tg.c)}</span><small>Carb. g</small></div>
-      <div><span class="num">${fmtI(Tg.f)}</span><small>Grassi g</small></div></div>` : ""}
+    ${macroTiles()}
     ${missing ? `<div class="card stack" style="border-color:var(--diet)"><span class="small">Alcuni alimenti della scheda non hanno i macro. Servono per i conti e per creare varianti.</span>
       <button class="btn diet" data-act="fill-macros" ${S.busy.fill ? "disabled" : ""}>${S.busy.fill ? '<span class="spin"></span> Calcolo i macro…' : "Calcola i macro della scheda"}</button></div>` : ""}
     ${hydroCard()}
@@ -2150,7 +2187,6 @@ function vDieta() {
       ${ml.extra.length ? `<ul class="items">${ml.extra.map((it, i) => itemLi(it, `<button class="mv" data-act="man-move" data-m="__extra" data-i="${i}" aria-label="Sposta ${esc(it.food)} in un pasto">⇄</button><button class="rm" data-act="man-del" data-m="__extra" data-i="${i}" aria-label="Togli ${esc(it.food)}">${ICON_X}</button>`)).join("")}</ul>${movePicker("__extra")}` : ""}
       ${foodAdder("extra")}
     </div>
-    ${totalsCard()}
     <button class="btn block shop-cta" data-act="shop-open">🛒 Lista della spesa</button>
     ${plan().diet.notes ? `<details class="card" data-pnl="notes" ${pnlOpen("notes")}><summary><span class="eyebrow" style="font-size:12px">Note del piano</span></summary><p class="small" style="margin:10px 0 0;white-space:pre-line;line-height:1.5">${esc(plan().diet.notes)}</p></details>` : ""}
     </div>`;
@@ -2717,9 +2753,10 @@ function pickAdd() {
 (() => {
   if (!(window.matchMedia && matchMedia("(pointer:coarse)").matches)) return;
   const isTxt = el => el && (el.tagName === "TEXTAREA" || el.isContentEditable || (el.tagName === "INPUT" && !/^(checkbox|radio|button|submit|range|file|color)$/.test(el.type)));
-  let t; const set = () => { clearTimeout(t); t = setTimeout(() => document.documentElement.classList.toggle("kb", isTxt(document.activeElement)), 60); };
+  let t; const set = () => { clearTimeout(t); t = setTimeout(() => { document.documentElement.classList.toggle("kb", isTxt(document.activeElement)); stripSync(); }, 60); };
   document.addEventListener("focusin", set); document.addEventListener("focusout", set);
 })();
+window.addEventListener("scroll", () => { if (S.tab === "dieta") stripSync(); }, { passive: true });
 // iOS a volte lascia il "layout viewport" sfasato (dopo la tastiera o durante lo scroll) e la barra fissa sale a metà schermo:
 // la misuro e la riaggancio al fondo reale dello schermo
 (() => {
