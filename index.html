@@ -825,7 +825,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "8.9 · 22 ottobre";
+const APP_VERSION = "9.0 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3846,7 +3846,7 @@ Regole fisse: le frecciate sul fisico non devono mai tradursi in consigli di man
 const coachTone = () => TONES[(S.profile.user || {}).tone] ? (S.profile.user || {}).tone : "roast";
 const COACH_RULES = `Sei il coach dentro Carico, un'app per chi va in palestra. Parli italiano, sei diretto, motivante ma onesto: se qualcosa non va lo dici.
 RISPOSTE BREVI: massimo 80 parole (3-5 frasi o un elenco di 3-5 punti), adatte allo schermo di un telefono. Vai dritto al punto, niente premesse né riepiloghi. Solo se l'utente chiede esplicitamente un piano, una dieta o una spiegazione dettagliata puoi arrivare a 150 parole. Usa elenchi puntati quando aiutano. Usa **grassetto** solo per i punti chiave.
-Basati sui dati dell'utente qui sotto. Se un dato manca dillo e fai una stima ragionevole spiegando le ipotesi.
+Basati sui dati dell'utente qui sotto. La data e l'ora sono quelle in "Data e ora": "oggi" è sempre quel giorno, anche se nella chat ci sono messaggi di giorni precedenti (sono segnati con la loro data). Se un dato manca dillo e fai una stima ragionevole spiegando le ipotesi.
 - "Cosa faccio oggi": indica la seduta prevista, gli esercizi e i carichi da provare in base alle ultime volte (progressione graduale).
 - Sostituzione di un pasto: proponi alternative con quantità in grammi e macro simili all'originale, con il totale.
 - Cosa mangiare ancora oggi: parti dai macro che restano e proponi cibi concreti con quantità.
@@ -3863,7 +3863,8 @@ REGISTRARE UN PASTO: se l'utente ti chiede di registrare, segnare o aggiungere a
 {"slot": "chiave-del-pasto oppure null", "items": [{"food": "Petto di pollo (cotto)", "qty": "150 g", "kcal": 248, "p": 46, "c": 0, "f": 5}]}
 \`\`\`
 Le quantità sono in grammi (o unità chiare) e i macro sono per quella quantità, con valori medi da tabelle nutrizionali. Per "slot" usa una delle chiavi elencate in "PASTI REGISTRABILI" solo se l'utente l'ha detto o è evidente dall'orario; altrimenti metti null. L'app mostrerà una scheda con un tasto: sarà l'utente a scegliere il pasto e a confermare. Non usare questo blocco se l'utente non ha chiesto di registrare.`;
-function coachContext() {
+function coachContext() { const keep = S.date; S.date = today(); try { return coachContext0(); } finally { S.date = keep; } }
+function coachContext0() {
   const L = [];
   const now = new Date();
   const U = S.profile.user || {};
@@ -4091,10 +4092,12 @@ async function coachSend(text, opts = {}) {
   if (!text) text = att.length > 1 ? "Valuta queste foto." : "Valuta questa foto.";
   if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
   CH.msgs = CH.msgs.filter(m => !m.err);
-  const um = { role: "user", content: text }; if (opts.label) { um.full = text; um.content = opts.label; } if (att.length) um.imgs = att.map(a => a.thumb).filter(Boolean);
+  const um = { role: "user", content: text, at: Date.now() }; if (opts.label) { um.full = text; um.content = opts.label; } if (att.length) um.imgs = att.map(a => a.thumb).filter(Boolean);
   CH.msgs.push(um); CH.draft = ""; CH.att = [];
-  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: (m.full || m.content) + ((m.imgs || m.nimg) && m !== um ? `\n[In questo messaggio l'utente aveva allegato ${(m.imgs || []).length || m.nimg} foto]` : "") + (m.action ? `\n[Proposta di registrazione: ${m.action.items.map(x => x.qty + " " + x.food).join(", ")}${m.action.done ? " — registrata in " + m.action.done : " — non ancora confermata"}]` : "") }));
-  const ans = { role: "assistant", content: "" }; CH.msgs.push(ans); CH.busy = true; CH.ctl = new AbortController(); renderCoach();
+  const stamp = m => { if (!m.at) return ""; const d = new Date(m.at); const ds = dstr(d); return ds === today() ? "" : `[messaggio di ${fmtDay(ds, { weekday: "long", day: "numeric", month: "long" })}, ore ${pad(d.getHours())}:${pad(d.getMinutes())}] `; };
+  const old = CH.msgs.slice(-20).some(m => m !== um && (!m.at || dstr(new Date(m.at)) !== today()));
+  const turns = CH.msgs.slice(-20).map(m => ({ role: m.role, content: (m.role === "user" ? stamp(m) : "") + (m === um && old ? `[NUOVO GIORNO: oggi è ${fmtDay(today(), { weekday: "long", day: "numeric", month: "long" })}, ore ${pad(new Date().getHours())}:${pad(new Date().getMinutes())}. I messaggi precedenti sono di giorni passati: non trattarli come cose di oggi.] ` : "") + (m.full || m.content) + ((m.imgs || m.nimg) && m !== um ? `\n[In questo messaggio l'utente aveva allegato ${(m.imgs || []).length || m.nimg} foto]` : "") + (m.action ? `\n[Proposta di registrazione: ${m.action.items.map(x => x.qty + " " + x.food).join(", ")}${m.action.done ? " — registrata in " + m.action.done : " — non ancora confermata"}]` : "") }));
+  const ans = { role: "assistant", content: "", at: Date.now() }; CH.msgs.push(ans); CH.busy = true; CH.ctl = new AbortController(); renderCoach();
   let raf = 0;
   const paint = () => { raf = 0; const b = $("#lastBub"); const vis = splitAction(ans.content).text; if (b && vis) { b.innerHTML = md(vis); const ms = $("#msgs"); if (ms.scrollHeight - ms.scrollTop - ms.clientHeight < 160) ms.scrollTop = ms.scrollHeight; } };
   try {
@@ -4161,7 +4164,7 @@ document.addEventListener("click", ev => {
   else if (a === "ca-save") {
     const m = CH.msgs[+b.dataset.mi]; if (!m || !m.action || !m.action.sel || m.action.done) return;
     if (!variants().length && m.action.sel !== "extra") { toast("Carica prima un piano alimentare"); return; }
-    const k = m.action.sel; addItemsTo(k === "extra" ? "extra" : "m:" + k, m.action.items.map(x => ({ ...x })));
+    const k = m.action.sel; const keep = S.date; S.date = today(); try { addItemsTo(k === "extra" ? "extra" : "m:" + k, m.action.items.map(x => ({ ...x }))); } finally { S.date = keep; } if (keep !== today()) toast("Registrato su oggi, " + fmtDay(today(), { weekday: "long", day: "numeric" }));
     m.action.done = k; saveChat(); renderCoach();
     const ms = $("#msgs"); if (ms) ms.scrollTop = ms.scrollHeight;
   }
