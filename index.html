@@ -772,6 +772,7 @@ svg.chart{width:100%;height:auto;display:block}
 .hist div{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
 .hist div:first-child{border-top:0}
 /* Nav */
+html.kb nav.tabs,html.kb .fab{display:none!important}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}
 nav.tabs .in-nav{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
 nav.tabs button{border:0;background:none;padding:9px 2px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--muted)}
@@ -850,7 +851,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "10.1 · 22 ottobre";
+const APP_VERSION = "10.2 · 22 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2711,6 +2712,13 @@ function pickAdd() {
   addItemsTo(pk.key, [item]);
 }
 
+// tastiera aperta (telefono): nascondo barra in basso e bottone chat, così non galleggiano sopra la tastiera
+(() => {
+  if (!(window.matchMedia && matchMedia("(pointer:coarse)").matches)) return;
+  const isTxt = el => el && (el.tagName === "TEXTAREA" || el.isContentEditable || (el.tagName === "INPUT" && !/^(checkbox|radio|button|submit|range|file|color)$/.test(el.type)));
+  let t; const set = () => { clearTimeout(t); t = setTimeout(() => document.documentElement.classList.toggle("kb", isTxt(document.activeElement)), 60); };
+  document.addEventListener("focusin", set); document.addEventListener("focusout", set);
+})();
 document.addEventListener("input", ev => {
   const el = ev.target;
   if (el.matches(".set input")) setField(el);
