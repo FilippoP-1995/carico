@@ -930,6 +930,49 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .gr.on{border-color:var(--accent);background:var(--accent-soft)}
 .gtog{display:flex;align-items:flex-start;gap:8px;font-size:13.5px}
 .gtog input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
+
+/* chat del gruppo */
+.hdr-r{display:flex;align-items:center;gap:8px}
+.gc-ico{position:relative;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;color:var(--muted);padding:0}
+.gc-ico svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round}
+.gc-ico i{position:absolute;top:-4px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:var(--danger);color:#fff;font-size:10.5px;font-style:normal;font-weight:800;display:grid;place-items:center;box-shadow:0 0 0 2px var(--bg)}
+.gc-entry{width:100%;justify-content:center;gap:8px}.gc-n{background:var(--danger);color:#fff;border-radius:9px;padding:0 6px;font-size:12px}
+.gchat{position:fixed;left:0;right:0;top:0;height:100%;z-index:45;display:flex;flex-direction:column;background:var(--bg);color:var(--ink)}
+.gc-top{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 12px 10px;border-bottom:1px solid var(--line);background:var(--surface)}
+.gc-x{width:38px;height:38px;border-radius:50%;border:0;background:var(--surface-2);color:var(--ink);font-size:26px;line-height:1;padding-bottom:3px}
+.gc-ti{display:flex;flex-direction:column;min-width:0}.gc-ti b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-ti span{font-size:12px;color:var(--ok)}.gc-ti span.off{color:var(--muted)}
+.gc-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px 12px 8px;display:flex;flex-direction:column;gap:2px;contain:content}
+.gc-day{text-align:center;margin:10px 0 6px}.gc-day span{font-size:11.5px;color:var(--muted);background:var(--surface-2);padding:3px 10px;border-radius:99px;text-transform:capitalize}
+.gc-empty{margin:auto;text-align:center;color:var(--muted);font-size:14px;line-height:1.5}
+.gm{display:flex;flex-direction:column;align-items:flex-start;max-width:82%;margin-top:6px}
+.gm.cont{margin-top:1px}
+.gm.me{align-self:flex-end;align-items:flex-end}
+.gm.gm-anim{animation:gmIn .22s ease-out}
+@keyframes gmIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.gm-n{font-size:12px;font-weight:800;margin:0 0 2px 10px}
+.gm-b{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:7px 11px 6px;font-size:15px;line-height:1.35;word-wrap:break-word;overflow-wrap:anywhere;box-shadow:0 1px 1px rgba(0,0,0,.04)}
+.gm.me .gm-b{background:linear-gradient(135deg,#3d6cf0,#6a5cf2);color:#fff;border-color:transparent}
+.gm.me.pend .gm-b{opacity:.75}
+.gm-t{white-space:pre-wrap}.gm-b a{color:inherit;text-decoration:underline}
+.gm-s{float:right;font-size:10.5px;opacity:.6;margin:6px 0 -2px 10px}.gm-s .st{font-style:normal;margin-left:3px}
+.gm-img{display:block;width:min(260px,66vw);max-height:340px;object-fit:cover;border-radius:13px;margin:-2px -6px 4px;background:var(--surface-2)}
+.gm.sys{align-self:center;max-width:92%;align-items:center;margin:8px 0}.gm.sys span{font-size:12.5px;background:var(--accent-soft);color:var(--ink);padding:5px 12px;border-radius:12px;text-align:center}
+.gm-rx{display:flex;gap:4px;margin-top:2px}.gm-rx:empty{display:none}
+.gm-rx button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:1px 7px;font-size:12px;color:var(--ink)}.gm-rx button.on{border-color:var(--accent);background:var(--accent-soft)}
+.gm-pick{display:flex;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:3px 5px;margin-top:4px;box-shadow:0 6px 18px rgba(0,0,0,.15);animation:gmIn .15s}
+.gm-pick button{border:0;background:none;font-size:22px;padding:2px 5px}
+.gc-new{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));border:0;border-radius:99px;padding:7px 14px;font-weight:700;font-size:13px;color:#fff;background:var(--accent);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.gc-prev{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--muted)}
+.gc-prev img{width:46px;height:46px;object-fit:cover;border-radius:8px}.gc-prev span{flex:1}.gc-prev button{border:0;background:var(--surface-2);border-radius:50%;width:30px;height:30px;color:var(--ink)}
+.gc-comp{display:flex;align-items:flex-end;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--surface)}
+.gc-b{flex:none;width:38px;height:38px;border:0;border-radius:50%;background:none;color:var(--muted);display:grid;place-items:center;padding:0}
+.gc-b svg,.gc-send svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gc-comp textarea{flex:1;resize:none;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);border-radius:20px;padding:9px 14px;font:inherit;font-size:16px;line-height:1.3;max-height:120px}
+.gc-send{flex:none;width:40px;height:40px;border:0;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center}
+.gc-view{position:fixed;inset:0;z-index:96;background:rgba(0,0,0,.92);display:grid;place-items:center;padding:12px}
+.gc-view img{max-width:100%;max-height:100%;border-radius:8px}
+html.neo-dark .gc-top,html.neo-dark .gc-comp,html.neo-dark .gc-prev{background:rgba(16,23,46,.96)}
 /* esercizi saltati */
 .lv-pill.sk{text-decoration:line-through;opacity:.55}
 .lv-start .st-x.sk{opacity:.55}
@@ -1039,13 +1082,23 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
       <div class="brand">Car<span>i</span>co</div>
       <div class="dnav"><button class="dn" data-act="day-prev" aria-label="Giorno precedente">‹</button><button class="date" id="hdrDate" data-act="day-today"></button><button class="dn" data-act="day-next" id="dayNext" aria-label="Giorno successivo">›</button></div>
     </div>
-    <span class="badge" id="saveMode" hidden></span>
+    <div class="hdr-r"><button class="gc-ico" id="gcIco" data-act="gc-open" aria-label="Chat del gruppo" hidden><svg viewBox="0 0 24 24"><path d="M4 5.5h16v10.5H9l-5 4z"/></svg><i id="gcDot" hidden></i></button><span class="badge" id="saveMode" hidden></span></div>
   </header>
   <main id="view"><div class="empty"><div class="plates"><i style="height:44px;background:var(--danger)"></i><i style="height:38px;background:var(--accent)"></i><i style="height:32px;background:var(--diet)"></i></div><p class="muted">Caricamento dei tuoi dati…</p></div></main>
 </div>
 <div class="timer" id="timer" hidden></div>
 <div class="toast" id="toast" hidden></div>
 <button id="fab" class="fab" aria-label="Apri il coach" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v10H9l-4.5 3.5V15.5H4z"/><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke-width="2.6"/></svg></button>
+<div id="gchat" class="gchat" hidden role="dialog" aria-label="Chat del gruppo">
+  <div class="gc-top"><button class="gc-x" data-act="gc-close" aria-label="Chiudi">‹</button><div class="gc-ti"><b id="gcTitle">Chat</b><span id="gcSub">…</span></div></div>
+  <div class="gc-list" id="gcList"></div>
+  <button class="gc-new" id="gcNew" data-act="gc-bottom" hidden>↓ nuovi messaggi</button>
+  <div class="gc-prev" id="gcPrev" hidden></div>
+  <form class="gc-comp" data-form="gc-send"><button type="button" class="gc-b" data-act="gc-cam" aria-label="Scatta una foto"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button><button type="button" class="gc-b" data-act="gc-lib" aria-label="Foto dalla galleria"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17l5-4.5 4 3.5 3-2.5 4 3.5"/></svg></button><textarea id="gcIn" rows="1" placeholder="Scrivi al gruppo…" enterkeyhint="send"></textarea><button class="gc-send" aria-label="Invia"><svg viewBox="0 0 24 24"><path d="M5 12h12M12 6l6 6-6 6"/></svg></button></form>
+</div>
+<div id="gcView" class="gc-view" hidden data-act="gc-viewclose"><img alt=""></div>
+<input id="gcCam" type="file" accept="image/*" capture="environment" hidden>
+<input id="gcLib" type="file" accept="image/*" hidden>
 <div id="coachBg" class="coach-bg" hidden></div>
 <div id="coach" class="coach-pop" hidden role="dialog" aria-label="Coach"></div>
 <div id="onb" class="live" hidden role="dialog" aria-label="Benvenuto"></div>
@@ -1091,7 +1144,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "13.4 · 23 ottobre";
+const APP_VERSION = "13.5 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1692,7 +1745,7 @@ function render() {
         toast("🏆 Settimana completata! Tutti gli allenamenti in programma sono fatti", 3800); setTimeout(() => wr.classList.remove("celebrate"), 1800); }, 450); } }
   if (neo && S.viewEnter && S.tab !== "oggi") { v.classList.remove("view-in"); void v.offsetWidth; v.classList.add("view-in"); setTimeout(() => v.classList.remove("view-in"), 700); }
   S.viewEnter = false;
-  S.stripKey = String(Date.now()); stripSync(); fxAfterRender(v);
+  S.stripKey = String(Date.now()); stripSync(); fxAfterRender(v); try { gcBadge(); if (gOn() && !GC.ws && !document.hidden) gcConnect(); } catch (e) {}
 }
 function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; if (S.tab === "oggi" && tab !== "oggi") { S.wkOpen = new Set(); S.wkSel = null; S.wkFocus = null; } if (tab !== S.tab) S.viewEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
 
@@ -2634,6 +2687,119 @@ async function gLoad(force) {
   GS.busy = false; if (S.tab === "progressi") render();
 }
 const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "ora" : m < 60 ? m + " min fa" : m < 1440 ? Math.round(m / 60) + " h fa" : Math.round(m / 1440) + " g fa"; };
+/* ---------- chat del gruppo in tempo reale ---------- */
+const GC = { ws: null, msgs: [], pend: [], up: false, open: false, tries: 0, ping: 0, typingAt: 0, typingT: 0, blobs: {}, img: null, loadingMore: false, noMore: false, ready: false };
+const gcKey = () => "carico.gchat." + ((S.profile.group || {}).code || "");
+function gcLoad() { try { const o = JSON.parse(lsGet(gcKey()) || "{}"); GC.msgs = o.msgs || []; GC.read = o.read || 0; GC.pend = (o.pend || []).filter(p => !p.img); } catch (e) { GC.msgs = []; GC.read = 0; GC.pend = []; } GC.code = (S.profile.group || {}).code; GC.noMore = false; }
+function gcSave() { try { lsSet(gcKey(), JSON.stringify({ msgs: GC.msgs.slice(-120), read: GC.read || 0, pend: GC.pend.filter(p => !p.img).slice(-20) })); } catch (e) {} }
+const gcLast = () => GC.msgs.length ? GC.msgs[GC.msgs.length - 1].id : 0;
+const gcUnread = () => { const me = gMid(); return GC.msgs.filter(m => m.id > (GC.read || 0) && m.mid !== me && !m.sys).length; };
+function gcBadge() { const ico = $("#gcIco"); if (!ico) return; const on = gOn() && !IN_CLAUDE; ico.hidden = !on; const n = on ? gcUnread() : 0; const dot = $("#gcDot"); if (dot) { dot.hidden = !n; dot.textContent = n > 9 ? "9+" : n || ""; } }
+async function gcConnect() {
+  if (!gOn() || IN_CLAUDE || document.hidden) return; if (GC.code !== S.profile.group.code) gcLoad();
+  if (GC.ws && (GC.ws.readyState === 0 || GC.ws.readyState === 1)) return;
+  const base = await ntUrl(); if (!base) return;
+  const u = base.replace(/^http/, "ws") + `/chat/ws?code=${encodeURIComponent(S.profile.group.code)}&mid=${gMid()}&after=${gcLast()}`;
+  let ws; try { ws = new WebSocket(u); } catch (e) { return gcRetry(); } GC.ws = ws;
+  ws.onopen = () => { GC.up = true; GC.tries = 0; gcSub(); clearInterval(GC.ping); GC.ping = setInterval(() => { try { ws.readyState === 1 && ws.send('{"t":"ping"}'); } catch (e) {} }, 25000); GC.pend.forEach(p => gcWire(p)); };
+  ws.onmessage = ev => { let d; try { d = JSON.parse(ev.data); } catch (e) { return; } gcOn(d); };
+  ws.onclose = () => { GC.up = false; clearInterval(GC.ping); if (GC.ws === ws) GC.ws = null; gcSub(); gcRetry(); };
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+}
+function gcRetry() { if (document.hidden || !gOn()) return; clearTimeout(GC.rt); const d = [1000, 2000, 4000, 8000, 15000, 30000][Math.min(GC.tries++, 5)]; GC.rt = setTimeout(gcConnect, d); }
+function gcClose() { clearTimeout(GC.rt); clearInterval(GC.ping); if (GC.ws) { const w = GC.ws; GC.ws = null; try { w.onclose = null; w.close(); } catch (e) {} } GC.up = false; }
+function gcMerge(list, prepend) { const byId = new Map(GC.msgs.map(m => [m.id, m])); let added = [];
+  list.forEach(m => { const pi = GC.pend.findIndex(p => p.cid && p.cid === m.cid); if (pi >= 0) { const p = GC.pend.splice(pi, 1)[0]; if (p.blob) GC.blobs[m.id] = p.blob; gcSwap(p.cid, m); }
+    if (!byId.has(m.id)) { byId.set(m.id, m); added.push(m); } else byId.set(m.id, m); });
+  GC.msgs = [...byId.values()].sort((a, b) => a.id - b.id); gcSave(); return added; }
+function gcOn(d) {
+  if (d.t === "hello") { if (d.full) { const keep = new Set(d.msgs.map(m => m.id)); GC.msgs = GC.msgs.filter(m => keep.has(m.id) || m.id > (d.msgs.length ? d.msgs[d.msgs.length - 1].id : 0)); }
+    const add = gcMerge(d.msgs); GC.ready = true; if (GC.open) { if (d.full) gcRenderAll(); else add.forEach(m => gcAppend(m)); gcMarkRead(); } gcBadge(); return; }
+  if (d.t === "msg") { const add = gcMerge([d.m]); if (GC.open) { add.forEach(m => gcAppend(m)); if (document.querySelector(`.gm[data-id="${d.m.id}"]`) && d.m.mid === gMid()) gcStatus(d.m); gcMarkRead(); } gcBadge(); return; }
+  if (d.t === "more") { GC.loadingMore = false; if (!d.msgs.length) { GC.noMore = true; return; } gcMerge(d.msgs); if (GC.open) gcPrepend(d.msgs); return; }
+  if (d.t === "react") { const m = GC.msgs.find(x => x.id === d.id); if (m) { m.r = d.r; gcSave(); const el = document.querySelector(`.gm[data-id="${d.id}"] .gm-rx`); if (el) el.outerHTML = gcRx(m); } return; }
+  if (d.t === "typing" && d.mid !== gMid()) { GC.typingAt = Date.now(); GC.typingName = d.name; gcSub(); clearTimeout(GC.typingT); GC.typingT = setTimeout(gcSub, 3200); }
+}
+function gcSub() { const el = $("#gcSub"); if (!el) return; const n = Object.keys(GS.members || {}).length;
+  el.textContent = Date.now() - GC.typingAt < 3000 ? `${GC.typingName} sta scrivendo…` : GC.up ? `${n > 1 ? n + " membri · " : ""}collegato` : "connessione…"; el.classList.toggle("off", !GC.up); }
+const gcColor = id => { let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h} 70% ${matchMedia && document.documentElement.classList.contains("neo-dark") ? 70 : 38}%)`; };
+const gcTime = t => { const d = new Date(t); return pad(d.getHours()) + ":" + pad(d.getMinutes()); };
+const gcDay = t => { const d = new Date(t); const ds = dstr(d); return ds === today() ? "Oggi" : ds === dstr(new Date(Date.now() - 864e5)) ? "Ieri" : d.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }); };
+async function gcPhotoUrl(ph) { const base = await ntUrl(); return `${base}/chat/photo?code=${encodeURIComponent(S.profile.group.code)}&mid=${gMid()}&id=${encodeURIComponent(ph)}`; }
+function gcRx(m) { const R = m.r || {}; const me = gMid(); const ks = Object.keys(R).filter(k => (R[k] || []).length); return `<div class="gm-rx">${ks.map(k => `<button class="${R[k].includes(me) ? "on" : ""}" data-act="gc-react" data-id="${m.id}" data-em="${k}">${k} ${R[k].length}</button>`).join("")}</div>`; }
+let GC_BASE = "";
+function gcHtml(m, prev) {
+  const me = gMid(); const mine = m.mid === me; const day = !prev || gcDay(prev.at) !== gcDay(m.at) ? `<div class="gc-day"><span>${esc(gcDay(m.at))}</span></div>` : "";
+  if (m.sys) return day + `<div class="gm sys" data-id="${m.id}"><span>${esc(m.tx)}</span></div>`;
+  const cont = prev && !prev.sys && prev.mid === m.mid && !day && m.at - prev.at < 5 * 60000;
+  let img = ""; if (m.ph || m.blob) { const [, wh] = String(m.ph || "").split("_"); const [w, h] = (wh || m.wh || "").split("x").map(Number); const ar = w && h ? `aspect-ratio:${w}/${h}` : "aspect-ratio:4/3";
+    const src = m.blob || GC.blobs[m.id] || (GC_BASE && m.ph ? `${GC_BASE}/chat/photo?code=${encodeURIComponent(S.profile.group.code)}&mid=${me}&id=${encodeURIComponent(m.ph)}` : "");
+    img = `<img class="gm-img" loading="lazy" decoding="async" style="${ar}" src="${esc(src)}" data-act="gc-view" alt="Foto">`; }
+  return day + `<div class="gm ${mine ? "me" : ""} ${cont ? "cont" : ""} ${m.pend ? "pend" : ""}" data-id="${m.id || ""}" data-cid="${esc(m.cid || "")}">
+    ${!mine && !cont ? `<span class="gm-n" style="color:${gcColor(m.mid)}">${esc(m.name)}</span>` : ""}
+    <div class="gm-b" data-act="gc-tap">${img}${m.tx ? `<span class="gm-t">${esc(m.tx).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')}</span>` : ""}<span class="gm-s">${gcTime(m.at)}${mine ? `<i class="st">${m.pend ? "🕓" : "✓"}</i>` : ""}</span></div>
+    ${gcRx(m)}</div>`;
+}
+const gcNear = () => { const l = $("#gcList"); return !l || l.scrollHeight - l.scrollTop - l.clientHeight < 140; };
+function gcToBottom(smooth) { const l = $("#gcList"); if (!l) return; l.scrollTo({ top: l.scrollHeight, behavior: smooth && !REDUCED() ? "smooth" : "auto" }); $("#gcNew").hidden = true; }
+function gcRenderAll() { const l = $("#gcList"); if (!l) return; const all = [...GC.msgs, ...GC.pend];
+  l.innerHTML = (GC.noMore ? "" : `<div class="gc-more">${GC.msgs.length ? "" : ""}</div>`) + (all.length ? all.map((m, i) => gcHtml(m, all[i - 1])).join("") : `<div class="gc-empty">Scrivi il primo messaggio al gruppo 👋<br><small>I traguardi del gruppo compaiono anche qui.</small></div>`); requestAnimationFrame(() => gcToBottom(false)); }
+function gcAppend(m) { const l = $("#gcList"); if (!l) return; if (l.querySelector(".gc-empty")) l.innerHTML = "";
+  const near = gcNear() || m.mid === gMid(); const all = [...GC.msgs, ...GC.pend]; const i = all.indexOf(m); const prev = i > 0 ? all[i - 1] : null;
+  if (m.id && l.querySelector(`.gm[data-id="${m.id}"]`)) return; l.insertAdjacentHTML("beforeend", gcHtml(m, prev)); const el = l.lastElementChild; if (el && !REDUCED()) el.classList.add("gm-anim");
+  if (near) gcToBottom(true); else $("#gcNew").hidden = false; }
+function gcPrepend(list) { const l = $("#gcList"); if (!l) return; const h0 = l.scrollHeight, t0 = l.scrollTop; gcRenderAllKeep(); l.scrollTop = t0 + (l.scrollHeight - h0); }
+function gcRenderAllKeep() { const l = $("#gcList"); const all = [...GC.msgs, ...GC.pend]; l.innerHTML = all.map((m, i) => gcHtml(m, all[i - 1])).join(""); }
+function gcSwap(cid, m) { const el = document.querySelector(`.gm[data-cid="${CSS.escape(cid)}"]`); if (!el) return; const all = [...GC.msgs, m]; const tmp = document.createElement("div"); tmp.innerHTML = gcHtml(m, null); const nu = tmp.querySelector(".gm"); if (!nu) return;
+  if (el.classList.contains("cont")) nu.classList.add("cont"); const n = nu.querySelector(".gm-n"); if (n && el.classList.contains("cont")) n.remove(); el.replaceWith(nu); }
+function gcStatus(m) {}
+function gcMarkRead() { if (!GC.open) return; const last = gcLast(); if (last > (GC.read || 0)) { GC.read = last; gcSave(); } gcBadge(); }
+function gcWire(p) { if (!GC.ws || GC.ws.readyState !== 1) return; try { GC.ws.send(JSON.stringify({ t: "send", cid: p.cid, tx: p.tx, img: p.img || undefined, w: p.w, h: p.h })); } catch (e) {} }
+function gcSendNow(tx) {
+  tx = (tx || "").trim(); const img = GC.img; if (!tx && !img) return;
+  const p = { cid: "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), mid: gMid(), name: gName(), tx, at: Date.now(), pend: true, r: {} };
+  if (img) { p.img = img.data; p.w = img.w; p.h = img.h; p.blob = img.url; p.wh = img.w + "x" + img.h; }
+  GC.pend.push(p); GC.img = null; gcPrevUi(); gcSave(); gcAppend(p); gcWire(p); if (!GC.up) gcConnect();
+}
+async function gcPickPhoto(file) { // ridimensiono e comprimo: foto leggere, invio veloce anche con poca rete
+  try { const url = URL.createObjectURL(file); const im = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+    const max = 1600, sc = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight)); const w = Math.round(im.naturalWidth * sc), h = Math.round(im.naturalHeight * sc);
+    const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(im, 0, 0, w, h);
+    let q = 0.78, data = ""; do { data = c.toDataURL("image/jpeg", q).split(",")[1]; q -= 0.1; } while (data.length > 800000 && q > 0.3);
+    GC.img = { data, w, h, url: c.toDataURL("image/jpeg", 0.6) }; URL.revokeObjectURL(url); gcPrevUi(); const t = $("#gcIn"); if (t) t.focus();
+  } catch (e) { toast("Non riesco a leggere la foto"); }
+}
+function gcPrevUi() { const p = $("#gcPrev"); if (!p) return; if (!GC.img) { p.hidden = true; p.innerHTML = ""; return; } p.hidden = false; p.innerHTML = `<img src="${GC.img.url}" alt=""><span>Foto pronta · scrivi una didascalia o invia</span><button type="button" data-act="gc-unpick" aria-label="Togli la foto">✕</button>`; }
+async function gcOpen() {
+  if (!gOn()) return; if (GC.code !== S.profile.group.code) gcLoad(); GC_BASE = await ntUrl(); GC.open = true;
+  $("#gcTitle").textContent = S.profile.group.name || "Chat"; ovOpen("gchat"); gcRenderAll(); gcSub(); gcMarkRead(); gcConnect(); gcFit();
+  if (!GS.feed) gLoad(true);
+}
+function gcHide() { GC.open = false; ovClose("gchat"); GC.img = null; gcPrevUi(); gcBadge(); }
+function gcFit() { // con la tastiera aperta la chat resta nello spazio visibile (iPhone)
+  const el = $("#gchat"); const vv = window.visualViewport; if (!el || !vv || el.hidden) return; el.style.height = vv.height + "px"; el.style.transform = `translateY(${vv.offsetTop}px)`; if (gcNear()) gcToBottom(false);
+}
+if (window.visualViewport) { visualViewport.addEventListener("resize", () => { if (GC.open) gcFit(); }); visualViewport.addEventListener("scroll", () => { if (GC.open) gcFit(); }); }
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-act]"); if (!b) return; const a = b.dataset.act; if (!/^gc-/.test(a)) return; ev.stopPropagation();
+  if (a === "gc-open") gcOpen(); else if (a === "gc-close") gcHide(); else if (a === "gc-bottom") gcToBottom(true);
+  else if (a === "gc-cam") $("#gcCam").click(); else if (a === "gc-lib") $("#gcLib").click(); else if (a === "gc-unpick") { GC.img = null; gcPrevUi(); }
+  else if (a === "gc-view") { const v = $("#gcView"); v.querySelector("img").src = b.src; v.hidden = false; }
+  else if (a === "gc-viewclose") $("#gcView").hidden = true;
+  else if (a === "gc-tap") { const g = b.closest(".gm"); if (!g || !g.dataset.id || ev.target.closest(".gm-img,a")) return; const open = g.querySelector(".gm-pick"); document.querySelectorAll(".gm-pick").forEach(x => x.remove()); if (open) return;
+    g.insertAdjacentHTML("beforeend", `<div class="gm-pick">${["🔥", "💪", "👏", "😂", "❤️"].map(e => `<button data-act="gc-react" data-id="${g.dataset.id}" data-em="${e}">${e}</button>`).join("")}</div>`); }
+  else if (a === "gc-react") { document.querySelectorAll(".gm-pick").forEach(x => x.remove()); const id = +b.dataset.id; const m = GC.msgs.find(x => x.id === id); const me = gMid();
+    if (m) { m.r = m.r || {}; const L = m.r[b.dataset.em] = m.r[b.dataset.em] || []; const i = L.indexOf(me); if (i >= 0) L.splice(i, 1); else L.push(me); if (!L.length) delete m.r[b.dataset.em]; const el = document.querySelector(`.gm[data-id="${id}"] .gm-rx`); if (el) el.outerHTML = gcRx(m); }
+    try { GC.ws && GC.ws.readyState === 1 && GC.ws.send(JSON.stringify({ t: "react", id, em: b.dataset.em })); } catch (e) {} }
+}, true);
+document.addEventListener("submit", ev => { if (ev.target.dataset.form !== "gc-send") return; ev.preventDefault(); ev.stopPropagation(); const t = $("#gcIn"); gcSendNow(t.value); t.value = ""; t.style.height = "auto"; t.focus(); }, true);
+document.addEventListener("keydown", ev => { if (ev.target.id === "gcIn" && ev.key === "Enter" && !ev.shiftKey && !ev.isComposing && !matchMedia("(pointer:coarse)").matches) { ev.preventDefault(); ev.target.form.requestSubmit(); } });
+document.addEventListener("input", ev => { if (ev.target.id !== "gcIn") return; const t = ev.target; t.style.height = "auto"; t.style.height = Math.min(120, t.scrollHeight) + "px";
+  if (Date.now() - (GC.lastTyping || 0) > 2500 && GC.ws && GC.ws.readyState === 1) { GC.lastTyping = Date.now(); try { GC.ws.send('{"t":"typing"}'); } catch (e) {} } });
+document.addEventListener("change", ev => { if (ev.target.id === "gcCam" || ev.target.id === "gcLib") { const f = ev.target.files[0]; ev.target.value = ""; if (f) gcPickPhoto(f); } });
+document.addEventListener("scroll", ev => { const l = ev.target; if (!l || l.id !== "gcList") return; if (gcNear()) $("#gcNew").hidden = true;
+  if (l.scrollTop < 80 && !GC.loadingMore && !GC.noMore && GC.msgs.length >= 40 && GC.ws && GC.ws.readyState === 1) { GC.loadingMore = true; try { GC.ws.send(JSON.stringify({ t: "more", before: GC.msgs[0].id })); } catch (e) { GC.loadingMore = false; } } }, true);
+document.addEventListener("visibilitychange", () => { if (document.hidden) gcClose(); else if (gOn()) setTimeout(gcConnect, 300); });
 function groupCard() {
   if (IN_CLAUDE) return "";
   const head = `<summary>👥 Gruppo ${gOn() ? `<span class="small muted" style="font-weight:500;margin-left:auto">${esc(S.profile.group.name || "")}</span>` : `<span class="small muted" style="font-weight:500;margin-left:auto">con gli amici</span>`}</summary>`;
@@ -2650,6 +2816,7 @@ function groupCard() {
       <div class="gf-r">${["🔥", "💪", "👏"].map(em => { const L = (f.r || {})[em] || []; return `<button class="gr ${L.includes(me) ? "on" : ""}" data-act="g-react" data-e="${esc(f.id)}" data-em="${em}">${em}${L.length ? " " + L.length : ""}</button>`; }).join("")}</div></div></div>`; }).join("") || `<span class="small muted">I traguardi del gruppo compariranno qui.</span>`;
   const notifOn = !!((S.profile.user || {}).notif || {}).on;
   return `<details class="card gcard" data-pnl="grp" ${pnlOpen("grp")}>${head}<div class="stack" style="margin-top:10px;gap:12px">
+    <button class="btn gc-entry" data-act="gc-open">💬 Apri la chat del gruppo${gcUnread() ? ` <span class="gc-n">${gcUnread()}</span>` : ""}</button>
     <div class="row between"><span class="small">Codice: <b class="gcode">${esc(G.code)}</b> · ${Object.keys(GS.members || {}).length || 1} ${Object.keys(GS.members || {}).length === 1 ? "persona" : "persone"}</span><button class="btn ghost sm" data-act="g-invite">📨 Invita</button></div>
     <div><span class="eyebrow">Classifica della settimana</span><div class="gboard">${board}</div></div>
     <div><div class="row between"><span class="eyebrow">Bacheca</span><button class="btn ghost sm" data-act="g-refresh" ${GS.busy ? "disabled" : ""}>${GS.busy ? '<span class="spin"></span>' : "↻"}</button></div><div class="gfeed">${GS.feed == null ? `<span class="small muted"><span class="spin"></span> Carico la bacheca…</span>` : feed}</div></div>
@@ -2658,6 +2825,7 @@ function groupCard() {
       <span class="small muted">Sempre condivisi: allenamenti fatti, settimana completata, record, giorni di fila, classifica. Mai: pasti e calorie.</span>
       ${[["weight", "⚖️ Kg persi o presi (solo la variazione, non il peso)"], ["measures", "📏 Variazione delle misure (ogni 2 cm)"], ["bf", "📉 Variazione della massa grassa"]].map(([k, lb]) => `<label class="gtog"><input type="checkbox" data-gshare="${k}" ${sh[k] ? "checked" : ""}> ${lb}</label>`).join("")}
       <label class="gtog"><input type="checkbox" data-gnotify="1" ${G.notify ? "checked" : ""} ${notifOn ? "" : "disabled"}> 🔔 Notificami quando un amico raggiunge un traguardo</label>
+      <label class="gtog"><input type="checkbox" data-gchatn="1" ${G.chatNotify ? "checked" : ""} ${notifOn ? "" : "disabled"}> 💬 Notificami i nuovi messaggi della chat</label>
       ${notifOn ? "" : `<span class="small muted">Per le notifiche del gruppo attiva prima le notifiche in Piano → Notifiche.</span>`}
       <button class="btn ghost sm danger" data-act="g-leave" style="align-self:flex-start">Esci dal gruppo</button></div></details>
   </div></details>`;
@@ -3250,6 +3418,7 @@ document.addEventListener("input", ev => {
 document.addEventListener("change", ev => {
   const el = ev.target; const P = plan();
   if (el.dataset && el.dataset.gshare) { S.profile.gshare = { ...gShare(), [el.dataset.gshare]: el.checked }; store.saveProfile(); if (el.checked) { const G = S.profile.group; const { ev } = gEvents(); const pre = el.dataset.gshare === "weight" ? "wt:" : el.dataset.gshare === "measures" ? "ms:" : "bf:"; G.posted = [...(G.posted || []), ...ev.filter(e => e.k.startsWith(pre)).map(e => e.k)]; store.saveProfile(); } return; }
+  if (el.dataset && el.dataset.gchatn) { const G = S.profile.group; G.chatNotify = el.checked; store.saveProfile(); const n = (S.profile.user || {}).notif || {}; gApi("/g/me", { chat: el.checked, nid: n.id }).then(() => toast(el.checked ? "💬 Ti avviso dei nuovi messaggi (non mentre hai la chat aperta)" : "Notifiche della chat spente")).catch(() => toast("Server non raggiungibile, riprova")); return; }
   if (el.dataset && el.dataset.gnotify) { const G = S.profile.group; G.notify = el.checked; store.saveProfile(); const n = (S.profile.user || {}).notif || {}; gApi("/g/me", { notify: el.checked, nid: n.id }).then(() => toast(el.checked ? "🔔 Ti avviso quando un amico raggiunge un traguardo" : "Notifiche del gruppo spente")).catch(() => toast("Server non raggiungibile, riprova")); return; }
   if (el.dataset && el.dataset.mf) { const f = (S.profile.foods || []).find(x => x.id === el.dataset.mf); if (!f) return; const k = el.dataset.k; const v = el.value.trim();
     if (k === "name") { if (v) f.name = v.slice(0, 80); }
@@ -3455,7 +3624,7 @@ document.addEventListener("click", ev => {
     case "g-refresh": gScan(true); gLoad(true); return;
     case "g-invite": { const G = S.profile.group; const txt = `Entra nel mio gruppo "${G.name}" su Carico 💪\n1) Apri https://filippop-1995.github.io/carico/ e aggiungila alla Home\n2) Progressi → Gruppo → codice ${G.code}`;
       if (navigator.share) navigator.share({ text: txt }).catch(() => {}); else { try { navigator.clipboard.writeText(txt); toast("Invito copiato: incollalo su WhatsApp"); } catch (e) { toast("Codice del gruppo: " + G.code, 5000); } } return; }
-    case "g-leave": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per uscire"; return; } const code = S.profile.group.code; gApi("/g/leave", {}).catch(() => {}); delete S.profile.group; GS.feed = null; GS.board = {}; store.saveProfile(); render(); toast("Sei uscito dal gruppo " + code); return; }
+    case "g-leave": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per uscire"; return; } const code = S.profile.group.code; gApi("/g/leave", {}).catch(() => {}); try { gcClose(); lsSet(gcKey(), "{}"); } catch (e) {} delete S.profile.group; GS.feed = null; GS.board = {}; store.saveProfile(); render(); toast("Sei uscito dal gruppo " + code); return; }
     case "xa-repedit": S.repDraft = null; S.repEdit = S.repEdit === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); setTimeout(() => { const i = document.querySelector(".re-in"); if (i) { i.focus(); i.select(); } }, 40); return;
     case "xa-repall": { const f = b.closest("form"); const ins = f ? [...f.querySelectorAll(".re-in")] : []; if (ins.length) { S.repDraft = S.repDraft || {}; ins.forEach((i, k) => { i.value = ins[0].value; S.repDraft[k] = ins[0].value; }); } return; }
     case "xa-repclose": S.repEdit = null; S.repDraft = null; if (!$("#live").hidden) renderLive(); else render(); return;
@@ -3701,7 +3870,7 @@ function applyPending() {
 
 /* ---------- overlay a tutto schermo ---------- */
 function ovOpen(id) { $("#" + id).hidden = false; $("#fab").hidden = true; document.body.style.overflow = "hidden"; }
-function ovClose(id) { $("#" + id).hidden = true; if (["live", "scan", "shop", "coach", "onb", "hkg"].every(x => $("#" + x).hidden)) { $("#fab").hidden = false; document.body.style.overflow = ""; } }
+function ovClose(id) { $("#" + id).hidden = true; if (["live", "scan", "shop", "coach", "onb", "hkg", "gchat"].every(x => $("#" + x).hidden)) { $("#fab").hidden = false; document.body.style.overflow = ""; } }
 
 /* ---------- mappa dei muscoli ---------- */
 const MNAMES = { pettorali: "Pettorali", delt_a: "Deltoidi anteriori", delt_l: "Deltoidi laterali", delt_p: "Deltoidi posteriori", bicipiti: "Bicipiti", tricipiti: "Tricipiti", avambracci: "Avambracci", addominali: "Addominali", dorsali: "Dorsali", trapezio: "Trapezio", lombari: "Lombari", glutei: "Glutei", quadricipiti: "Quadricipiti", femorali: "Femorali", polpacci: "Polpacci", adduttori: "Adduttori" };
@@ -5285,7 +5454,7 @@ document.addEventListener("change", ev => {
   store.saveProfile();
 }, true);
 if (ntSupported()) {
-  navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.go && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(e.data.go)) go(e.data.go); });
+  navigator.serviceWorker.addEventListener("message", e => { if (e.data && e.data.go === "chat") { gcOpen(); return; } if (e.data && e.data.go && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(e.data.go)) go(e.data.go); });
 }
 
 /* ---------- avvio ---------- */
@@ -5296,7 +5465,7 @@ if (ntSupported()) {
   S.homeEnter = true; render();
   showOnboarding();
   try { const inv = new URLSearchParams(location.search).get("invito"); if (inv && inv.length >= 4) { lsSet("carico.code", inv); setTimeout(() => toast("Codice invito salvato: il coach è attivo 🤝", 4000), 800); } } catch (e) {}
-  try { const q = new URLSearchParams(location.search).get("go"); if (q && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(q)) { go(q); history.replaceState(null, "", location.pathname); } } catch (e) {}
+  try { const q = new URLSearchParams(location.search).get("go"); if (q === "chat") { setTimeout(gcOpen, 600); history.replaceState(null, "", location.pathname); } else if (q && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(q)) { go(q); history.replaceState(null, "", location.pathname); } } catch (e) {}
   if (((S.profile.user || {}).notif || {}).on && ntSupported()) { navigator.serviceWorker.register("./sw.js").catch(() => {}); pushSync(); setTimeout(() => ntAiRefresh(false), 6000); }
   document.addEventListener("visibilitychange", () => { if (!document.hidden) { pushSync(); setTimeout(() => ntAiRefresh(false), 4000); } });
   if (IN_CLAUDE) {

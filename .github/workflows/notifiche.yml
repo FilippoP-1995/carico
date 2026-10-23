@@ -42,6 +42,12 @@ jobs:
           [[kv_namespaces]]
           binding = "KV"
           id = "$ID"
+          [[durable_objects.bindings]]
+          name = "CHAT"
+          class_name = "ChatRoom"
+          [[migrations]]
+          tag = "v1"
+          new_sqlite_classes = ["ChatRoom"]
           TOML
           sed -i 's/^ *//' wrangler.toml
       - name: Pubblica
