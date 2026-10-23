@@ -798,6 +798,44 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .lv-startbar{display:flex;gap:8px;margin:0 0 10px}
 .lv-sb-back{flex:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;border-radius:14px;padding:12px 14px;font:inherit;font-weight:700}
 .lv-sb-go{flex:1;border:0;border-radius:14px;padding:12px;font:inherit;font-weight:800;font-size:16px;color:#06281a;background:linear-gradient(135deg,#4fd296,#8be8bd);box-shadow:0 10px 26px -12px rgba(79,210,150,.8)}
+/* modalità allenamento compatta: "Serie fatta" visibile senza scorrere */
+.lv-in{gap:8px}
+.lv-body .mmw{grid-template-columns:70px 1fr;gap:12px;align-items:start}
+.lv-body .mmw .mml{font-size:12.5px;gap:1px}
+.lv-note.in{margin-top:6px;font-size:12.5px;padding:7px 9px;grid-column:1/-1;background:rgba(255,255,255,.07)!important;color:var(--hero-ink)!important;border:0}
+.lv-body .mmw .mml{display:grid;grid-template-columns:auto 1fr;column-gap:8px;row-gap:3px;align-items:baseline}
+.lv-body .mmw .mmk{font-size:10.5px}
+.lv-lastsess{font-size:12px!important;padding:7px 10px!important;line-height:1.35}
+.lv-tools .lv-meta{flex-basis:100%}
+.lv-sets{align-items:center}
+.lv-sets .lv-copy{margin:0;align-self:center}
+.lv-ex .lv-k{font-size:10.5px}
+#live .lv-ex h1{font-size:26px;margin:2px 0}
+#live .lv-set b{font-size:18px}
+.lv-set{line-height:1.1}
+.lv-step button{height:36px;width:34px}
+.lv-go{min-height:54px}
+.lv-pill{padding:6px 11px}
+.lv-x{width:38px;height:38px}
+.lv-step{padding:5px 8px}
+.lv-body{gap:8px}
+.lv-ex h1{font-size:30px;margin:2px 0 2px}
+.lv-ex .xa-was{margin-top:0}
+.lv-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:6px}
+.lv-tools .xa-btn.dark{margin:0;padding:5px 11px;font-size:12.5px}
+.lv-tools>*{margin:0!important}
+.lv-body .mmw{grid-template-columns:92px 1fr;gap:12px}
+.lv-body .mmw .mml{font-size:13px;gap:2px}
+.lv-body .mm text{display:none}
+.lv-note{font-size:13px;padding:8px 10px;line-height:1.35}
+.lv-set{font-size:14px}.lv-set b{font-size:20px}
+.lv-last{font-size:12.5px;margin-top:-6px}
+.lv-step{padding:6px 8px;gap:2px;border-radius:14px}
+.lv-step button{height:38px}
+.lv-step input{font-size:clamp(24px,7.5vw,34px)}
+.lv-s{height:36px;min-width:46px}
+.lv-copy{padding:6px 10px!important;font-size:12.5px!important}
+.lv-go{min-height:56px}
 .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mtile{background:var(--surface-2);border-radius:12px;padding:9px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .mtile .num{font-size:21px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -936,7 +974,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.6 · 23 ottobre";
+const APP_VERSION = "11.7 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3346,12 +3384,12 @@ function muscleSvg(mu, cls = "") { // sagoma anatomica fronte/retro
   return `<svg class="mm ${cls}" viewBox="-30 -20 2260 2330" role="img" aria-label="Muscoli coinvolti">${fig(MM_A, 0)}${fig(MM_P, 1200)}
     <text x="500" y="2300" text-anchor="middle">fronte</text><text x="1700" y="2300" text-anchor="middle">retro</text></svg>`;
 }
-function muscleBlock(ex, dark) {
+function muscleBlock(ex, dark, extra = "") {
   const mu = exMuscles(ex);
-  if (!mu) return `<div class="mmw ${dark ? "dark" : ""}">${muscleSvg(null, dark ? "dark" : "")}<div class="mml"><span class="small">Muscoli in arrivo…</span></div></div>`;
+  if (!mu) return `<div class="mmw ${dark ? "dark" : ""}">${muscleSvg(null, dark ? "dark" : "")}<div class="mml"><span class="small">Muscoli in arrivo…</span>${extra}</div></div>`;
   return `<div class="mmw ${dark ? "dark" : ""}">${muscleSvg(mu, dark ? "dark" : "")}<div class="mml">
     <span class="mmk"><i class="dot p"></i>Principali</span><span>${mu.p.map(k => MNAMES[k]).join(", ")}</span>
-    ${mu.s.length ? `<span class="mmk"><i class="dot s"></i>Secondari</span><span>${mu.s.map(k => MNAMES[k]).join(", ")}</span>` : ""}</div></div>`;
+    ${mu.s.length ? `<span class="mmk"><i class="dot s"></i>Secondari</span><span>${mu.s.map(k => MNAMES[k]).join(", ")}</span>` : ""}${extra}</div></div>`;
 }
 let tagging = false;
 async function tagMuscles() { // esercizi con nomi non riconosciuti: chiedo all'AI una volta sola
@@ -3524,10 +3562,8 @@ function renderLive() {
     const last = lastPerformance(xn(ex), S.date);
     const t = repTargets(ex.reps, n)[LV.setIdx];
     body = `<div class="lv-ex"><span class="lv-k">Esercizio ${LV.exIdx + 1} di ${exs.length}</span><h1>${esc(xn(ex))}</h1>${xn(ex) !== ex.name ? `<div class="xa-was">al posto di ${esc(ex.name)}</div>` : ""}
-        <button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${altPicker(ex, true)}
-        <div class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · recupero " + esc(ex.rest) + " s" : ""}${ex.load ? " · " + esc(ex.load) : ""}</div>${noteBox(ex.id, true)}</div>
-      ${muscleBlock(exView(ex), true)}
-      ${ex.notes ? `<div class="lv-note">${esc(ex.notes)}</div>` : ""}
+        <div class="lv-tools"><span class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · rec. " + esc(ex.rest) + " s" : ""}${ex.load ? " · " + esc(ex.load) : ""}</span><button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${noteBox(ex.id, true)}</div>${altPicker(ex, true)}</div>
+      ${muscleBlock(exView(ex), true, ex.notes ? `<div class="lv-note in">${esc(ex.notes)}</div>` : "")}
       <div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span>${t ? `<span>obiettivo <b>${esc(t)}</b> rip.</span>` : ""}</div>
       ${last ? `<div class="lv-last">Ultima volta: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${esc(feelHint(last))}</div>` : ""}
       ${exDone(l, ex) >= n && LV.feelEx !== ex.id ? feelRow(ex.id, true) : ""}
@@ -3535,8 +3571,7 @@ function renderLive() {
         <div class="lv-step"><span>kg</span><div><button data-act="lv-adj" data-f="kg" data-d="-2.5" aria-label="Meno 2,5 kg">−</button><input id="lvKg" inputmode="decimal" value="${esc(fmtN(num(LV.kg)))}" aria-label="Chili"><button data-act="lv-adj" data-f="kg" data-d="2.5" aria-label="Più 2,5 kg">+</button></div></div>
         <div class="lv-step"><span>ripetizioni</span><div><button data-act="lv-adj" data-f="reps" data-d="-1" aria-label="Una ripetizione in meno">−</button><input id="lvReps" inputmode="numeric" value="${esc(LV.reps)}" aria-label="Ripetizioni"><button data-act="lv-adj" data-f="reps" data-d="1" aria-label="Una ripetizione in più">+</button></div></div>
       </div>
-      <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}</div>
-      ${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte le serie</button>` : ""}
+      <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte</button>` : ""}</div>
       <button class="lv-go" data-act="lv-done">✓ Serie fatta</button>
       <div class="lv-row"><button class="lv-btn" data-act="lv-prev" ${LV.exIdx ? "" : "disabled"}>← Precedente</button><button class="lv-btn" data-act="lv-next" ${LV.exIdx < exs.length - 1 ? "" : "disabled"}>Prossimo →</button></div>`;
   }
