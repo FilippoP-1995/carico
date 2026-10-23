@@ -909,6 +909,27 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 @keyframes fxRingGlow{0%,100%{filter:none;transform:none}40%{filter:drop-shadow(0 0 14px var(--hero-g));transform:scale(1.07)}}
 .badge-main.fx-pop{animation:fxPop .6s cubic-bezier(.2,1.6,.4,1)}
 @media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none!important}.fx-pr{display:none}}
+
+/* gruppo */
+.gcard summary{display:flex;align-items:center;gap:8px;font-weight:800}
+.gcode{font-family:var(--f-display);letter-spacing:.12em;font-size:16px;color:var(--accent)}
+.gboard{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.gb-r{display:grid;grid-template-columns:26px minmax(0,1fr) 70px 34px auto;align-items:center;gap:8px;font-size:14px;padding:6px 8px;border-radius:10px;background:var(--surface-2)}
+.gb-r.me{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.gb-r b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gb-p{text-align:center}.gb-n{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}.gb-s{font-size:12px;white-space:nowrap}
+.gb-bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}.gb-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--p1),var(--p3));border-radius:3px}
+.gfeed{display:flex;flex-direction:column;gap:8px;margin-top:6px;max-height:420px;overflow:auto}
+.gf{display:flex;gap:10px;padding:8px 10px;border-radius:12px;background:var(--surface-2)}
+.gf.me{background:var(--accent-soft)}
+.gf-ic{font-size:22px;line-height:1.2}
+.gf-b{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;font-size:14px}
+.gf-b small{color:var(--muted);font-size:11.5px}
+.gf-r{display:flex;gap:6px;margin-top:2px}
+.gr{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 9px;font-size:13px;font-weight:700;color:var(--ink)}
+.gr.on{border-color:var(--accent);background:var(--accent-soft)}
+.gtog{display:flex;align-items:flex-start;gap:8px;font-size:13.5px}
+.gtog input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
 /* esercizi saltati */
 .lv-pill.sk{text-decoration:line-through;opacity:.55}
 .lv-start .st-x.sk{opacity:.55}
@@ -1070,7 +1091,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "13.2 · 23 ottobre";
+const APP_VERSION = "13.3 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1802,6 +1823,7 @@ function fxExtras(v) { fxRun(() => { // dopo almeno 1 ora: piccoli effetti sui t
   const st = hs.querySelector(".streak"); if (st) setTimeout(() => fxClass(st, "fx-flare", 1600), 250);
   const bm = hs.querySelector(".badge-main"); if (bm && /fatto/.test(bm.textContent)) fxClass(bm, "fx-pop", 700);
 }); }
+setTimeout(() => { try { gScan(true); } catch (e) {} }, 8000);
 fxSeen(true, true); // apertura a freddo dell'app
 function fxAfterRender(v) { fxRun(() => {
   if (FX.intro && S.tab === "oggi") { const full = FX.introFull; FX.intro = null; if (full) setTimeout(() => fxExtras($("#view")), 1100); }
@@ -2558,6 +2580,76 @@ function lineChart(points, unit) {
   </svg>`;
 }
 
+/* ---------- gruppo di amici: traguardi condivisi in automatico, reazioni, classifica settimanale ---------- */
+const GS = { feed: null, board: {}, members: {}, at: 0, busy: false, err: null, scanAt: 0, statSig: "" };
+const gOn = () => !!(S.profile.group && S.profile.group.code);
+const gShare = () => ({ weight: false, measures: false, bf: false, ...(S.profile.gshare || {}) });
+function gMid() { if (!S.profile.gid) { S.profile.gid = Array.from(crypto.getRandomValues(new Uint8Array(8)), b => (b % 36).toString(36)).join("") + Date.now().toString(36).slice(-4); store.saveProfile(); } return S.profile.gid; }
+const gName = () => (S.profile.user || {}).name ? String(S.profile.user.name).trim().slice(0, 30) : "Amico";
+async function gApi(path, body = {}) { return ntPost(path, { mid: gMid(), name: gName(), code: gOn() ? S.profile.group.code : undefined, ...body }); }
+function gEvents() { // traguardi calcolati dai dati: chiave unica, icona, testo
+  const ev = []; const t = today(); const sess = sessionDates();
+  const lim = new Date(); lim.setDate(lim.getDate() - 3); const L3 = dstr(lim);
+  sess.filter(d => d >= L3).forEach(d => sessionsOn(d).filter(x => x.finished).forEach(x => ev.push({ k: `s:${d}:${x.day.id}`, ic: "💪", tx: `ha completato ${x.day.name}${x.sets ? ` (${x.sets} serie)` : ""}` })));
+  const ws = dstr(weekStart(t)); const weN = sess.filter(d => d >= ws && d <= t).length; const tg = weekTarget(t);
+  if (tg > 0 && weN >= tg) ev.push({ k: `w:${ws}`, ic: "🏆", tx: `ha completato la settimana: ${weN}/${tg} allenamenti` });
+  const best = {}; sess.forEach(d => { const ex = exOf(d); for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(z => z && z.done).map(z => num(z.kg) || 0)); if (!top) continue; const key = norm(ex[k].name);
+    if (best[key] != null && top > best[key] && d >= L3) ev.push({ k: `pr:${key}:${top}`, ic: "🏆", tx: `nuovo record su ${ex[k].name}: ${fmtN(top)} kg` }); best[key] = Math.max(best[key] || 0, top); } });
+  let streak = 0; { const cur = parseD(t); if (!dayHasActivity(t)) cur.setDate(cur.getDate() - 1); while (dayHasActivity(dstr(cur))) { streak++; cur.setDate(cur.getDate() - 1); }
+    const start = dstr(new Date(cur.getTime() + 864e5)); [7, 14, 21, 30, 50, 75, 100, 150, 200, 365].filter(m => streak >= m).slice(-1).forEach(m => ev.push({ k: `st:${m}:${start}`, ic: "🔥", tx: `${m} giorni di fila!` })); }
+  const sh = gShare();
+  if (sh.weight) { const W = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1); if (W.length > 1) { const dl = W[W.length - 1].kg - W[0].kg; const m = Math.trunc(dl); if (Math.abs(m) >= 1) ev.push({ k: `wt:${m}`, ic: "⚖️", tx: `${m < 0 ? "−" : "+"}${Math.abs(m)} kg dall'inizio` }); } }
+  if (sh.measures) { const M = measures(); if (M.length > 1) MEAS.forEach(([k, lb]) => { const P = M.filter(x => num(x[k])); if (P.length < 2) return; const dl = num(P[P.length - 1][k]) - num(P[0][k]); const m = Math.trunc(dl / 2) * 2; if (Math.abs(m) >= 2) ev.push({ k: `ms:${k}:${m}`, ic: "📏", tx: `${m < 0 ? "−" : "+"}${Math.abs(m)} cm di ${lb.toLowerCase()} dall'inizio` }); }); }
+  if (sh.bf) { try { const b = bfSeries(); if (b.pts.length > 1) { const dl = b.pts[b.pts.length - 1].v - b.pts[0].v; const m = Math.trunc(dl); if (Math.abs(m) >= 1) ev.push({ k: `bf:${m}`, ic: "📉", tx: `${m < 0 ? "−" : "+"}${Math.abs(m)}% di massa grassa dall'inizio` }); } } catch (e) {} }
+  return { ev, stats: { n: weN, t: tg, streak, pr: ev.filter(e => e.k.startsWith("pr:")).length } };
+}
+async function gScan(force) { // pubblica i traguardi nuovi e le statistiche della settimana
+  if (!gOn() || !ntSupported && !force) return; if (!force && Date.now() - GS.scanAt < 20000) return; GS.scanAt = Date.now();
+  try {
+    const { ev, stats } = gEvents(); const G = S.profile.group; G.posted = G.posted || [];
+    if (!G.init) { G.posted = ev.map(e => e.k); G.init = true; store.saveProfile(); } // all'ingresso non pubblico lo storico
+    const nu = ev.filter(e => !G.posted.includes(e.k));
+    if (nu.length) { await gApi("/g/post", { evs: nu.slice(0, 10) }); G.posted = [...G.posted, ...nu.map(e => e.k)].slice(-400); store.saveProfile(); }
+    const sig = dstr(weekStart(today())) + JSON.stringify(stats);
+    if (sig !== GS.statSig) { await gApi("/g/stats", { week: dstr(weekStart(today())), stats }); GS.statSig = sig; }
+    if (nu.length && S.tab === "progressi") gLoad(true);
+  } catch (e) {}
+}
+async function gLoad(force) {
+  if (!gOn() || GS.busy || (!force && Date.now() - GS.at < 45000)) return; GS.busy = true;
+  try { const r = await gApi("/g/feed", { week: dstr(weekStart(today())) }); GS.feed = r.feed || []; GS.board = r.board || {}; GS.members = (r.group || {}).members || {}; if (r.group && r.group.name) S.profile.group.name = r.group.name; GS.err = null; GS.at = Date.now(); }
+  catch (e) { GS.err = e && e.code === "not_member" ? "Non fai più parte del gruppo." : e && e.code === "no_group" ? "Il gruppo non esiste più." : "Non riesco a caricare il gruppo, riprova tra poco."; }
+  GS.busy = false; if (S.tab === "progressi") render();
+}
+const ago = t => { const m = Math.round((Date.now() - t) / 60000); return m < 1 ? "ora" : m < 60 ? m + " min fa" : m < 1440 ? Math.round(m / 60) + " h fa" : Math.round(m / 1440) + " g fa"; };
+function groupCard() {
+  if (IN_CLAUDE) return "";
+  const head = `<summary>👥 Gruppo ${gOn() ? `<span class="small muted" style="font-weight:500;margin-left:auto">${esc(S.profile.group.name || "")}</span>` : `<span class="small muted" style="font-weight:500;margin-left:auto">con gli amici</span>`}</summary>`;
+  if (!gOn()) return `<details class="card gcard" data-pnl="grp" ${pnlOpen("grp")}>${head}<div class="stack" style="margin-top:10px;gap:10px">
+      <span class="small muted">Condividete in automatico allenamenti fatti, settimane completate, record e giorni di fila (e, solo se lo attivi tu, kg persi, misure e massa grassa). Classifica della settimana e reazioni. I pasti restano privati.</span>
+      <form class="row" data-form="g-join" style="gap:8px"><input class="in" id="gCode" placeholder="Codice del gruppo" autocapitalize="characters" maxlength="6" style="flex:1;text-transform:uppercase"><button class="btn sm">Entra</button></form>
+      <form class="row" data-form="g-create" style="gap:8px"><input class="in" id="gNameIn" placeholder="Nome del nuovo gruppo" maxlength="40" style="flex:1"><button class="btn sm acc">Crea</button></form>
+      ${GS.err ? `<span class="small" style="color:var(--danger)">${esc(GS.err)}</span>` : ""}${GS.busy ? `<span class="small muted"><span class="spin"></span> Un attimo…</span>` : ""}
+      ${!gName() || gName() === "Amico" ? `<span class="small muted">Imposta il tuo nome in Piano → Il tuo profilo, così gli amici ti riconoscono.</span>` : ""}</div></details>`;
+  const me = gMid(); const sh = gShare(); const G = S.profile.group;
+  const rows = Object.entries(GS.board || {}).map(([id, x]) => ({ id, ...x, pct: x.t ? x.n / x.t : 0 })).sort((a, b) => b.pct - a.pct || b.n - a.n || b.streak - a.streak);
+  const board = rows.length ? rows.map((r, i) => `<div class="gb-r ${r.id === me ? "me" : ""}"><span class="gb-p">${["🥇", "🥈", "🥉"][i] || i + 1}</span><b>${esc(r.name)}${r.id === me ? " (tu)" : ""}</b><span class="gb-bar"><i style="width:${Math.min(100, r.pct * 100)}%"></i></span><span class="gb-n">${r.n}/${r.t || "–"}</span><span class="gb-s">${r.streak ? "🔥" + r.streak : ""}${r.pr ? " 🏆" + r.pr : ""}</span></div>`).join("") : `<span class="small muted">Ancora nessun dato questa settimana.</span>`;
+  const feed = (GS.feed || []).map(f => { const mine = f.mid === me; return `<div class="gf ${mine ? "me" : ""}"><span class="gf-ic">${esc(f.ic)}</span><div class="gf-b"><span><b>${esc(mine ? "Tu" : f.name)}</b> ${esc(f.tx)}</span><small>${ago(f.at)}</small>
+      <div class="gf-r">${["🔥", "💪", "👏"].map(em => { const L = (f.r || {})[em] || []; return `<button class="gr ${L.includes(me) ? "on" : ""}" data-act="g-react" data-e="${esc(f.id)}" data-em="${em}">${em}${L.length ? " " + L.length : ""}</button>`; }).join("")}</div></div></div>`; }).join("") || `<span class="small muted">I traguardi del gruppo compariranno qui.</span>`;
+  const notifOn = !!((S.profile.user || {}).notif || {}).on;
+  return `<details class="card gcard" data-pnl="grp" ${pnlOpen("grp")}>${head}<div class="stack" style="margin-top:10px;gap:12px">
+    <div class="row between"><span class="small">Codice: <b class="gcode">${esc(G.code)}</b> · ${Object.keys(GS.members || {}).length || 1} ${Object.keys(GS.members || {}).length === 1 ? "persona" : "persone"}</span><button class="btn ghost sm" data-act="g-invite">📨 Invita</button></div>
+    <div><span class="eyebrow">Classifica della settimana</span><div class="gboard">${board}</div></div>
+    <div><div class="row between"><span class="eyebrow">Bacheca</span><button class="btn ghost sm" data-act="g-refresh" ${GS.busy ? "disabled" : ""}>${GS.busy ? '<span class="spin"></span>' : "↻"}</button></div><div class="gfeed">${GS.feed == null ? `<span class="small muted"><span class="spin"></span> Carico la bacheca…</span>` : feed}</div></div>
+    ${GS.err ? `<span class="small" style="color:var(--danger)">${esc(GS.err)}</span>` : ""}
+    <details class="gset"><summary class="small" style="font-weight:700">⚙️ Cosa condivido e notifiche</summary><div class="stack" style="gap:8px;margin-top:8px">
+      <span class="small muted">Sempre condivisi: allenamenti fatti, settimana completata, record, giorni di fila, classifica. Mai: pasti e calorie.</span>
+      ${[["weight", "⚖️ Kg persi o presi (solo la variazione, non il peso)"], ["measures", "📏 Variazione delle misure (ogni 2 cm)"], ["bf", "📉 Variazione della massa grassa"]].map(([k, lb]) => `<label class="gtog"><input type="checkbox" data-gshare="${k}" ${sh[k] ? "checked" : ""}> ${lb}</label>`).join("")}
+      <label class="gtog"><input type="checkbox" data-gnotify="1" ${G.notify ? "checked" : ""} ${notifOn ? "" : "disabled"}> 🔔 Notificami quando un amico raggiunge un traguardo</label>
+      ${notifOn ? "" : `<span class="small muted">Per le notifiche del gruppo attiva prima le notifiche in Piano → Notifiche.</span>`}
+      <button class="btn ghost sm danger" data-act="g-leave" style="align-self:flex-start">Esci dal gruppo</button></div></details>
+  </div></details>`;
+}
 function vProgressi() {
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
   const wpts = ws.slice(-30).map(w => ({ y: w.kg, l: fmtDay(w.d, { day: "numeric", month: "short" }) }));
@@ -2572,7 +2664,8 @@ function vProgressi() {
   if (!S.progEx || !exMap[S.progEx]) S.progEx = exKeys[0] || null;
   const ex = S.progEx && exMap[S.progEx];
   const recent = sess.slice().reverse().slice(0, 8);
-  return `<h2>Progressi</h2><div class="stack prog-v">
+  if (gOn()) { setTimeout(() => { gLoad(false); gScan(false); }, 50); }
+  return `<h2>Progressi</h2>${groupCard()}<div class="stack prog-v">
     <div class="card stack">
       <div class="row between"><span class="eyebrow">Peso corporeo</span>${ws.length ? `<span class="num" style="font-size:22px">${fmtN(ws[ws.length - 1].kg)} kg</span>` : ""}</div>
       ${delta != null ? `<span class="small muted">${delta > 0 ? "+" : ""}${fmtN(delta)} kg dal ${esc(fmtDay(ws[0].d, { day: "numeric", month: "long" }))}</span>` : ""}
@@ -2604,6 +2697,7 @@ function vProgressi() {
 
 const PANELS = new Set((() => { try { return JSON.parse(lsGet("carico.panels") || "[]"); } catch (e) { return []; } })());
 const pnlOpen = k => PANELS.has(k) ? "open" : "";
+try { if (!lsGet("carico.grpInit")) { PANELS.add("grp"); lsSet("carico.grpInit", "1"); lsSet("carico.panels", JSON.stringify([...PANELS])); } } catch (e) {}
 document.addEventListener("toggle", ev => { const d = ev.target; if (!d.dataset || !d.dataset.pnl) return; if (d.open) PANELS.add(d.dataset.pnl); else PANELS.delete(d.dataset.pnl); lsSet("carico.panels", JSON.stringify([...PANELS])); }, true);
 function replaceBox(p) {
   const what = [p.workout && wDays().length ? "la scheda di allenamento" : "", p.diet && variants().length ? "il piano alimentare" : ""].filter(Boolean).join(" e ");
@@ -3143,6 +3237,8 @@ document.addEventListener("input", ev => {
 });
 document.addEventListener("change", ev => {
   const el = ev.target; const P = plan();
+  if (el.dataset && el.dataset.gshare) { S.profile.gshare = { ...gShare(), [el.dataset.gshare]: el.checked }; store.saveProfile(); if (el.checked) { const G = S.profile.group; const { ev } = gEvents(); const pre = el.dataset.gshare === "weight" ? "wt:" : el.dataset.gshare === "measures" ? "ms:" : "bf:"; G.posted = [...(G.posted || []), ...ev.filter(e => e.k.startsWith(pre)).map(e => e.k)]; store.saveProfile(); } return; }
+  if (el.dataset && el.dataset.gnotify) { const G = S.profile.group; G.notify = el.checked; store.saveProfile(); const n = (S.profile.user || {}).notif || {}; gApi("/g/me", { notify: el.checked, nid: n.id }).then(() => toast(el.checked ? "🔔 Ti avviso quando un amico raggiunge un traguardo" : "Notifiche del gruppo spente")).catch(() => toast("Server non raggiungibile, riprova")); return; }
   if (el.dataset && el.dataset.mf) { const f = (S.profile.foods || []).find(x => x.id === el.dataset.mf); if (!f) return; const k = el.dataset.k; const v = el.value.trim();
     if (k === "name") { if (v) f.name = v.slice(0, 80); }
     else if (k === "un" || k === "ug") { const n = k === "un" ? v : ((f.unit && f.unit.n) || "porzione"); const g = k === "ug" ? num(v) : (f.unit && f.unit.g); if (n && g) f.unit = { n: n.slice(0, 30), g }; else if (!v) delete f.unit; }
@@ -3188,6 +3284,14 @@ document.addEventListener("submit", ev => {
     ws.sort((a, b) => a.d < b.d ? -1 : 1); if (ws.length > 730) ws.splice(0, ws.length - 730);
     store.saveProfile(); toast(wd === today() ? "Peso salvato" : "Peso salvato per " + fmtDay(wd, { weekday: "long", day: "numeric", month: "long" })); render();
   } else if (f.dataset.form === "food") { const k = f.dataset.key; const list = S.sug[k] || []; if (list.length && list[0].sc >= 3 * parseQuery(S.drafts[k] || "").terms.length) openPicker(k, list[0]); else addFood(k); }
+  else if (f.dataset.form === "g-join" || f.dataset.form === "g-create") {
+    const create = f.dataset.form === "g-create"; const code = (($("#gCode") || {}).value || "").trim().toUpperCase(); const gname = (($("#gNameIn") || {}).value || "").trim();
+    if (!create && !/^[A-Z0-9]{6}$/.test(code)) { toast("Il codice ha 6 caratteri"); return; }
+    GS.busy = true; GS.err = null; render();
+    ntPost(create ? "/g/create" : "/g/join", { mid: gMid(), name: gName(), code: create ? undefined : code, gname: gname || "Il gruppo" })
+      .then(r => { S.profile.group = { code: create ? r.code : code, name: (r.group || {}).name || gname, posted: [], init: false }; store.saveProfile(); GS.busy = false; GS.feed = null; render(); toast(create ? `Gruppo creato: codice ${r.code}. Tocca "Invita" per mandarlo agli amici` : `Sei nel gruppo ${(r.group || {}).name || ""} 👥`, 4500); gScan(true).then(() => gLoad(true)); })
+      .catch(e => { GS.busy = false; GS.err = e && e.code === "no_group" ? "Codice non valido: nessun gruppo trovato." : e && e.code === "full" ? "Il gruppo è pieno (30 persone)." : "Server non raggiungibile, riprova."; render(); });
+  }
   else if (f.dataset.form === "rep-ed") { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === f.dataset.ex);
     const L = [...f.querySelectorAll(".re-in")].map(i => i.value.trim().replace(/\s*[–—-]\s*/g, "-").replace(/[,;]/g, "").slice(0, 16));
     if (L.some(x => !/\d/.test(x))) { toast("Scrivi per ogni serie un numero o un range, es. 8-12"); return; }
@@ -3334,6 +3438,12 @@ document.addEventListener("click", ev => {
       store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su tutte le ${n + 1} serie`); return;
     }
     case "xa-open": S.altPick = S.altPick === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); return;
+    case "g-react": { const it = (GS.feed || []).find(x => x.id === b.dataset.e); const me = gMid(); if (it) { it.r = it.r || {}; const L = it.r[b.dataset.em] = it.r[b.dataset.em] || []; const i = L.indexOf(me); if (i >= 0) L.splice(i, 1); else L.push(me); render(); }
+      gApi("/g/react", { eid: b.dataset.e, em: b.dataset.em }).catch(() => {}); return; }
+    case "g-refresh": gScan(true); gLoad(true); return;
+    case "g-invite": { const G = S.profile.group; const txt = `Entra nel mio gruppo "${G.name}" su Carico 💪\n1) Apri https://filippop-1995.github.io/carico/ e aggiungila alla Home\n2) Progressi → Gruppo → codice ${G.code}`;
+      if (navigator.share) navigator.share({ text: txt }).catch(() => {}); else { try { navigator.clipboard.writeText(txt); toast("Invito copiato: incollalo su WhatsApp"); } catch (e) { toast("Codice del gruppo: " + G.code, 5000); } } return; }
+    case "g-leave": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per uscire"; return; } const code = S.profile.group.code; gApi("/g/leave", {}).catch(() => {}); delete S.profile.group; GS.feed = null; GS.board = {}; store.saveProfile(); render(); toast("Sei uscito dal gruppo " + code); return; }
     case "xa-repedit": S.repDraft = null; S.repEdit = S.repEdit === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); setTimeout(() => { const i = document.querySelector(".re-in"); if (i) { i.focus(); i.select(); } }, 40); return;
     case "xa-repall": { const f = b.closest("form"); const ins = f ? [...f.querySelectorAll(".re-in")] : []; if (ins.length) { S.repDraft = S.repDraft || {}; ins.forEach((i, k) => { i.value = ins[0].value; S.repDraft[k] = ins[0].value; }); } return; }
     case "xa-repclose": S.repEdit = null; S.repDraft = null; if (!$("#live").hidden) renderLive(); else render(); return;
@@ -3988,7 +4098,7 @@ document.addEventListener("click", ev => {
   else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (nx ? xn(nx) : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
   else if (a === "lv-mini") { LV.mini = !LV.mini; renderLive(); }
   else if (a === "lv-skip") { stopAlarm(); const wasRestPhase = LV.phase === "rest"; LV.phase = "set"; LV.resting = false; LV.over = false; LV.flash = ""; if (wasRestPhase) lvDefaults(); renderLive(); }
-  else if (a === "lv-finish") { lvFinish(); setTimeout(() => ntAiRefresh(true), 1500); }
+  else if (a === "lv-finish") { lvFinish(); setTimeout(() => ntAiRefresh(true), 1500); setTimeout(() => gScan(true), 800); }
   else if (a === "ask-save") { const w = LV.ask; LV.ask = null; LV.keepShort = true; if (w === "finish") lvFinish(); else closeLive(); }
   else if (a === "ask-drop") { const l = dayLog(); (day.exercises || []).forEach(x => { delete l.w.ex[x.id]; }); if (!(LV.archived && restoreRun(l, day))) discardSession(l, day); store.saveDay(S.date); LV.ask = null; closeLive(); toast("Allenamento non salvato"); }
   else if (a === "ask-back") { LV.ask = null; renderLive(); }
@@ -4962,7 +5072,7 @@ let TODAY_REF = today();
   }, { passive: true });
 })();
 let HIDDEN_AT = 0;
-document.addEventListener("visibilitychange", () => { try { if (document.hidden) fxSeen(false); else { fxSeen(true, false); if (S.tab === "oggi" && $("#live").hidden && $("#coach").hidden) { S.homeEnter = true; render(); } } } catch (e) {} });
+document.addEventListener("visibilitychange", () => { try { if (document.hidden) fxSeen(false); else { fxSeen(true, false); setTimeout(() => { try { gScan(false); } catch (e) {} }, 3000); if (S.tab === "oggi" && $("#live").hidden && $("#coach").hidden) { S.homeEnter = true; render(); } } } catch (e) {} });
 setInterval(() => { if (!document.hidden) fxSeen(false); }, 5 * 60000);
 document.addEventListener("visibilitychange", () => { if (document.hidden) { HIDDEN_AT = Date.now(); return; } if (HIDDEN_AT && Date.now() - HIDDEN_AT > 2 * 3600e3 && TODAY_REF === today()) { S.selDay = null; S.wkSel = null; render(); } });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && TODAY_REF !== today()) { if (S.date === TODAY_REF) S.date = today(); TODAY_REF = today(); S.selDay = null; S.selVariant = null; render(); } });

@@ -152,6 +152,63 @@ async function delUser(env, id) {
   if (idx.includes(id)) await env.KV.put("index", JSON.stringify(idx.filter(x => x !== id)));
 }
 
+
+// ---------- gruppi di amici: bacheca traguardi, reazioni, classifica settimanale ----------
+const gKey = c => "g:" + c, fKey = c => "gf:" + c, sKey = (c, w) => "gs:" + c + ":" + w;
+const validCode = c => typeof c === "string" && /^[A-Z0-9]{6}$/.test(c);
+const clean = (t, n) => String(t == null ? "" : t).replace(/[<>]/g, "").slice(0, n);
+async function groupApi(path, body, env) {
+  const mid = body.mid; if (!validId(mid)) return json({ error: "mid" }, 400);
+  if (JSON.stringify(body).length > 12000) return json({ error: "too_big" }, 413);
+  const name = clean(body.name || "Amico", 30) || "Amico";
+  if (path === "/g/create") {
+    let code = ""; for (let i = 0; i < 6; i++) { const A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; code = Array.from(crypto.getRandomValues(new Uint8Array(6)), b => A[b % A.length]).join(""); if (!(await env.KV.get(gKey(code)))) break; }
+    const g = { name: clean(body.gname || "Il gruppo", 40) || "Il gruppo", created: Date.now(), members: { [mid]: { name, joined: Date.now() } } };
+    await env.KV.put(gKey(code), JSON.stringify(g)); return json({ ok: true, code, group: g });
+  }
+  const code = String(body.code || "").toUpperCase(); if (!validCode(code)) return json({ error: "code" }, 400);
+  const g = await env.KV.get(gKey(code), "json"); if (!g) return json({ error: "no_group" }, 404);
+  if (path === "/g/join") {
+    if (!g.members[mid] && Object.keys(g.members).length >= 30) return json({ error: "full" }, 409);
+    g.members[mid] = { ...(g.members[mid] || { joined: Date.now() }), name }; await env.KV.put(gKey(code), JSON.stringify(g)); return json({ ok: true, group: g });
+  }
+  if (!g.members[mid]) return json({ error: "not_member" }, 403);
+  if (path === "/g/leave") { delete g.members[mid]; await env.KV.put(gKey(code), JSON.stringify(g)); return json({ ok: true }); }
+  if (path === "/g/me") { // nome e preferenza notifiche (id dell'iscrizione push dell'app)
+    g.members[mid].name = name; g.members[mid].nid = body.notify && validId(body.nid) ? body.nid : null; await env.KV.put(gKey(code), JSON.stringify(g)); return json({ ok: true });
+  }
+  if (path === "/g/post") {
+    const evs = Array.isArray(body.evs) ? body.evs.slice(0, 10) : []; if (!evs.length) return json({ ok: true, added: 0 });
+    const feed = (await env.KV.get(fKey(code), "json")) || []; const added = [];
+    for (const e of evs) { const k = clean(e.k, 60); if (!k || feed.some(x => x.mid === mid && x.k === k)) continue;
+      const it = { id: crypto.randomUUID().slice(0, 12), mid, name, k, ic: clean(e.ic, 4), tx: clean(e.tx, 160), at: Date.now(), r: {} }; feed.unshift(it); added.push(it); }
+    if (added.length) { await env.KV.put(fKey(code), JSON.stringify(feed.slice(0, 150)));
+      let keys = null; // notifiche solo a chi le ha attivate nel gruppo
+      for (const [id, m] of Object.entries(g.members)) { if (id === mid || !m.nid) continue; const u = await env.KV.get("u:" + m.nid, "json"); if (!u) continue;
+        keys = keys || await vapidKeys(env); const last = added[added.length - 1];
+        await sendPush(env, keys, u.sub, { title: "👥 " + g.name, body: `${last.ic} ${name} · ${last.tx}`.slice(0, 180), tag: "group-" + code, go: "progressi" }).catch(() => 0); } }
+    return json({ ok: true, added: added.length });
+  }
+  if (path === "/g/react") {
+    const feed = (await env.KV.get(fKey(code), "json")) || []; const it = feed.find(x => x.id === body.eid); const em = ["🔥", "💪", "👏"].includes(body.em) ? body.em : null;
+    if (!it || !em) return json({ error: "bad" }, 400);
+    const L = it.r[em] = it.r[em] || []; const i = L.indexOf(mid); if (i >= 0) L.splice(i, 1); else L.push(mid);
+    await env.KV.put(fKey(code), JSON.stringify(feed)); return json({ ok: true, r: it.r });
+  }
+  if (path === "/g/stats") {
+    const w = clean(body.week, 10); if (!/^\d{4}-\d{2}-\d{2}$/.test(w)) return json({ error: "week" }, 400);
+    const st = (await env.KV.get(sKey(code, w), "json")) || {}; const x = body.stats || {};
+    st[mid] = { name, n: Math.max(0, Math.min(14, +x.n || 0)), t: Math.max(0, Math.min(14, +x.t || 0)), streak: Math.max(0, Math.min(999, +x.streak || 0)), pr: Math.max(0, Math.min(50, +x.pr || 0)), at: Date.now() };
+    await env.KV.put(sKey(code, w), JSON.stringify(st), { expirationTtl: 60 * 86400 }); return json({ ok: true });
+  }
+  if (path === "/g/feed") {
+    const w = clean(body.week, 10); const [feed, st] = await Promise.all([env.KV.get(fKey(code), "json"), /^\d{4}-\d{2}-\d{2}$/.test(w) ? env.KV.get(sKey(code, w), "json") : null]);
+    const members = Object.fromEntries(Object.entries(g.members).map(([id, m]) => [id, { name: m.name, notify: !!m.nid }]));
+    return json({ ok: true, group: { name: g.name, members }, feed: (feed || []).slice(0, 60), board: st || {} });
+  }
+  return json({ error: "not_found" }, 404);
+}
+
 export default {
   async fetch(req, env) {
     if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -163,6 +220,7 @@ export default {
       if (url.pathname === "/ai" && req.method === "POST") return aiProxy(req, env);
       if (req.method !== "POST") return json({ error: "method" }, 405);
       const body = await req.json();
+      if (url.pathname.startsWith("/g/")) return groupApi(url.pathname, body, env);
       if (!validId(body.id)) return json({ error: "id" }, 400);
       if (JSON.stringify(body).length > 24000) return json({ error: "too_big" }, 413);
       const key = "u:" + body.id;
