@@ -975,6 +975,23 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .gc-view{position:fixed;inset:0;z-index:96;background:rgba(0,0,0,.92);display:grid;place-items:center;padding:12px}
 .gc-view img{max-width:100%;max-height:100%;border-radius:8px}
 html.neo-dark .gc-top,html.neo-dark .gc-comp,html.neo-dark .gc-prev{background:rgba(16,23,46,.96)}
+
+/* foto dei progressi */
+.ph-card summary{display:flex;align-items:center;gap:8px;font-weight:800}
+.ph-need{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:14px}
+.ph-add{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:12px;padding:10px}
+.ph-day{display:flex;flex-direction:column;gap:6px}
+.ph-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.ph-t{border:0;padding:0;background:none;display:flex;flex-direction:column;gap:3px;color:var(--muted);font-size:11.5px;text-align:left}
+.ph-t img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;background:var(--surface-2)}
+.ph-view{position:fixed;inset:0;z-index:97;background:rgba(6,9,20,.96);color:#fff;display:flex;flex-direction:column;padding:calc(10px + env(safe-area-inset-top,0px)) 12px calc(12px + env(safe-area-inset-bottom,0px));gap:10px;overflow:auto}
+.ph-v-top{display:flex;align-items:center;gap:10px}.ph-v-top button{width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:16px}
+.ph-v-top b{text-transform:capitalize}
+.ph-v-img{flex:1;display:flex;gap:8px;min-height:0}.ph-v-img figure{flex:1;margin:0;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ph-v-img img{width:100%;max-height:62vh;object-fit:contain;border-radius:10px}.ph-v-img figcaption{text-align:center;font-size:12.5px;color:rgba(255,255,255,.7)}
+.ph-v-ed{display:flex;flex-direction:column;gap:8px}
+.ph-v-ed .in{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.18)}.ph-v-ed .f{color:rgba(255,255,255,.7)}
+.ph-v-ed .btn{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)}
 /* esercizi saltati */
 .lv-pill.sk{text-decoration:line-through;opacity:.55}
 .lv-start .st-x.sk{opacity:.55}
@@ -1102,6 +1119,9 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 <div id="gcView" class="gc-view" hidden data-act="gc-viewclose"><img alt=""></div>
 <input id="gcCam" type="file" accept="image/*" capture="environment" hidden>
 <input id="gcLib" type="file" accept="image/*" hidden>
+<input id="phCam" type="file" accept="image/*" capture="user" hidden>
+<input id="phLib" type="file" accept="image/*" hidden>
+<div id="phView" class="ph-view" hidden></div>
 <div id="coachBg" class="coach-bg" hidden></div>
 <div id="coach" class="coach-pop" hidden role="dialog" aria-label="Coach"></div>
 <div id="onb" class="live" hidden role="dialog" aria-label="Benvenuto"></div>
@@ -1147,7 +1167,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "13.9 · 24 ottobre";
+const APP_VERSION = "14.2 · 24 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1941,7 +1961,7 @@ function homeSession() { // la seduta da mostrare in Home: quella in corso, altr
   return { day, done: 0, tot: totalSets(day, LL), finished: false };
 }
 function summaryCard() {
-  const h = new Date().getHours(); const uname = userName(); const hi = (h < 12 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera") + (uname ? ", " + uname : "") + "\u00a0" + (h < 12 ? "☀️" : h < 18 ? "💪" : "🌙");
+  const h = new Date().getHours(); const uname = userName(); const hi = (h >= 4 && h < 12 ? "Buongiorno" : h >= 12 && h < 18 ? "Buon pomeriggio" : "Buonasera") + (uname ? ", " + uname : "") + "\u00a0" + (h >= 4 && h < 12 ? "☀️" : h >= 12 && h < 18 ? "💪" : "🌙");
   // allenamento di oggi
   const hs = homeSession(); const day = hs ? hs.day : null; const l = peekLog();
   const done = hs ? hs.done : 0; const tot = hs ? hs.tot : 0;
@@ -2838,6 +2858,85 @@ function groupCard() {
       <button class="btn ghost sm danger" data-act="g-leave" style="align-self:flex-start">Esci dal gruppo</button></div></details>
   </div></details>`;
 }
+/* ---------- foto dei progressi: salvate sul telefono (IndexedDB), con data, posa e note ---------- */
+const PDB = { db: null,
+  open() { if (this.db) return Promise.resolve(this.db); return new Promise((ok, ko) => { try { const r = indexedDB.open("carico-foto", 1); r.onupgradeneeded = () => r.result.createObjectStore("ph", { keyPath: "id" }); r.onsuccess = () => { this.db = r.result; ok(this.db); }; r.onerror = () => ko(r.error); } catch (e) { ko(e); } }); },
+  async tx(mode, fn) { const db = await this.open(); return new Promise((ok, ko) => { const t = db.transaction("ph", mode); const st = t.objectStore("ph"); const r = fn(st); t.oncomplete = () => ok(r && r.result); t.onerror = () => ko(t.error); }); },
+  put(rec) { return this.tx("readwrite", st => st.put(rec)); }, get(id) { return this.tx("readonly", st => st.get(id)); }, del(id) { return this.tx("readwrite", st => st.delete(id)); } };
+const PH = { add: null, busy: false, urls: {} };
+const photos = () => (S.profile.photos || []).slice().sort((a, b) => a.d < b.d ? 1 : a.d > b.d ? -1 : b.at - a.at);
+const POSES = [["fronte", "Fronte"], ["lato", "Lato"], ["retro", "Retro"], ["altro", "Altro"]];
+async function phUrl(id) { if (PH.urls[id]) return PH.urls[id]; const r = await PDB.get(id).catch(() => null); if (!r || !r.blob) return ""; return (PH.urls[id] = URL.createObjectURL(r.blob)); }
+function phWeek() { const cd = checkDay(); const t = parseD(today()); const back = (t.getDay() - cd + 7) % 7; const end = new Date(t); end.setDate(t.getDate() - back); const st = new Date(end); st.setDate(end.getDate() - 6); return [dstr(st), dstr(end)]; }
+function checkPhotos() { // foto di questa settimana (fino al check) e la precedente con cui confrontarla
+  const [st] = phWeek(); const P = photos(); const cur = P.filter(p => p.d >= st && p.d <= today());
+  const c = cur.find(p => p.pose === "fronte") || cur[0] || null; if (!c) return { cur: null, prev: null };
+  const older = P.filter(p => p.d < st); const prev = older.find(p => p.pose === c.pose) || older[0] || null; return { cur: c, prev };
+}
+async function phSave(file) {
+  const f = PH.add; if (!f) return; PH.busy = true; render();
+  try {
+    const url = URL.createObjectURL(file); const im = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+    const sc = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight)); const w = Math.round(im.naturalWidth * sc), h = Math.round(im.naturalHeight * sc);
+    const c = document.createElement("canvas"); c.width = w; c.height = h; c.getContext("2d").drawImage(im, 0, 0, w, h);
+    const blob = await new Promise(ok => c.toBlob(ok, "image/jpeg", 0.8));
+    const t = document.createElement("canvas"); const ts = 220 / Math.max(w, h); t.width = Math.round(w * ts); t.height = Math.round(h * ts); t.getContext("2d").drawImage(c, 0, 0, t.width, t.height);
+    const id = "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    await PDB.put({ id, blob }); URL.revokeObjectURL(url);
+    S.profile.photos = [...(S.profile.photos || []), { id, d: f.d || today(), pose: f.pose || "fronte", note: (f.note || "").slice(0, 300), w, h, thumb: t.toDataURL("image/jpeg", 0.6), at: Date.now() }];
+    store.saveProfile(); PH.add = null; PH.busy = false; render(); toast("📸 Foto salvata");
+    if (S.checkNeedPhoto) { S.checkNeedPhoto = false; setTimeout(() => runCheck(true), 400); }
+  } catch (e) { PH.busy = false; render(); toast("Non riesco a salvare la foto (spazio pieno?)", 4000); }
+}
+function photosCard() {
+  if (IN_CLAUDE) return "";
+  const P = photos(); const need = S.checkNeedPhoto; const f = PH.add;
+  const groups = {}; P.forEach(p => (groups[p.d] = groups[p.d] || []).push(p));
+  const form = f ? `<form class="ph-add" data-form="ph-add"><span class="eyebrow">Nuova foto</span>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><label class="f" style="flex:1;min-width:130px">Data<input class="in" type="date" id="phDate" value="${esc(f.d)}" max="${today()}"></label></div>
+      <div class="chips">${POSES.map(([k, l]) => `<button type="button" class="chip sm ${f.pose === k ? "on-acc" : ""}" data-act="ph-pose" data-k="${k}">${l}</button>`).join("")}</div>
+      <input class="in" id="phNote" placeholder="Note (facoltative): es. a digiuno, dopo allenamento…" value="${esc(f.note || "")}" maxlength="300">
+      <div class="row" style="gap:8px"><button type="button" class="btn sm acc" data-act="ph-cam" ${PH.busy ? "disabled" : ""}>📷 Scatta</button><button type="button" class="btn sm" data-act="ph-lib" ${PH.busy ? "disabled" : ""}>🖼️ Dalla galleria</button><button type="button" class="btn ghost sm" data-act="ph-cancel">Annulla</button></div>
+      ${PH.busy ? `<span class="small muted"><span class="spin"></span> Salvo la foto…</span>` : `<span class="small muted">Scegli prima data e posa, poi scatta o prendi la foto. Puoi mettere anche una data passata.</span>`}</form>` : "";
+  return `<details class="card ph-card" data-pnl="photos" ${pnlOpen("photos") || (need ? "open" : "")}><summary>📸 Foto dei progressi <span class="small muted" style="font-weight:500;margin-left:auto">${P.length ? `${P.length} · ultima ${esc(fmtDay(P[0].d, { day: "numeric", month: "short" }))}` : "nessuna"}</span></summary>
+    <div class="stack" style="margin-top:10px;gap:10px">
+      ${need ? `<div class="ph-need">📋 Per il check di questa settimana carica una foto: il coach la confronterà con quella precedente.<div class="row" style="gap:8px;margin-top:8px"><button class="btn sm acc" data-act="ph-new">📸 Carica la foto</button><button class="btn ghost sm" data-act="ph-skipcheck">Fai il check senza foto</button></div></div>` : ""}
+      ${form || `<button class="btn" data-act="ph-new">📸 Aggiungi foto</button>`}
+      ${P.length ? Object.entries(groups).map(([d, L]) => `<div class="ph-day"><span class="small" style="font-weight:700">${esc(fmtDay(d, { weekday: "short", day: "numeric", month: "long", year: d.slice(0, 4) !== today().slice(0, 4) ? "numeric" : undefined }))}</span>
+        <div class="ph-grid">${L.map(p => `<button class="ph-t" data-act="ph-open" data-id="${p.id}"><img src="${p.thumb}" alt=""><span>${esc((POSES.find(x => x[0] === p.pose) || [, ""])[1])}${p.note ? " · 📝" : ""}</span></button>`).join("")}</div></div>`).join("")
+        : `<span class="small muted">Le foto restano solo su questo telefono e si vedono solo aprendo questa sezione. Ogni check settimanale il coach confronta la foto della settimana con la precedente.</span>`}
+    </div></details>`;
+}
+async function phOpen(id, cmp) {
+  const p = (S.profile.photos || []).find(x => x.id === id); if (!p) return; const v = $("#phView");
+  const older = photos().filter(x => x.d < p.d || (x.d === p.d && x.at < p.at)); const prev = older.find(x => x.pose === p.pose) || older[0];
+  const u = await phUrl(id); const pu = cmp && prev ? await phUrl(prev.id) : "";
+  v.innerHTML = `<div class="ph-v-top"><button data-act="ph-close" aria-label="Chiudi">✕</button><b>${esc(fmtDay(p.d, { weekday: "long", day: "numeric", month: "long" }))}</b></div>
+    <div class="ph-v-img ${cmp && prev ? "cmp" : ""}">${cmp && prev ? `<figure><img src="${pu}" alt=""><figcaption>${esc(fmtDay(prev.d, { day: "numeric", month: "short", year: "numeric" }))}</figcaption></figure>` : ""}<figure><img src="${u}" alt=""><figcaption>${cmp && prev ? esc(fmtDay(p.d, { day: "numeric", month: "short", year: "numeric" })) : ""}</figcaption></figure></div>
+    <div class="ph-v-ed"><div class="row" style="gap:8px"><label class="f" style="flex:1">Data<input class="in" type="date" data-phed="d" data-id="${p.id}" value="${esc(p.d)}" max="${today()}"></label><label class="f" style="flex:1">Posa<select class="in" data-phed="pose" data-id="${p.id}">${POSES.map(([k, l]) => `<option value="${k}" ${p.pose === k ? "selected" : ""}>${l}</option>`).join("")}</select></label></div>
+      <input class="in" data-phed="note" data-id="${p.id}" value="${esc(p.note || "")}" placeholder="Note" maxlength="300">
+      <div class="row" style="gap:8px;flex-wrap:wrap">${prev ? `<button class="btn sm" data-act="ph-cmp" data-id="${p.id}" data-c="${cmp ? 0 : 1}">${cmp ? "Solo questa" : "⇄ Confronta con la precedente"}</button>` : ""}<button class="btn ghost sm danger" data-act="ph-del" data-id="${p.id}">Elimina</button></div></div>`;
+  v.hidden = false; document.body.style.overflow = "hidden";
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("[data-act]"); if (!b) return; const a = b.dataset.act; if (!/^ph-/.test(a)) return; ev.stopPropagation();
+  if (a === "ph-new") { PH.add = { d: today(), pose: "fronte", note: "" }; PH.busy = false; render(); }
+  else if (a === "ph-cancel") { PH.add = null; render(); }
+  else if (a === "ph-pose") { if (PH.add) { PH.add.pose = b.dataset.k; render(); } }
+  else if (a === "ph-cam" || a === "ph-lib") { if (PH.add) { PH.add.d = ($("#phDate") || {}).value || today(); PH.add.note = ($("#phNote") || {}).value || ""; } $(a === "ph-cam" ? "#phCam" : "#phLib").click(); }
+  else if (a === "ph-open") phOpen(b.dataset.id, false);
+  else if (a === "ph-cmp") phOpen(b.dataset.id, b.dataset.c === "1");
+  else if (a === "ph-close") { $("#phView").hidden = true; document.body.style.overflow = ""; render(); }
+  else if (a === "ph-del") { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per eliminare"; return; } const id = b.dataset.id; S.profile.photos = (S.profile.photos || []).filter(x => x.id !== id); store.saveProfile(); PDB.del(id).catch(() => {}); if (PH.urls[id]) { URL.revokeObjectURL(PH.urls[id]); delete PH.urls[id]; } $("#phView").hidden = true; document.body.style.overflow = ""; render(); toast("Foto eliminata"); }
+  else if (a === "ph-skipcheck") { S.checkNeedPhoto = false; render(); runCheck(true); }
+}, true);
+document.addEventListener("change", ev => {
+  if (ev.target.id === "phCam" || ev.target.id === "phLib") { const f = ev.target.files[0]; ev.target.value = ""; if (f) phSave(f); return; }
+  const k = ev.target.dataset && ev.target.dataset.phed; if (!k) return; const p = (S.profile.photos || []).find(x => x.id === ev.target.dataset.id); if (!p) return;
+  if (k === "d") { if (ev.target.value) p.d = ev.target.value; } else if (k === "pose") p.pose = ev.target.value; else p.note = ev.target.value.slice(0, 300);
+  store.saveProfile(); toast("Salvato");
+});
+document.addEventListener("input", ev => { if (!PH.add) return; if (ev.target.id === "phNote") PH.add.note = ev.target.value; else if (ev.target.id === "phDate") PH.add.d = ev.target.value; });
 function vProgressi() {
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
   const wpts = ws.slice(-30).map(w => ({ y: w.kg, d: w.d, l: fmtDay(w.d, { day: "numeric", month: "short" }) }));
@@ -2853,7 +2952,7 @@ function vProgressi() {
   const ex = S.progEx && exMap[S.progEx];
   const recent = sess.slice().reverse().slice(0, 8);
   if (gOn()) { setTimeout(() => { gLoad(false); gScan(false); }, 50); }
-  return `<h2>Progressi</h2>${groupCard()}<div class="stack prog-v">
+  return `<h2>Progressi</h2>${groupCard()}${photosCard()}<div class="stack prog-v">
     <div class="card stack">
       <div class="row between"><span class="eyebrow">Peso corporeo</span>${ws.length ? `<span class="num" style="font-size:22px">${fmtN(ws[ws.length - 1].kg)} kg</span>` : ""}</div>
       ${delta != null ? `<span class="small muted">${delta > 0 ? "+" : ""}${fmtN(delta)} kg dal ${esc(fmtDay(ws[0].d, { day: "numeric", month: "long" }))}</span>` : ""}
@@ -4623,9 +4722,15 @@ Se nelle note della dieta c'è un cambio di livello legato al check, dimmi chiar
 
 DATI DELLA SETTIMANA:
 `;
-function runCheck() {
+async function runCheck(force) {
   if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
-  openCoach(); coachSend(CHECK_PROMPT + weekStats(), { check: true, label: "📋 Check settimanale" });
+  const cp = IN_CLAUDE ? { cur: null, prev: null } : checkPhotos();
+  if (!force && !IN_CLAUDE && !cp.cur) { S.checkNeedPhoto = true; PANELS.add("photos"); go("progressi"); setTimeout(() => { const c = document.querySelector(".ph-card"); if (c) c.scrollIntoView({ block: "start", behavior: "smooth" }); }, 120); return; }
+  let extra = "";
+  if (cp.cur) { const blobs = []; const lab = [];
+    for (const p of [cp.prev, cp.cur].filter(Boolean)) { const r = await PDB.get(p.id).catch(() => null); if (r && r.blob) { blobs.push({ blob: r.blob, thumb: p.thumb }); lab.push(`${fmtDay(p.d, { day: "numeric", month: "long" })} (${(POSES.find(x => x[0] === p.pose) || [, ""])[1].toLowerCase()})${p.note ? ' — nota: "' + p.note + '"' : ""}`); } }
+    if (blobs.length) { CH.att = blobs; extra = blobs.length > 1 ? `\nFOTO ALLEGATE: la prima è del ${lab[0]} (precedente), la seconda del ${lab[1]} (questa settimana). Nel punto sul peso aggiungi un confronto onesto delle foto: cosa è cambiato in modo visibile (spalle, braccia, addome, vita, gambe, postura), cosa no, e collegalo ai dati della settimana. Se luce o posa sono diverse dillo e consiglia di rifarle uguali.` : `\nFOTO ALLEGATA: questa settimana (${lab[0]}). Non c'è una foto precedente da confrontare: commentala brevemente e dì che dalla prossima settimana farai il confronto.`; } }
+  openCoach(); coachSend(CHECK_PROMPT + weekStats() + extra, { check: true, label: cp.cur ? "📋 Check settimanale (con foto)" : "📋 Check settimanale" });
 }
 
 /* ---------- obiettivi dalle note con l'AI ---------- */
@@ -4883,6 +4988,7 @@ function coachContext0() {
   } else L.push("Nessun allenamento registrato finora.");
   { const hk = hkDay(today()); if (hk) L.push(`Anelli di Salute oggi: ${fmtI(hk.kcal)} kcal attive (obiettivo ${fmtI(HKG().kcal)}), ${fmtI(hk.ex)} min di esercizio (obiettivo ${HKG().ex}), ${fmtI(hk.steps)} passi (obiettivo ${fmtI(HKG().steps)}).`); }
   { const h = hydro(today()); L.push(`Acqua oggi: ${fmtN(Math.round((h.w || 0) / 100) / 10)} L su ${fmtN(waterGoal())} L.${supps().length ? " Integratori: " + supps().map(x => `${x.name}${x.dose ? " " + x.dose : ""} ${h.s && h.s[x.id] ? "(preso)" : "(non ancora)"}`).join(", ") + "." : ""}`); }
+  { const P = (S.profile.photos || []).slice().sort((x, y) => x.d < y.d ? -1 : 1); if (P.length) L.push(`Foto dei progressi salvate: ${P.length} (date: ${P.slice(-6).map(p => p.d).join(", ")}). Le confronti nel check settimanale.`); }
   { const M = measures(); if (M.length) L.push("Misure corporee (cm): " + M.slice(-4).map(m => m.d + " " + MEAS.filter(([k]) => num(m[k])).map(([k, l]) => l.toLowerCase() + " " + fmtN(num(m[k]))).join(", ")).join("; ")); }
   if ((plan().diet.levels || []).length) { const T = targetsFor(today()); L.push(`Oggi è un giorno ${T.dayType === "on" ? "ON (allenamento)" : "OFF (riposo)"}, ${T.level || ""}: obiettivo ${fmtI(T.kcal)} kcal, P ${fmtI(T.p)}, C ${fmtI(T.c)}, G ${fmtI(T.f)}.`); }
   if ((S.profile.checks || []).length) L.push("Ultimo check settimanale (" + S.profile.checks[0].date + "): " + S.profile.checks[0].text.slice(0, 600));
@@ -5249,17 +5355,7 @@ setTimeout(checkUpdate, 1500);
 
 /* cambio giorno se l'app resta aperta oltre la mezzanotte */
 let TODAY_REF = today();
-(function heroSwipe() {
-  let st = null;
-  document.addEventListener("touchstart", e => { const h = e.target.closest && e.target.closest(".hero-sum"); if (!h || S.tab !== "oggi" || e.touches.length !== 1) { st = null; return; } st = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() }; }, { passive: true });
-  document.addEventListener("touchend", e => {
-    if (!st) return; const t = e.changedTouches[0]; const dx = t.clientX - st.x, dy = t.clientY - st.y; const fast = Date.now() - st.t < 700; st = null;
-    if (!fast || Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
-    const d = parseD(S.date); d.setDate(d.getDate() + (dx < 0 ? 1 : -1)); const nd = dstr(d);
-    if (nd > today()) { const h = $(".hero-sum"); if (h) { h.classList.remove("in-next"); void h.offsetWidth; h.classList.add("in-prev"); } return; }
-    S.heroDir = dx < 0 ? "next" : "prev"; S.date = nd; S.selDay = null; S.picker = null; S.review = null; S.wkFocus = null; render();
-  }, { passive: true });
-})();
+// scorrimento tra i giorni nella card della Home tolto: si cambia giorno con le frecce o toccando i giorni
 let HIDDEN_AT = 0;
 document.addEventListener("visibilitychange", () => { try { if (document.hidden) fxSeen(false); else { fxSeen(true, false); setTimeout(() => { try { gScan(false); } catch (e) {} }, 3000); if (S.tab === "oggi" && $("#live").hidden && $("#coach").hidden) { S.homeEnter = true; render(); } } } catch (e) {} });
 setInterval(() => { if (!document.hidden) fxSeen(false); }, 5 * 60000);
