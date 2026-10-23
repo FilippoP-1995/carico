@@ -558,9 +558,8 @@ html.neo-home nav.tabs button[aria-current="page"] svg{filter:drop-shadow(0 0 5p
 .neo-home .home-in>*:nth-child(2){animation-delay:.08s}.neo-home .home-in>*:nth-child(3){animation-delay:.16s}.neo-home .home-in>*:nth-child(4){animation-delay:.24s}.neo-home .home-in>*:nth-child(5){animation-delay:.32s}.neo-home .home-in>*:nth-child(n+6){animation-delay:.4s}
 @keyframes neoRise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
 html.neo-home header.top{background:none;backdrop-filter:none;-webkit-backdrop-filter:none;isolation:isolate}
-html.neo-home header.top::before{content:"";position:fixed;z-index:-1;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px) + var(--hdrH,92px) + 14px);pointer-events:none;
-  background:linear-gradient(to bottom,color-mix(in srgb,var(--bg) 92%,transparent) 0%,color-mix(in srgb,var(--bg) 78%,transparent) 75%,color-mix(in srgb,var(--bg) 0%,transparent) 100%);
-  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 72%,transparent 100%);mask-image:linear-gradient(to bottom,#000 0%,#000 72%,transparent 100%)}
+html.neo-home header.top::before{content:"";position:fixed;z-index:-1;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px) + var(--hdrH,92px) + 30px);pointer-events:none;
+  background:linear-gradient(to bottom,var(--bg) 0%,var(--bg) calc(100% - 56px),color-mix(in srgb,var(--bg) 88%,transparent) calc(100% - 38px),color-mix(in srgb,var(--bg) 55%,transparent) calc(100% - 20px),color-mix(in srgb,var(--bg) 18%,transparent) calc(100% - 8px),transparent 100%)}
 .neo-home h2{background:linear-gradient(90deg,var(--ink) 30%,#3c63e0 78%,#7b4fe0);-webkit-background-clip:text;background-clip:text;color:transparent}
 .neo-home .chip[aria-pressed="true"],.neo-home .chip.on-acc{background:linear-gradient(100deg,#3f7bff,#7a5cff);color:#fff;border-color:transparent;box-shadow:0 6px 18px -8px rgba(90,110,255,.8)}
 .neo-home .set.done{background:linear-gradient(90deg,rgba(34,211,183,.15),rgba(77,141,255,.05))}
@@ -1147,7 +1146,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "13.7 · 24 ottobre";
+const APP_VERSION = "13.8 · 24 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
