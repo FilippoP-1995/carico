@@ -795,6 +795,8 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .lv-start .st-x span{color:var(--hero-mut);white-space:nowrap}
 .lv-go.st-go{font-size:22px;padding:22px}
 .lv-start .st-x{color:#fff;font:inherit;text-align:left;width:100%;cursor:pointer}
+.lv-start .st-x.ok{border-color:rgba(79,210,150,.45);color:var(--hero-g)}
+.lv-exdone .lv-row{width:100%;margin-top:4px}
 .lv-startbar{display:flex;gap:8px;margin:0 0 10px}
 .lv-sb-back{flex:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;border-radius:14px;padding:12px 14px;font:inherit;font-weight:700}
 .lv-sb-go{flex:1;border:0;border-radius:14px;padding:12px;font:inherit;font-weight:800;font-size:16px;color:#06281a;background:linear-gradient(135deg,#4fd296,#8be8bd);box-shadow:0 10px 26px -12px rgba(79,210,150,.8)}
@@ -836,6 +838,24 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .lv-s{height:36px;min-width:46px}
 .lv-copy{padding:6px 10px!important;font-size:12.5px!important}
 .lv-go{min-height:56px}
+#live .lv-steps:has(.lv-rec){grid-template-columns:1fr 1fr 74px;gap:8px}
+#live .lv-rec{padding:5px 4px;justify-content:space-between}
+#live .lv-steps:has(.lv-rec) .lv-step:not(.lv-rec) button{width:30px}
+#live .lv-steps:has(.lv-rec) .lv-step:not(.lv-rec)>div{gap:2px}
+#live .lv-body:has(> .lv-steps) .lv-steps:has(.lv-rec) .lv-step input{font-size:clamp(22px,3.7vh,32px)}
+#live .lv-steps:has(.lv-rec) .lv-step:not(.lv-rec){padding:5px 5px}
+#live .lv-rec>span{font-size:9.5px;letter-spacing:.05em}
+#live .lv-rec b{font-family:var(--f-display);font-size:clamp(17px,2.4vh,21px);font-variant-numeric:tabular-nums;line-height:1.1}
+#live .lv-rec>div{justify-content:center;gap:4px}
+#live .lv-rec button{width:30px;height:clamp(28px,3.3vh,32px);font-size:19px}
+/* la schermata esercizio riempie sempre la pagina: gli spazi crescono, il tasto resta in basso */
+.lv-body:has(> .lv-steps){justify-content:space-between}
+#live .lv-body .mmw{grid-template-columns:clamp(70px,9vh,100px) 1fr}
+#live .lv-ex h1{font-size:clamp(26px,3.4vh,32px)}
+#live .lv-body:has(> .lv-steps) .lv-step button{height:clamp(36px,4.4vh,44px)}
+#live .lv-body:has(> .lv-steps) .lv-step input{font-size:clamp(26px,4.2vh,38px)}
+#live .lv-body:has(> .lv-steps) .lv-go{min-height:clamp(52px,6vh,60px)}
+#live .lv-body:has(> .lv-steps) .lv-s{height:clamp(36px,4.4vh,42px)}
 .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mtile{background:var(--surface-2);border-radius:12px;padding:9px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .mtile .num{font-size:21px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -974,7 +994,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.7 · 23 ottobre";
+const APP_VERSION = "11.8 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3437,6 +3457,13 @@ function lvFinish() {
   const l = dayLog(); l.w.done = true; if (!l.w.end) l.w.end = lastSetAt(l, lvDay()) || Date.now(); store.saveDay(S.date); closeLive(); toast("Allenamento salvato 💪");
 }
 function lastSetAt(l, day) { let t = 0; const ids = day ? new Set((day.exercises || []).map(x => x.id)) : null; for (const k in (l.w.ex || {})) { if (ids && !ids.has(k)) continue; (l.w.ex[k].s || []).forEach(s => { if (s && s.done && s.at > t) t = s.at; }); } return t; }
+const exs0 = day => day.exercises || [];
+const fmtRest = sec => sec >= 60 ? Math.floor(sec / 60) + ":" + pad(sec % 60) : sec + " s";
+function setRest(ex, sec) { // cambia il recupero nel piano, anche dove è scritto nelle note
+  ex.rest = sec;
+  if (ex.notes) ex.notes = ex.notes.replace(/(recupero|rec\.?|riposo)(\s*(?:di|:)?\s*)\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?\s*(?:s\b|sec\w*|secondi|"|'')/gi, (m, w, sp) => `${w}${sp}${sec} s`)
+    .replace(/(recupero|rec\.?|riposo)(\s*(?:di|:)?\s*)\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?\s*(?:min\w*|')/gi, (m, w, sp) => `${w}${sp}${sec} s`);
+}
 function lvLog() { const day = lvDay(); const l = dayLog(); useSession(l, day); if (!l.w.start) l.w.start = Date.now(); LV.needStart = false; LV.browse = false; return l; }
 function exDefaultsFor(ex, j) {
   const l = dayLog(); const e = l.w.ex[ex.id]; const s = e && e.s && e.s[j];
@@ -3459,6 +3486,13 @@ function lvOpenAt(day, i) { // primo set da fare per l'esercizio (o la super ser
   const maxN = Math.max(...g.map(k => exSets(day.exercises[k])));
   return [g[0], open.length ? Math.min(...open) : maxN - 1];
 }
+function lvNextOpen(from) { // dopo una serie: prima finisco l'esercizio (o la super serie) in corso, poi il successivo non finito, poi quelli saltati
+  const day = lvDay(); const X = day.exercises || []; const l = dayLog();
+  const open = i => { const ex = X[i]; const e = l.w.dayId === day.id ? l.w.ex[ex.id] : null; for (let j = 0; j < exSets(ex); j++) if (!(e && e.s && e.s[j] && e.s[j].done)) return true; return false; };
+  const g = ssGroup(day, from); if (g.some(open)) return lvOpenAt(day, from);
+  for (let k = 1; k < X.length; k++) { const i = (Math.max(...g) + k) % X.length; if (open(i)) return lvOpenAt(day, i); }
+  return null;
+}
 function lvFirstOpen() {
   const day = lvDay(); const l = dayLog();
   for (let i = 0; i < day.exercises.length; i++) { const ex = day.exercises[i]; const e = l.w.dayId === day.id ? l.w.ex[ex.id] : null; const n = exSets(ex); for (let j = 0; j < n; j++) if (!(e && e.s && e.s[j] && e.s[j].done)) return ssGroup(day, i).length > 1 ? lvOpenAt(day, i) : [i, j]; }
@@ -3467,7 +3501,7 @@ function lvFirstOpen() {
 function openLive() {
   const day = lvDay(); if (!day || !(day.exercises || []).length) { toast("Carica prima una scheda di allenamento"); return; }
   { const l0 = dayLog(); useSession(l0, day); if (setsFor(l0, day) === 0 && !l0.w.done && (l0.w.start || l0.w.end)) { const prev = (l0.w.also || []).slice(-1)[0]; if (prev && l0.w.end) { l0.w.times = l0.w.times || {}; if (!l0.w.times[prev]) l0.w.times[prev] = { start: l0.w.start || 0, end: l0.w.end }; } delete l0.w.start; delete l0.w.end; } }
-  LV.ask = null; LV.keepShort = false; LV.archived = false; LV.browse = false;
+  LV.ask = null; LV.keepShort = false; LV.archived = false; LV.browse = false; LV.listView = false;
   { const l1 = dayLog(); if (l1.w.dayId === day.id && l1.w.done && setsFor(l1, day) > 0) { archiveRun(l1, day); LV.archived = true; store.saveDay(S.date); } }
   { const l2 = dayLog(); useSession(l2, day); LV.needStart = !l2.w.start && setsFor(l2, day) === 0 && !l2.w.done; if (!LV.needStart && !l2.w.start) l2.w.start = Date.now(); } const f = lvFirstOpen();
   if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; }
@@ -3493,7 +3527,7 @@ function lvTick() {
     if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); beep(true); renderLive(); }
     if (LV.over) {
       const x = Math.floor((Date.now() - LV.restEnd) / 1000); const o = $("#lvOver"); if (o) o.textContent = "+" + Math.floor(x / 60) + ":" + pad(x % 60);
-      if (x >= 180) { if (ALARM_MODE) stopAlarm(); } // dopo 3 minuti smette da solo
+      if (x >= 8) { if (ALARM_MODE) stopAlarm(); } // suona 8 secondi, poi resta solo il banner con il "+" finché non lo tocchi
       else if (ALARM_MODE === "synth" && Date.now() - LV.lastAlarm > 1900) { LV.lastAlarm = Date.now(); beepSynth(); }
     }
   }
@@ -3512,7 +3546,11 @@ function renderLive() {
     <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(xn(ex))}</button>`; }).join("")}</div>`;
   let body = "";
   const lsl = LV.phase === "set" && setsFor(l, day) === 0 ? lastSessionLine(day) : "";
-  if (LV.needStart && !LV.browse) {
+  if (LV.listView) {
+    body = `<div class="lv-start"><span class="lv-k">Esercizi della seduta</span><h1>${esc(day.name)}</h1>
+      <div class="st-list">${exs.map((x, i) => { const dn = exDone(l, x), nn = exSets(x); return `<button class="st-x ${dn >= nn ? "ok" : ""}" data-act="lv-ex" data-i="${i}"><b>${dn >= nn ? "✓ " : ""}${i + 1}. ${esc(xn(x))}</b><span>${dn}/${nn} ›</span></button>`; }).join("")}</div>
+      <button class="lv-go" data-act="lv-listclose">Continua →</button></div>`;
+  } else if (LV.needStart && !LV.browse) {
     const exs2 = exs; const ll = lastSessionLine(day);
     body = `<div class="lv-start"><span class="lv-k">Pronto?</span><h1>${esc(day.name)}</h1>
       <div class="lv-meta">${exs2.length} esercizi · ${tot} serie</div>
@@ -3524,7 +3562,7 @@ function renderLive() {
     body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Super serie completata</span><h1>${gx.map(x => esc(x.name)).join(" + ")}</h1>
       ${gx.map(x => { const sets = ((l.w.ex[x.id] || {}).s || []).filter(y => y && y.done); return `<div class="ss-done"><b>${esc(x.name)}</b><div class="xd-sets">${sets.map(y => `<span>${esc(y.kg || "–")}×${esc(y.reps || "–")}</span>`).join("")}</div>${feelRow(x.id, true)}</div>`; }).join("")}
       ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
-      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? xn(nx) : "")} →</b></button></div>`;
+      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? xn(nx) : "")} →</b></button><div class="lv-row"><button class="lv-btn" data-act="lv-backex">‹ Rivedi l'esercizio</button><button class="lv-btn" data-act="lv-list">📋 Tutti gli esercizi</button></div></div>`;
   } else if (LV.phase === "exdone") {
     const dx = exs.find(x => x.id === LV.doneEx) || {}; const de = l.w.ex[dx.id] || { s: [] }; const nx = exs[LV.exIdx];
     const sets = (de.s || []).filter(x => x && x.done);
@@ -3533,7 +3571,7 @@ function renderLive() {
       ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
       ${feelRow(dx.id, true)}
       ${noteBox(dx.id, true)}
-      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? xn(nx) : "")} →</b></button></div>`;
+      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? xn(nx) : "")} →</b></button><div class="lv-row"><button class="lv-btn" data-act="lv-backex">‹ Rivedi l'esercizio</button><button class="lv-btn" data-act="lv-list">📋 Tutti gli esercizi</button></div></div>`;
   } else if (LV.phase === "done") {
     const s = lvSummary();
     body = `<div class="lv-done"><div class="lv-emoji">🎉</div><h1>Allenamento completato</h1><p>${esc(day.name)}. Ottimo lavoro, ora recupera bene.</p>
@@ -3570,6 +3608,7 @@ function renderLive() {
       <div class="lv-steps">
         <div class="lv-step"><span>kg</span><div><button data-act="lv-adj" data-f="kg" data-d="-2.5" aria-label="Meno 2,5 kg">−</button><input id="lvKg" inputmode="decimal" value="${esc(fmtN(num(LV.kg)))}" aria-label="Chili"><button data-act="lv-adj" data-f="kg" data-d="2.5" aria-label="Più 2,5 kg">+</button></div></div>
         <div class="lv-step"><span>ripetizioni</span><div><button data-act="lv-adj" data-f="reps" data-d="-1" aria-label="Una ripetizione in meno">−</button><input id="lvReps" inputmode="numeric" value="${esc(LV.reps)}" aria-label="Ripetizioni"><button data-act="lv-adj" data-f="reps" data-d="1" aria-label="Una ripetizione in più">+</button></div></div>
+        <div class="lv-step lv-rec"><span>recupero</span><b>${fmtRest(parseInt(ex.rest) || 90)}</b><div><button data-act="lv-rec" data-ex="${ex.id}" data-d="-15" aria-label="Recupero 15 secondi in meno">−</button><button data-act="lv-rec" data-ex="${ex.id}" data-d="15" aria-label="Recupero 15 secondi in più">+</button></div></div>
       </div>
       <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte</button>` : ""}</div>
       <button class="lv-go" data-act="lv-done">✓ Serie fatta</button>
@@ -3623,7 +3662,7 @@ function lvSetDone() {
   LV.feelEx = null;
   const b = bestBefore(xn(ex)); LV.flash = num(kg) && b && num(kg) > b ? `🏆 Nuovo record su ${xn(ex)}: ${fmtN(num(kg))} kg` : "";
   try { if (T.audio && T.audio.state === "suspended") T.audio.resume(); } catch (er) {}
-  const f = lvFirstOpen();
+  const f = lvNextOpen(LV.exIdx);
   if (!f) { l.w.end = Date.now(); store.saveDay(S.date); LV.phase = "done"; renderLive(); return; }
   const rest = parseInt(ex.rest) || 90;
   if (exComplete && f[0] !== LV.exIdx) { // esercizio finito: schermata di passaggio al prossimo, niente recupero automatico
@@ -3647,7 +3686,7 @@ function lvSsDone() {
   });
   store.saveDay(S.date); LV.flash = flash; LV.feelEx = null;
   try { if (T.audio && T.audio.state === "suspended") T.audio.resume(); } catch (er) {}
-  const f = lvFirstOpen();
+  const f = lvNextOpen(LV.exIdx);
   if (!f) { l.w.end = Date.now(); store.saveDay(S.date); LV.phase = "done"; renderLive(); return; }
   const lastEx = day.exercises[g[g.length - 1]]; const rest = parseInt(lastEx.rest) || parseInt(day.exercises[g[0]].rest) || 90;
   if (!g.includes(f[0])) { LV.doneEx = null; LV.doneGroup = g.map(i => day.exercises[i].id); LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "exdone"; LV.resting = false; LV.over = false; LV.restTotal = rest; lvDefaults(); renderLive(); return; }
@@ -3698,14 +3737,20 @@ document.addEventListener("click", ev => {
     for (let i = 0; i < n; i++) { const s0 = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; s0.kg = kg; s0.reps = reps; c++; }
     LV.kg = kg; LV.reps = reps; store.saveDay(S.date); renderLive(); toast(`${fmtN(num(kg))} kg × ${reps} su tutte le ${c} serie`);
   }
+  else if (a === "lv-rec") { const ex = exs0(day).find(x => x.id === b.dataset.ex); if (ex) { const kg = $("#lvKg"), rp = $("#lvReps"); if (kg) LV.kg = kg.value; if (rp) LV.reps = rp.value;
+      setRest(ex, Math.min(600, Math.max(15, (parseInt(ex.rest) || 90) + +b.dataset.d))); store.saveProfile(); renderLive(); } }
   else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); }
-  else if (a === "lv-ex") { LV.browse = true; const r = lvOpenAt(day, +b.dataset.i); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
+  else if (a === "lv-ex") { LV.browse = true; LV.listView = false; if (LV.phase === "exdone") { LV.doneEx = null; LV.doneGroup = null; } const r = lvOpenAt(day, +b.dataset.i); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-set") { LV.setIdx = +b.dataset.i; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-prev" || a === "lv-next") { const g = ssGroup(day, LV.exIdx); const t = Math.max(0, Math.min(day.exercises.length - 1, a === "lv-next" ? g[g.length - 1] + 1 : g[0] - 1)); const r = lvOpenAt(day, t); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "ss-done") lvSsDone();
   else if (a === "ss-adj") { const v = LV.ssv[b.dataset.x] = LV.ssv[b.dataset.x] || {}; const f = b.dataset.f; const cur = f === "kg" ? (num(v.kg) || 0) : (parseInt(v.reps) || 0); const nv = Math.max(0, Math.round((cur + +b.dataset.d) * 100) / 100); v[f] = String(nv); const inp = document.querySelector(`[data-ssx="${b.dataset.x}"][data-ssf="${f}"]`); if (inp) inp.value = f === "kg" ? fmtN(nv) : String(nv); }
   else if (a === "ss-copy") { const l = lvLog(); ssGroup(day, LV.exIdx).forEach(i => { const x = day.exercises[i]; const v = LV.ssv[x.id] || {}; const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: xn(x), s: [] }; e.name = xn(x); for (let k = 0; k < exSets(x); k++) { const sk = e.s[k]; e.s[k] = { ...(sk || {}), kg: v.kg || "", reps: v.reps || "", done: !!(sk && sk.done) }; } for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false }; }); store.saveDay(S.date); toast("Valori copiati su tutti i giri"); renderLive(); }
   else if (a === "lv-rest") { if (LV.over || !LV.resting) return; LV.restEnd += +b.dataset.d * 1000; LV.restTotal = Math.max(LV.restTotal, Math.ceil((LV.restEnd - Date.now()) / 1000)); lvTick(); }
+  else if (a === "lv-list") { LV.listView = true; renderLive(); $("#live").scrollTop = 0; }
+  else if (a === "lv-listclose") { LV.listView = false; if (LV.phase === "exdone") { LV.phase = "set"; LV.doneEx = null; LV.doneGroup = null; lvDefaults(); } renderLive(); }
+  else if (a === "lv-backex") { const id = LV.doneEx || (LV.doneGroup || [])[0]; const i = exs0(day).findIndex(x => x.id === id);
+    if (i >= 0) { LV.exIdx = i; LV.setIdx = exSets(day.exercises[i]) - 1; } LV.phase = "set"; LV.flash = ""; LV.doneEx = null; LV.doneGroup = null; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
   else if (a === "lv-nextex") { LV.phase = "set"; LV.flash = ""; LV.doneEx = null; LV.doneGroup = null; lvDefaults(); renderLive(); window.scrollTo(0, 0); $("#live").scrollTop = 0; }
   else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (nx ? xn(nx) : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
   else if (a === "lv-mini") { LV.mini = !LV.mini; renderLive(); }
