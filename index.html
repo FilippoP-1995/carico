@@ -848,9 +848,21 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 #live .lv-rec b{font-family:var(--f-display);font-size:clamp(17px,2.4vh,21px);font-variant-numeric:tabular-nums;line-height:1.1}
 #live .lv-rec>div{justify-content:center;gap:4px}
 #live .lv-rec button{width:30px;height:clamp(28px,3.3vh,32px);font-size:19px}
+
+/* esercizi saltati */
+.lv-pill.sk{text-decoration:line-through;opacity:.55}
+.lv-start .st-x.sk{opacity:.55}
+.xa-btn.sk{border-color:var(--muted);color:var(--muted)}
+.xa-btn.dark.sk{border-color:rgba(255,255,255,.3);color:var(--hero-mut);font-size:12px;padding:4px 10px}
+.lv-skipped{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.2);border-radius:14px;padding:14px}
+.lv-skipped span{font-size:13px;color:var(--hero-mut)}
+.lv-skipped .lv-btn{width:100%;margin-top:4px}
+.lv-body:has(.lv-skipped) > :is(.lv-steps,.lv-sets,.lv-go,.lv-set,.lv-last){display:none}
+.card.ex.skipped{opacity:.6}.card.ex.skipped .h3{text-decoration:line-through}
+.card.ex.skipped .prog{color:var(--muted)}
 /* la schermata esercizio riempie sempre la pagina: gli spazi crescono, il tasto resta in basso */
 .lv-body:has(> .lv-steps){justify-content:space-between}
-#live .lv-body .mmw{grid-template-columns:clamp(70px,9vh,100px) 1fr}
+#live .lv-body .mmw{grid-template-columns:clamp(100px,14vh,130px) 1fr}
 #live .lv-ex h1{font-size:clamp(26px,3.4vh,32px)}
 #live .lv-body:has(> .lv-steps) .lv-step button{height:clamp(36px,4.4vh,44px)}
 #live .lv-body:has(> .lv-steps) .lv-step input{font-size:clamp(26px,4.2vh,38px)}
@@ -994,7 +1006,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.8 · 23 ottobre";
+const APP_VERSION = "11.9 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1412,7 +1424,7 @@ function moveBox(date, asg) { // oggi, se non mi sono allenato: la seduta previs
 function dayWorkPct(ds) { // riempimento della mini barra allenamento: serie fatte / serie della seduta
   const L = S.days[ds]; if (!L || !isSession(L)) return 0; const id = assignedOn(ds); const d = id && wDays().find(x => x.id === id); if (!d) return 100;
   const ss = sessionsOn(ds).filter(x => x.day.id === id); if (ss.some(x => x.finished)) return 100;
-  const tot = totalSets(d); const done = ss.reduce((a, x) => a + x.sets, 0); return tot ? Math.min(100, Math.round(done / tot * 100)) : 100;
+  const tot = totalSets(d, L); const done = ss.reduce((a, x) => a + x.sets, 0); return tot ? Math.min(100, Math.round(done / tot * 100)) : 100;
 }
 function dayMealPct(ds) { // pasti segnati / pasti della dieta
   const L = S.days[ds]; const m = L && L.m; if (!m) return 0; const SL = variants().length ? slots() : [];
@@ -1492,7 +1504,8 @@ function repTargets(reps, sets) {
   if (parts.length === sets && parts.length > 2) return parts;
   return Array(sets).fill(r);
 }
-function totalSets(day) { return (day.exercises || []).reduce((a, e) => a + Math.max(1, parseInt(e.sets) || 3), 0); }
+function totalSets(day, l) { const sk = (l && l.skipEx) || {}; return (day.exercises || []).reduce((a, e) => a + (sk[e.id] ? 0 : Math.max(1, parseInt(e.sets) || 3)), 0); }
+const isSkipped = (l, id) => !!(l && l.skipEx && l.skipEx[id]);
 
 /* ---------- timer di recupero ---------- */
 const T = { end: 0, label: "", iv: null, audio: null, beeped: false };
@@ -1670,10 +1683,11 @@ function homeSession() { // la seduta da mostrare in Home: quella in corso, altr
   const day = currentDay(); if (!day) return null;
   const ss = sessionsOn(S.date);
   const act = ss.find(x => x.active && x.day.id === day.id);
-  if (act) return { day, done: act.sets, tot: totalSets(day), finished: act.finished || act.sets >= totalSets(day) };
+  const LL = S.days[S.date];
+  if (act) return { day, done: act.sets, tot: totalSets(day, LL), finished: act.finished || act.sets >= totalSets(day, LL) };
   const last = ss.filter(x => x.sets || x.finished).slice(-1)[0];
-  if (last) return { day: last.day, done: last.sets, tot: totalSets(last.day), finished: last.finished || last.sets >= totalSets(last.day) };
-  return { day, done: 0, tot: totalSets(day), finished: false };
+  if (last) return { day: last.day, done: last.sets, tot: totalSets(last.day, LL), finished: last.finished || last.sets >= totalSets(last.day, LL) };
+  return { day, done: 0, tot: totalSets(day, LL), finished: false };
 }
 function summaryCard() {
   const h = new Date().getHours(); const uname = userName(); const hi = (h < 12 ? "Buongiorno" : h < 18 ? "Buon pomeriggio" : "Buonasera") + (uname ? ", " + uname : "") + "\u00a0" + (h < 12 ? "☀️" : h < 18 ? "💪" : "🌙");
@@ -1953,16 +1967,16 @@ function vAllenamento() {
         ${complete ? `<div style="padding:8px 12px 0;border-top:1px solid var(--line)">${feelRow(ex.id, false)}</div>` : ""}
         <div class="row" style="padding:8px 12px;border-top:1px solid var(--line)"><button class="btn ghost small" data-act="add-set" data-ex="${ex.id}">+ Aggiungi serie</button></div>`;
     }
-    return `${ssPos === 0 ? `<div class="ss-label">🔗 Super serie · ${ssg.length} esercizi di fila, poi recupero</div>` : ""}<div class="card ex pc${EX_PC[xi % EX_PC.length]} ${complete ? "complete" : ""} ${open ? "open" : ""} ${ssPos >= 0 ? "ss" + (ssPos === 0 ? " ss-first" : "") + (ssPos === ssg.length - 1 ? " ss-last" : "") : ""}">
+    return `${ssPos === 0 ? `<div class="ss-label">🔗 Super serie · ${ssg.length} esercizi di fila, poi recupero</div>` : ""}<div class="card ex pc${EX_PC[xi % EX_PC.length]} ${isSkipped(peekLog(), ex.id) ? "skipped" : ""} ${complete ? "complete" : ""} ${open ? "open" : ""} ${ssPos >= 0 ? "ss" + (ssPos === 0 ? " ss-first" : "") + (ssPos === ssg.length - 1 ? " ss-last" : "") : ""}">
       <button class="exbtn" data-act="toggle-ex" data-ex="${ex.id}" aria-expanded="${open}">
-        <span class="ex-top">${ssPos >= 0 ? `<span class="ss-k">${String.fromCharCode(65 + ssPos)}</span>` : ""}<span class="h3">${esc(xn(ex))}${xn(ex) !== ex.name ? `<small class="xa-was">al posto di ${esc(ex.name)}</small>` : ""}</span><span class="prog">${complete ? "✓ " : ""}${doneN}/${sets}</span>${ICON_CHEV}</span>
+        <span class="ex-top">${ssPos >= 0 ? `<span class="ss-k">${String.fromCharCode(65 + ssPos)}</span>` : ""}<span class="h3">${esc(xn(ex))}${xn(ex) !== ex.name ? `<small class="xa-was">al posto di ${esc(ex.name)}</small>` : ""}</span><span class="prog">${isSkipped(peekLog(), ex.id) ? "⏭ saltato" : (complete ? "✓ " : "") + doneN + "/" + sets}</span>${ICON_CHEV}</span>
         <span class="ex-t"><span><b>${sets}</b> serie</span>${ex.reps ? `<span>× <b>${esc(ex.reps)}</b></span>` : ""}${ex.rest ? `<span>rec. <b>${esc(ex.rest)}s</b></span>` : ""}${ex.load ? `<span>carico <b>${esc(ex.load)}</b></span>` : ""}</span>
       </button>
-      ${open ? `<button class="xa-btn ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ ${(ex.alts || []).length ? `Alternative (${ex.alts.length})` : "Alternativa"}</button>` : ""}
+      ${open ? `<div class="row" style="gap:0;flex-wrap:wrap"><button class="xa-btn ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ ${(ex.alts || []).length ? `Alternative (${ex.alts.length})` : "Alternativa"}</button><button class="xa-btn sk" data-act="${isSkipped(peekLog(), ex.id) ? "xa-unskip" : "xa-skip"}" data-ex="${ex.id}">${isSkipped(peekLog(), ex.id) ? "↩ Fallo lo stesso" : "⏭ Salta oggi"}</button></div>` : ""}
       ${inner}
     </div>`;
   }).join("");
-  const done = isThis ? setsFor(l, day) : 0, tot = totalSets(day);
+  const done = isThis ? setsFor(l, day) : 0, tot = totalSets(day, l);
   if (wDays().some(d => (d.exercises || []).some(ex => !ex.muscles && !ex.muscleTried))) setTimeout(tagMuscles, 50);
   const dpc = "pc" + EX_PC[Math.max(0, wDays().findIndex(d => d.id === day.id)) % EX_PC.length];
   return `<div class="wk-v ${dpc}"><h2>Allenamento</h2>
@@ -3139,6 +3153,22 @@ document.addEventListener("click", ev => {
       store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su tutte le ${n + 1} serie`); return;
     }
     case "xa-open": S.altPick = S.altPick === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); return;
+    case "xa-skip": case "xa-unskip": {
+      const day = currentDay(); if (!day) return; const i = (day.exercises || []).findIndex(x => x.id === b.dataset.ex); if (i < 0) return;
+      const l = dayLog(); l.skipEx = l.skipEx || {}; const g = ssGroup(day, i); const ids = g.map(k => day.exercises[k].id);
+      if (a === "xa-skip") ids.forEach(id => l.skipEx[id] = true); else ids.forEach(id => delete l.skipEx[id]);
+      if (!Object.keys(l.skipEx).length) delete l.skipEx;
+      store.saveDay(S.date);
+      const names = g.map(k => xn(day.exercises[k])).join(" + ");
+      if (!$("#live").hidden) {
+        if (a === "xa-skip") { const f = lvNextOpen(i);
+          if (!f) { if (l.w.start || setsFor(l, day)) { l.w.end = lastSetAt(l, day) || Date.now(); store.saveDay(S.date); } LV.phase = "done"; }
+          else { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; LV.browse = LV.browse; } }
+        else { const r = lvOpenAt(day, i); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; }
+        lvDefaults(); renderLive(); $("#live").scrollTop = 0;
+      } else render();
+      toast(a === "xa-skip" ? `⏭ Saltato oggi: ${names}` : `↩ ${names} di nuovo in programma`); return;
+    }
     case "xa-use": case "xa-del": case "xa-always": case "xa-ai": {
       const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === b.dataset.ex); if (!ex) return; const i = +b.dataset.i;
       const rr = () => { if (!$("#live").hidden) { lvDefaults(); renderLive(); } else render(); };
@@ -3482,20 +3512,20 @@ function lvDefaults() {
 function lvOpenAt(day, i) { // primo set da fare per l'esercizio (o la super serie) all'indice i
   const g = ssGroup(day, i); const l = dayLog();
   const firstUndone = x => { const e = l.w.dayId === day.id ? l.w.ex[x.id] : null; let j = 0; while (j < exSets(x) && e && e.s && e.s[j] && e.s[j].done) j++; return j; };
-  const open = g.map(k => day.exercises[k]).map(x => [firstUndone(x), exSets(x)]).filter(([j, n]) => j < n).map(([j]) => j);
+  const open = g.map(k => day.exercises[k]).filter(x => !isSkipped(l, x.id)).map(x => [firstUndone(x), exSets(x)]).filter(([j, n]) => j < n).map(([j]) => j);
   const maxN = Math.max(...g.map(k => exSets(day.exercises[k])));
   return [g[0], open.length ? Math.min(...open) : maxN - 1];
 }
 function lvNextOpen(from) { // dopo una serie: prima finisco l'esercizio (o la super serie) in corso, poi il successivo non finito, poi quelli saltati
   const day = lvDay(); const X = day.exercises || []; const l = dayLog();
-  const open = i => { const ex = X[i]; const e = l.w.dayId === day.id ? l.w.ex[ex.id] : null; for (let j = 0; j < exSets(ex); j++) if (!(e && e.s && e.s[j] && e.s[j].done)) return true; return false; };
+  const open = i => { const ex = X[i]; if (isSkipped(l, ex.id)) return false; const e = l.w.dayId === day.id ? l.w.ex[ex.id] : null; for (let j = 0; j < exSets(ex); j++) if (!(e && e.s && e.s[j] && e.s[j].done)) return true; return false; };
   const g = ssGroup(day, from); if (g.some(open)) return lvOpenAt(day, from);
   for (let k = 1; k < X.length; k++) { const i = (Math.max(...g) + k) % X.length; if (open(i)) return lvOpenAt(day, i); }
   return null;
 }
 function lvFirstOpen() {
   const day = lvDay(); const l = dayLog();
-  for (let i = 0; i < day.exercises.length; i++) { const ex = day.exercises[i]; const e = l.w.dayId === day.id ? l.w.ex[ex.id] : null; const n = exSets(ex); for (let j = 0; j < n; j++) if (!(e && e.s && e.s[j] && e.s[j].done)) return ssGroup(day, i).length > 1 ? lvOpenAt(day, i) : [i, j]; }
+  for (let i = 0; i < day.exercises.length; i++) { const ex = day.exercises[i]; if (isSkipped(l, ex.id)) continue; const e = l.w.dayId === day.id ? l.w.ex[ex.id] : null; const n = exSets(ex); for (let j = 0; j < n; j++) if (!(e && e.s && e.s[j] && e.s[j].done)) return ssGroup(day, i).length > 1 ? lvOpenAt(day, i) : [i, j]; }
   return null;
 }
 function openLive() {
@@ -3540,15 +3570,15 @@ function lvSummary() {
 }
 function renderLive() {
   const el = $("#live"); const day = lvDay(); const l = dayLog(); const exs = day.exercises || [];
-  const tot = totalSets(day), done = l.w.dayId === day.id ? setsFor(l, day) : 0;
+  const tot = totalSets(day, l), done = l.w.dayId === day.id ? setsFor(l, day) : 0;
   const top = `<div class="lv-top"><button class="lv-x" data-act="lv-close" aria-label="Chiudi">${ICON_X}</button><div class="lv-day"><span>${esc(day.name)}</span><b id="lvClock">0:00</b></div><button class="lv-spot" data-act="lv-spot" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button><span class="lv-cnt">${done}/${tot}</span></div>
     <div class="lv-prog"><i style="width:${tot ? done / tot * 100 : 0}%"></i></div>
-    <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(xn(ex))}</button>`; }).join("")}</div>`;
+    <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""} ${isSkipped(l, ex.id) ? "sk" : ""}" data-act="lv-ex" data-i="${i}">${isSkipped(l, ex.id) ? "⏭ " : dn >= n ? "✓ " : ""}${esc(xn(ex))}</button>`; }).join("")}</div>`;
   let body = "";
   const lsl = LV.phase === "set" && setsFor(l, day) === 0 ? lastSessionLine(day) : "";
   if (LV.listView) {
     body = `<div class="lv-start"><span class="lv-k">Esercizi della seduta</span><h1>${esc(day.name)}</h1>
-      <div class="st-list">${exs.map((x, i) => { const dn = exDone(l, x), nn = exSets(x); return `<button class="st-x ${dn >= nn ? "ok" : ""}" data-act="lv-ex" data-i="${i}"><b>${dn >= nn ? "✓ " : ""}${i + 1}. ${esc(xn(x))}</b><span>${dn}/${nn} ›</span></button>`; }).join("")}</div>
+      <div class="st-list">${exs.map((x, i) => { const dn = exDone(l, x), nn = exSets(x); const skp = isSkipped(l, x.id); return `<button class="st-x ${dn >= nn ? "ok" : ""} ${skp ? "sk" : ""}" data-act="lv-ex" data-i="${i}"><b>${skp ? "⏭ " : dn >= nn ? "✓ " : ""}${i + 1}. ${esc(xn(x))}</b><span>${skp ? "saltato" : dn + "/" + nn} ›</span></button>`; }).join("")}</div>
       <button class="lv-go" data-act="lv-listclose">Continua →</button></div>`;
   } else if (LV.needStart && !LV.browse) {
     const exs2 = exs; const ll = lastSessionLine(day);
@@ -3600,7 +3630,8 @@ function renderLive() {
     const last = lastPerformance(xn(ex), S.date);
     const t = repTargets(ex.reps, n)[LV.setIdx];
     body = `<div class="lv-ex"><span class="lv-k">Esercizio ${LV.exIdx + 1} di ${exs.length}</span><h1>${esc(xn(ex))}</h1>${xn(ex) !== ex.name ? `<div class="xa-was">al posto di ${esc(ex.name)}</div>` : ""}
-        <div class="lv-tools"><span class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · rec. " + esc(ex.rest) + " s" : ""}${ex.load ? " · " + esc(ex.load) : ""}</span><button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${noteBox(ex.id, true)}</div>${altPicker(ex, true)}</div>
+        <div class="lv-tools"><span class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · rec. " + esc(ex.rest) + " s" : ""}${ex.load ? " · " + esc(ex.load) : ""}</span><button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${noteBox(ex.id, true)}${isSkipped(l, ex.id) ? "" : `<button class="xa-btn dark sk" data-act="xa-skip" data-ex="${ex.id}">⏭ Salta</button>`}</div>${altPicker(ex, true)}</div>
+      ${isSkipped(l, ex.id) ? `<div class="lv-skipped">⏭ <b>Esercizio saltato oggi</b><span>Non conta nelle serie della seduta.</span><button class="lv-btn" data-act="xa-unskip" data-ex="${ex.id}">↩ Fallo lo stesso</button></div>` : ""}
       ${muscleBlock(exView(ex), true, ex.notes ? `<div class="lv-note in">${esc(ex.notes)}</div>` : "")}
       <div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span>${t ? `<span>obiettivo <b>${esc(t)}</b> rip.</span>` : ""}</div>
       ${last ? `<div class="lv-last">Ultima volta: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${esc(feelHint(last))}</div>` : ""}
@@ -3708,7 +3739,7 @@ function ssBody(day, l) {
       ${x.notes ? `<div class="lv-note">${esc(x.notes)}</div>` : ""}
       <div class="lv-steps ss-steps">${step("kg", 2.5, "kg")}${step("reps", 1, "rip.")}</div>` : `<div class="ss-meta">Serie di questo esercizio già finite</div>`}</div>`;
   }).join("");
-  return `<div class="lv-ex"><span class="lv-k">🔗 Super serie · ${g.length} esercizi</span><h1 class="ss-h">${g.map(i => esc(xn(exs[i]))).join(" + ")}</h1>
+  return `<div class="lv-ex"><span class="lv-k">🔗 Super serie · ${g.length} esercizi <button class="xa-btn dark sk" style="margin-left:6px" data-act="xa-skip" data-ex="${exs[g[0]].id}">⏭ Salta</button></span><h1 class="ss-h">${g.map(i => esc(xn(exs[i]))).join(" + ")}</h1>
       <div class="lv-meta">Di fila, senza pausa tra gli esercizi${rest ? ` · poi recupero ${rest} s` : ""}</div></div>
     <div class="lv-set"><span>Giro <b>${j + 1}</b> di ${n}</span></div>
     ${cards}
@@ -4391,7 +4422,7 @@ function registroTxt() { // quello che è DAVVERO registrato nelle sezioni Dieta
     const L0 = S.days[t0]; const ss = sessionsOn(t0);
     out.push("ALLENAMENTO:");
     if (ss.length) ss.forEach(x => { const ex = Object.values(x.ex || {}).map(e => { const sd = (e.s || []).filter(z => z && z.done); return sd.length ? `${e.name} ${sd.map(z => (z.kg || "–") + "x" + (z.reps || "–")).join(",")}` : null; }).filter(Boolean);
-      out.push(`- ${x.day.name}: ${x.finished ? "terminato" : "in corso"}, ${x.sets} serie su ${totalSets(x.day)}${ex.length ? " — " + ex.join("; ") : ""}`); });
+      out.push(`- ${x.day.name}: ${x.finished ? "terminato" : "in corso"}, ${x.sets} serie su ${totalSets(x.day, L0)}${Object.keys((L0 && L0.skipEx) || {}).length ? " (saltati: " + (x.day.exercises || []).filter(e => isSkipped(L0, e.id)).map(e => e.name).join(", ") + ")" : ""}${ex.length ? " — " + ex.join("; ") : ""}`); });
     else if (L0 && L0.rest) out.push("- Oggi l'utente ha segnato RIPOSO (nessun allenamento).");
     else { const pl = hasSched() ? plannedOn(t0) : undefined; out.push("- Nessuna serie registrata oggi" + (pl ? ` (in programma: ${(wDays().find(d => d.id === pl) || {}).name})` : pl === null ? " (giorno di riposo da programma)" : "") + "."); }
     // ultimi giorni di dieta
