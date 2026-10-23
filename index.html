@@ -1007,7 +1007,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "12.0 · 23 ottobre";
+const APP_VERSION = "12.1 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1523,15 +1523,28 @@ function alarmWavUrl() { // allarme a due toni generato in WAV (riprodotto da un
   for (let i = 0; i < n; i++) { const t = i / sr, k = Math.floor(t / 0.19), ph = t - k * 0.19; const on = ph < 0.15; const f = k % 2 ? 1175 : 1760; const sq = Math.sin(2 * Math.PI * f * t) >= 0 ? 1 : -1; const env = on ? Math.min(1, ph / 0.005, (0.15 - ph) / 0.01) : 0; v.setInt16(44 + i * 2, sq * env * 32000, true); }
   return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
 }
-function unlockAlarm() { // va chiamata dentro un tocco: sblocca la riproduzione automatica successiva
-  try { if (!ALARM_EL) { ALARM_EL = new Audio(alarmWavUrl()); ALARM_EL.preload = "auto"; ALARM_EL.volume = 1; }
-    ALARM_EL.muted = true; const pr = ALARM_EL.play(); if (pr && pr.then) pr.then(() => { ALARM_EL.pause(); ALARM_EL.currentTime = 0; ALARM_EL.muted = false; }).catch(() => { ALARM_EL.muted = false; }); else { ALARM_EL.pause(); ALARM_EL.muted = false; } } catch (e) {}
+function silentWavUrl() { // 0,1 s di silenzio: serve solo a "sbloccare" l'audio su iPhone senza far sentire niente
+  const sr = 8000, n = 800, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVE"); w(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, "data"); v.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([buf], { type: "audio/wav" }));
+}
+let ALARM_SRC = "", ALARM_OK = false;
+function unlockAlarm() { // va chiamata dentro un tocco: sblocca la riproduzione successiva SENZA suonare (riproduce solo silenzio)
+  try {
+    if (!ALARM_EL) { ALARM_SRC = alarmWavUrl(); ALARM_EL = new Audio(); ALARM_EL.preload = "auto"; ALARM_EL.volume = 1; }
+    if (!ALARM_OK && ALARM_MODE !== "el") {
+      const sil = silentWavUrl(); ALARM_EL.loop = false; ALARM_EL.src = sil;
+      const done = () => { try { ALARM_EL.pause(); } catch (e) {} ALARM_EL.src = ALARM_SRC; try { ALARM_EL.load(); } catch (e) {} };
+      const pr = ALARM_EL.play(); if (pr && pr.then) pr.then(() => { ALARM_OK = true; done(); }).catch(done); else { ALARM_OK = true; done(); }
+    }
+  } catch (e) {}
   try { const a = T.audio || (T.audio = new (window.AudioContext || window.webkitAudioContext)()); if (a.state !== "running") a.resume(); const b = a.createBuffer(1, 1, 22050), src = a.createBufferSource(); src.buffer = b; src.connect(a.destination); src.start(0); } catch (e) {}
 }
 let ALARM_MODE = "", ALARM_NODES = [];
 function beep(loop) { // loop: continua a suonare finché non si chiama stopAlarm()
   try { if (navigator.audioSession) navigator.audioSession.type = "transient"; } catch (e) {}
-  if (ALARM_EL) { try { ALARM_EL.muted = false; ALARM_EL.loop = !!loop; ALARM_EL.currentTime = 0; ALARM_MODE = "el"; const pr = ALARM_EL.play(); if (pr && pr.catch) pr.catch(() => { ALARM_MODE = loop ? "synth" : ""; beepSynth(); }); return; } catch (e) {} }
+  if (ALARM_EL) { try { if (ALARM_SRC && ALARM_EL.src !== ALARM_SRC) ALARM_EL.src = ALARM_SRC; ALARM_EL.muted = false; ALARM_EL.loop = !!loop; ALARM_EL.currentTime = 0; ALARM_MODE = "el"; const pr = ALARM_EL.play(); if (pr && pr.catch) pr.catch(() => { ALARM_MODE = loop ? "synth" : ""; beepSynth(); }); return; } catch (e) {} }
   ALARM_MODE = loop ? "synth" : ""; beepSynth();
 }
 function stopAlarm() { // silenzio immediato
@@ -3557,7 +3570,7 @@ function lvTick() {
     const n = $("#lvRestN"), r = $("#lvRestArc");
     if (n && !LV.over) n.textContent = Math.floor(left / 60) + ":" + pad(left % 60);
     if (r) { const C = 2 * Math.PI * (+r.getAttribute("r") || 22); r.setAttribute("stroke-dasharray", `${(C * left / Math.max(1, LV.restTotal)).toFixed(1)} ${C.toFixed(1)}`); }
-    if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); beep(true); renderLive(); }
+    if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); if (LV.restTotal >= 5) beep(true); renderLive(); } // niente suono per recuperi nulli o appena partiti
     if (LV.over) {
       const x = Math.floor((Date.now() - LV.restEnd) / 1000); const o = $("#lvOver"); if (o) o.textContent = "+" + Math.floor(x / 60) + ":" + pad(x % 60);
       if (x >= 8) { if (ALARM_MODE) stopAlarm(); } // suona 8 secondi, poi resta solo il banner con il "+" finché non lo tocchi
