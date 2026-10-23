@@ -1091,7 +1091,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "13.3 · 23 ottobre";
+const APP_VERSION = "13.4 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2053,6 +2053,18 @@ const ICON_BAR = '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke
 const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 
 function exDone(l, ex) { return l && l.w.ex[ex.id] ? (l.w.ex[ex.id].s || []).filter(s => s && s.done).length : 0; }
+function stripKg(load) { // dalla scheda tengo solo l'intensità (RIR, RPE, %…), mai i chili
+  const t = String(load || "").trim(); if (!t) return "";
+  const parts = t.split(/\s*(?:·|,|;|\|)\s*/).filter(Boolean).filter(x => /^\d-\d-\d-\d$/.test(x) || (/[a-z%]/i.test(x.replace(/\b(kg|chili|kili)\b/gi, "")) && !/^\s*\d+(?:[.,]\d+)?\s*(kg|chili|kili)\s*$/i.test(x)));
+  return parts.map(x => x.replace(/\b\d+(?:[.,]\d+)?\s*(kg|chili|kili)\b/gi, "").trim()).filter(Boolean).join(" · ");
+}
+function migrateLoads() { // una volta: i chili trascritti dalla scheda escono dai testi (restano solo come proposta iniziale nel campo kg)
+  const W = plan().workout; if (!W || W.loadsClean) return false;
+  (W.days || []).forEach(d => (d.exercises || []).forEach(ex => { if (!ex.load) return; const clean = stripKg(ex.load); if (clean === ex.load) return;
+    const L = String(ex.load); const mk = L.match(/(\d+(?:[.,]\d+)?)\s*(?:kg|chili|kili)\b/i); const tok = L.split(/\s*(?:·|,|;|\|)\s*/).find(x => /^\d+(?:[.,]\d+)?(?:\s*[\/+]\s*\d+(?:[.,]\d+)?)?$/.test(x.trim()));
+    const k = num(mk ? mk[1] : tok ? tok.match(/\d+(?:[.,]\d+)?/)[0] : null); if (k && !ex.kg0) ex.kg0 = k; ex.load = clean; }));
+  W.loadsClean = true; return true;
+}
 function migrateAlts() { // una volta: "Hack squat oppure leg press", "(alt. leg press)", note "Alternativa: leg press" -> nome + alternative
   const W = plan().workout; if (!W || W.altsSplit2) return false;
   const RX = /\(?\s*(?:\b(?:o\s+)?in\s+alternativa|\balternativ[ae]|\balt\.|\boppure|\bse\s+(?:è\s+)?occupat[oa])\s*(?:[:\-–]\s*)?([^.;\n)]+)\)?/i;
@@ -2148,7 +2160,7 @@ function vAllenamento() {
         const s = logged[i] || {}; const ls = last && last.sets[Math.min(i, last.sets.length - 1)];
         const row = `<div class="set ${s.done ? "done" : ""} ${i === nextI ? "next" : ""}" data-ex="${ex.id}" data-i="${i}">
           <span class="sn">${i + 1}</span>
-          <div><input inputmode="decimal" data-f="kg" value="${esc(s.kg ?? "")}" placeholder="${ls && ls.kg !== "" && ls.kg != null ? esc(ls.kg) : (ex.load && num(ex.load) != null && !/%|rpe/i.test(ex.load) ? esc(num(ex.load)) : "–")}" aria-label="Serie ${i + 1} chili"><span class="unit">kg</span></div>
+          <div><input inputmode="decimal" data-f="kg" value="${esc(s.kg ?? "")}" placeholder="${ls && ls.kg !== "" && ls.kg != null ? esc(ls.kg) : (ex.kg0 ? esc(ex.kg0) : "–")}" aria-label="Serie ${i + 1} chili"><span class="unit">kg</span></div>
           <span class="x">×</span>
           <div><input inputmode="numeric" data-f="reps" value="${esc(s.reps ?? "")}" placeholder="${esc(targets[i] || "–")}" aria-label="Serie ${i + 1} ripetizioni"><span class="unit">rip.</span></div>
           <button class="chk" data-act="set" aria-label="Serie ${i + 1} fatta">${ICON_CHECK}</button>
@@ -2902,7 +2914,7 @@ Regole:
 - sets è un numero intero; reps è testo (es. "10", "8-10", "12-10-8-6", "30 sec", "max").
 - rest è il recupero in secondi come numero, copiato ESATTAMENTE dal documento: 60" o 60'' o 60 sec = 60; 1' = 60; 1'30" = 90; 2' = 120; per un intervallo (es. 60-90") usa il valore più basso. null se non indicato.
 - Copia tutti i numeri (serie, ripetizioni, recuperi, carichi, grammi) esattamente come scritti: non stimare, non arrotondare, non "correggere". Se un numero non si legge bene, rileggilo nel contesto (i recuperi sono quasi sempre multipli di 15 secondi).
-- load è il carico o l'intensità se indicati (es. "70%", "RPE 8", "20 kg"), altrimenti "".
+- load è SOLO l'intensità prescritta se indicata (es. "RIR 2", "RPE 8", "70% 1RM", "buffer 2"), altrimenti "". NON trascrivere mai i carichi in kg (numeri scritti a mano accanto agli esercizi, colonne "carico" o "kg", pesi usati): sono variabili che l'utente registra nell'app, non fanno parte della scheda. Non metterli nemmeno nelle note.
 - SUPER SERIE: se più esercizi vanno fatti di fila senza recupero tra loro (superserie, "SS", "+", A1/A2, giant set, circuito, esercizi uniti da una graffa), dai a tutti lo stesso valore "ss" ("A" per la prima super serie del giorno, "B" per la seconda…), nell'ordine in cui vanno eseguiti. Gli esercizi singoli hanno "ss": "". Ogni esercizio della super serie è un elemento separato con il suo nome, le sue serie e ripetizioni: non unire due esercizi in uno solo con "+". Il recupero indicato dopo il giro va sull'ultimo esercizio del gruppo.
 - ALTERNATIVE: se per un esercizio sono indicati altri esercizi da fare in alternativa ("oppure", "in alternativa", "o", "/", "se occupato…"), il primo è "name" e gli altri vanno in "alts" (lista di nomi), non nel nome né nelle note.
 - Tempo sotto tensione e tecnica vanno in notes dell'esercizio.
@@ -2915,7 +2927,7 @@ Regole:
 function normalizePlan(r) {
   const out = {};
   if (r && r.workout && Array.isArray(r.workout.days) && r.workout.days.length) {
-    out.workout = { days: r.workout.days.map((d, i) => ({ id: uid(), name: String(d.name || "Giorno " + String.fromCharCode(65 + i)), exercises: (d.exercises || []).filter(e => e && e.name).map(e => ({ id: uid(), name: String(e.name), sets: parseInt(e.sets) || 3, reps: e.reps == null ? "" : String(e.reps), rest: parseInt(e.rest) || "", load: e.load ? String(e.load) : "", ss: e.ss ? String(e.ss).slice(0, 12) : "", notes: e.notes ? String(e.notes) : "", alts: Array.isArray(e.alts) ? e.alts.map(x => String(x).trim().slice(0, 60)).filter(Boolean).slice(0, 6) : [] })) })) };
+    out.workout = { days: r.workout.days.map((d, i) => ({ id: uid(), name: String(d.name || "Giorno " + String.fromCharCode(65 + i)), exercises: (d.exercises || []).filter(e => e && e.name).map(e => ({ id: uid(), name: String(e.name), sets: parseInt(e.sets) || 3, reps: e.reps == null ? "" : String(e.reps), rest: parseInt(e.rest) || "", load: e.load ? String(e.load) : "", ss: e.ss ? String(e.ss).slice(0, 12) : "", load: stripKg(e.load), notes: e.notes ? String(e.notes) : "", alts: Array.isArray(e.alts) ? e.alts.map(x => String(x).trim().slice(0, 60)).filter(Boolean).slice(0, 6) : [] })) })) };
     out.workout.days.forEach(d => { d.exercises = splitCombined(d.exercises).list; }); out.workout.ssSplit = true;
   }
   if (r && r.diet && Array.isArray(r.diet.variants) && r.diet.variants.length) {
@@ -3807,7 +3819,7 @@ function exDefaultsFor(ex, j) {
   const prev = e && e.s && e.s[j - 1];
   const last = lastPerformance(xn(ex), S.date); const ls = last && last.sets[Math.min(j, last.sets.length - 1)];
   const t = repTargets(ex.reps, exSets(ex))[j];
-  return { kg: s && s.kg !== "" && s.kg != null ? String(s.kg) : prev && prev.kg ? String(prev.kg) : ls && ls.kg ? String(ls.kg) : (ex.load && num(ex.load) != null && !/%|rpe|rir/i.test(ex.load) ? String(num(ex.load)) : ""),
+  return { kg: s && s.kg !== "" && s.kg != null ? String(s.kg) : prev && prev.kg ? String(prev.kg) : ls && ls.kg ? String(ls.kg) : (ex.kg0 ? String(ex.kg0) : ""),
     reps: s && s.reps ? String(s.reps) : prev && prev.reps ? String(prev.reps) : String(parseInt(t) || (ls && ls.reps) || "") };
 }
 function lvDefaults() {
@@ -5293,7 +5305,7 @@ if (ntSupported()) {
   }
   setTimeout(autoExtract, 1200);
   setTimeout(autoSnapshot, 2500);
-  setTimeout(() => { try { const before = JSON.stringify(plan().workout || {}); autoSplit(); autoSuperset(); if (migrateAlts()) { store.saveProfile(); setTimeout(tagMuscles, 500); } if (JSON.stringify(plan().workout || {}) !== before) render(); } catch (e) { console.warn(e); } }, 900);
+  setTimeout(() => { try { const before = JSON.stringify(plan().workout || {}); autoSplit(); autoSuperset(); if (migrateAlts()) { store.saveProfile(); setTimeout(tagMuscles, 500); } if (migrateLoads()) store.saveProfile(); if (JSON.stringify(plan().workout || {}) !== before) render(); } catch (e) { console.warn(e); } }, 900);
   document.addEventListener("click", function wl() { try { navigator.wakeLock && navigator.wakeLock.request("screen").catch(() => {}); } catch (e) {} }, { once: true });
 })();
 })();
