@@ -994,6 +994,7 @@ html.neo-dark .gc-top,html.neo-dark .gc-comp,html.neo-dark .gc-prev{background:r
 #live .lv-body:has(> .lv-steps) .lv-step input{font-size:clamp(26px,4.2vh,38px)}
 #live .lv-body:has(> .lv-steps) .lv-go{min-height:clamp(52px,6vh,60px)}
 #live .lv-body:has(> .lv-steps) .lv-s{height:clamp(36px,4.4vh,42px)}
+.chart .cv{font-size:9.5px;font-weight:700;fill:var(--ink)}
 .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mtile{background:var(--surface-2);border-radius:12px;padding:9px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .mtile .num{font-size:21px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -1146,7 +1147,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "13.8 · 24 ottobre";
+const APP_VERSION = "13.9 · 24 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2628,22 +2629,27 @@ function vDieta() {
     </div>`;
 }
 
-function lineChart(points, unit) {
+function lineChart(points, unit) { // tutti i punti registrati, distanziati secondo la data quando c'è
   if (points.length < 2) return `<p class="small muted" style="margin:0">Servono almeno due misure per vedere il grafico.</p>`;
-  const W = 340, H = 150, L = 36, R = 12, Tp = 12, B = 24;
+  const W = 340, H = 160, L = 36, R = 14, Tp = 18, B = 24;
   const ys = points.map(p => p.y); let mn = Math.min(...ys), mx = Math.max(...ys); if (mx - mn < 1) { mn -= .5; mx += .5; }
-  const padY = (mx - mn) * .12; mn -= padY; mx += padY;
-  const x = i => L + i * (W - L - R) / (points.length - 1), y = v => Tp + (mx - v) * (H - Tp - B) / (mx - mn);
+  const padY = (mx - mn) * .14; mn -= padY; mx += padY;
+  const ts = points.map(p => p.d ? parseD(p.d).getTime() : null); const byDate = ts.every(t => t != null) && ts[ts.length - 1] > ts[0];
+  const x = i => L + (byDate ? (ts[i] - ts[0]) / (ts[ts.length - 1] - ts[0]) : i / (points.length - 1)) * (W - L - R), y = v => Tp + (mx - v) * (H - Tp - B) / (mx - mn);
   const ticks = [mn + (mx - mn) * .15, (mn + mx) / 2, mx - (mx - mn) * .15];
   const path = points.map((p, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(p.y).toFixed(1)).join(" ");
   const area = path + ` L${x(points.length - 1).toFixed(1)} ${H - B} L${L} ${H - B} Z`;
-  const lastP = points[points.length - 1];
+  const n = points.length; const lastP = points[n - 1];
+  const showVal = n <= 10; const showMidDates = n <= 5;
+  const dots = points.map((p, i) => { const last = i === n - 1; const cx = x(i).toFixed(1), cy = y(p.y).toFixed(1);
+    return `<circle cx="${cx}" cy="${cy}" r="${last ? 4.8 : 3.4}" fill="${last ? "var(--accent)" : "var(--surface)"}" stroke="var(--accent)" stroke-width="2"/>${showVal ? `<text class="cv" x="${cx}" y="${(+cy - 8).toFixed(1)}" text-anchor="middle">${fmtN(p.y)}</text>` : ""}`; }).join("");
+  const mids = showMidDates ? points.slice(1, -1).map((p, k) => { const xi = x(k + 1); return xi - L > 40 && W - R - xi > 40 ? `<text x="${xi.toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(p.l)}</text>` : ""; }).join("") : "";
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento ${unit}">
     ${ticks.map(t => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${fmtN(t)}</text>`).join("")}
     <path d="${area}" fill="var(--accent)" fill-opacity=".1"/>
     <path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>
-    <circle cx="${x(points.length - 1)}" cy="${y(lastP.y)}" r="4.5" fill="var(--accent)"/>
-    <text x="${L}" y="${H - 6}">${esc(points[0].l)}</text><text x="${W - R}" y="${H - 6}" text-anchor="end">${esc(lastP.l)}</text>
+    ${dots}
+    <text x="${L}" y="${H - 6}">${esc(points[0].l)}</text>${mids}<text x="${W - R}" y="${H - 6}" text-anchor="end">${esc(lastP.l)}</text>
   </svg>`;
 }
 
@@ -2834,7 +2840,7 @@ function groupCard() {
 }
 function vProgressi() {
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
-  const wpts = ws.slice(-30).map(w => ({ y: w.kg, l: fmtDay(w.d, { day: "numeric", month: "short" }) }));
+  const wpts = ws.slice(-30).map(w => ({ y: w.kg, d: w.d, l: fmtDay(w.d, { day: "numeric", month: "short" }) }));
   const delta = ws.length > 1 ? ws[ws.length - 1].kg - ws[0].kg : null;
   const sess = sessionDates();
   const now = parseD(S.date); const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
@@ -2869,7 +2875,7 @@ function vProgressi() {
     <div class="card stack">
       <span class="eyebrow">Carico massimo per esercizio</span>
       ${exKeys.length ? `<select class="in" id="progSel" aria-label="Esercizio">${exKeys.map(k => `<option value="${esc(k)}" ${k === S.progEx ? "selected" : ""}>${esc(exMap[k].name)}</option>`).join("")}</select>
-      ${lineChart(ex.pts.slice(-20).map(p => ({ y: p.kg, l: fmtDay(p.d, { day: "numeric", month: "short" }) })), "carico")}
+      ${lineChart(ex.pts.slice(-20).map(p => ({ y: p.kg, d: p.d, l: fmtDay(p.d, { day: "numeric", month: "short" }) })), "carico")}
       <span class="small muted">Record: <b class="num" style="font-size:17px;color:var(--ink)">${fmtN(Math.max(...ex.pts.map(p => p.kg)))} kg</b></span>`
       : `<p class="small muted" style="margin:0">Segna le serie con i chili usati e qui vedrai come crescono i carichi.</p>`}
     </div>
@@ -4523,7 +4529,7 @@ function bfCard() {
   return `<div class="card stack">
     <div class="row between"><span class="eyebrow">🔥 Massa grassa (BF)</span>${last ? `<span class="num" style="font-size:22px">${fmtN(last.v)}%</span>` : ""}</div>
     ${last ? `<span class="small muted">${esc(BF_M[method][0])} · ${esc(fmtDay(last.d, { day: "numeric", month: "short" }))}${kg ? ` · grasso ${fmtN(Math.round(kg * last.v / 10) / 10)} kg · massa magra ${fmtN(Math.round(kg * (100 - last.v) / 10) / 10)} kg` : ""}${first && first !== last ? ` · ${last.v - first.v > 0 ? "+" : "−"}${fmtN(Math.abs(Math.round((last.v - first.v) * 10) / 10))} punti dal ${esc(fmtDay(first.d, { day: "numeric", month: "short" }))}` : ""}</span>
-      ${lineChart(pts.map(p => ({ y: p.v, l: fmtDay(p.d, { day: "numeric", month: "short" }) })), "%")}
+      ${lineChart(pts.map(p => ({ y: p.v, d: p.d, l: fmtDay(p.d, { day: "numeric", month: "short" }) })), "%")}
       <span class="small muted">Precisione: ${esc(BF_M[method][1])}.</span>` : `<p class="small muted" style="margin:0">Per calcolare la percentuale di grasso mi servono alcuni dati.</p>`}
     ${method !== "jp" ? `<div class="bf-need">${method === "navy" ? `<span class="small">Per una stima più precisa: misura le <b>3 pliche</b> col plicometro (${plicheFor().map(x => x[1].toLowerCase()).join(", ")}) in Misure → ＋ Registra${!num(U.birthYear) ? ", e inserisci l'anno di nascita" : ""}.</span>`
       : `<span class="small">${miss.length ? `Per la formula della Marina USA mancano: <b>${miss.join(", ")}</b>.${miss.some(x => x !== "altezza") ? " Collo, vita e fianchi si inseriscono in Misure corporee → ＋ Registra." : ""}` : ""}${!last && !num(U.birthYear) ? " Con altezza e anno di nascita intanto faccio una stima indicativa dal peso." : ""}</span>`}
@@ -4552,7 +4558,7 @@ function dayTypeBar() {
 function measCard() {
   const M = measures(); const last = M[M.length - 1]; const prev = M[M.length - 2]; const first = M[0];
   if (!S.measK) S.measK = "vita";
-  const pts = M.filter(m => num(m[S.measK])).slice(-20).map(m => ({ y: num(m[S.measK]), l: fmtDay(m.d, { day: "numeric", month: "short" }) }));
+  const pts = M.filter(m => num(m[S.measK])).slice(-20).map(m => ({ y: num(m[S.measK]), d: m.d, l: fmtDay(m.d, { day: "numeric", month: "short" }) }));
   const today_ = M.find(m => m.d === S.date) || {};
   return `<div class="card stack">
     <div class="row between"><span class="eyebrow">📏 Misure corporee</span><button class="btn ghost sm" data-act="meas-open">${S.measOpen ? "Chiudi" : "＋ Registra"}</button></div>
