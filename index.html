@@ -807,7 +807,7 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .lv-note.in{margin-top:6px;font-size:12.5px;padding:7px 9px;grid-column:1/-1;background:rgba(255,255,255,.07)!important;color:var(--hero-ink)!important;border:0}
 .lv-body .mmw .mml{display:grid;grid-template-columns:auto 1fr;column-gap:8px;row-gap:3px;align-items:baseline}
 .lv-body .mmw .mmk{font-size:10.5px}
-.lv-lastsess{font-size:12px!important;padding:7px 10px!important;line-height:1.35}
+.lv-lastsess{font-size:11.5px!important;padding:5px 10px!important;line-height:1.3}
 .lv-tools .lv-meta{flex-basis:100%}
 .lv-sets{align-items:center}
 .lv-sets .lv-copy{margin:0;align-self:center}
@@ -863,7 +863,7 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .card.ex.skipped .prog{color:var(--muted)}
 /* la schermata esercizio riempie sempre la pagina: gli spazi crescono, il tasto resta in basso */
 .lv-body:has(> .lv-steps){justify-content:space-between}
-#live .lv-body .mmw{grid-template-columns:clamp(100px,14vh,130px) 1fr}
+#live .lv-body .mmw{grid-template-columns:clamp(150px,22vh,200px) 1fr;align-items:center}
 #live .lv-ex h1{font-size:clamp(26px,3.4vh,32px)}
 #live .lv-body:has(> .lv-steps) .lv-step button{height:clamp(36px,4.4vh,44px)}
 #live .lv-body:has(> .lv-steps) .lv-step input{font-size:clamp(26px,4.2vh,38px)}
@@ -1007,7 +1007,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "12.1 · 23 ottobre";
+const APP_VERSION = "12.2 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
