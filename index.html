@@ -978,7 +978,10 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 html.neo-dark .gc-top,html.neo-dark .gc-comp,html.neo-dark .gc-prev{background:rgba(16,23,46,.96)}
 
 /* foto dei progressi */
-.ph-card summary{display:flex;align-items:center;gap:8px;font-weight:800}
+.ph-card summary{display:flex;align-items:center;gap:8px;font-weight:800;cursor:pointer;list-style:none}
+.ph-card summary::-webkit-details-marker{display:none}
+.ph-in{border-radius:14px;padding:11px 12px;background:color-mix(in srgb,var(--ink) 4.5%,transparent);border:1px solid var(--line)}
+.ph-in summary::after{content:"›";margin-left:6px;font-size:18px;opacity:.5;transition:transform .2s}.ph-in[open] summary::after{transform:rotate(90deg)}
 .ph-need{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:14px}
 .ph-add{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:12px;padding:10px}
 .ph-day{display:flex;flex-direction:column;gap:6px}
@@ -1120,7 +1123,6 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 <div id="gcView" class="gc-view" hidden data-act="gc-viewclose"><img alt=""></div>
 <input id="gcCam" type="file" accept="image/*" capture="environment" hidden>
 <input id="gcLib" type="file" accept="image/*" hidden>
-<input id="phCam" type="file" accept="image/*" capture="user" hidden>
 <input id="phLib" type="file" accept="image/*" hidden>
 <div id="phView" class="ph-view" hidden></div>
 <div id="coachBg" class="coach-bg" hidden></div>
@@ -1168,7 +1170,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "14.3 · 24 ottobre";
+const APP_VERSION = "14.5 · 24 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2897,9 +2899,9 @@ function photosCard() {
       <div class="row" style="gap:8px;flex-wrap:wrap"><label class="f" style="flex:1;min-width:130px">Data<input class="in" type="date" id="phDate" value="${esc(f.d)}" max="${today()}"></label></div>
       <div class="chips">${POSES.map(([k, l]) => `<button type="button" class="chip sm ${f.pose === k ? "on-acc" : ""}" data-act="ph-pose" data-k="${k}">${l}</button>`).join("")}</div>
       <input class="in" id="phNote" placeholder="Note (facoltative): es. a digiuno, dopo allenamento…" value="${esc(f.note || "")}" maxlength="300">
-      <div class="row" style="gap:8px"><button type="button" class="btn sm acc" data-act="ph-cam" ${PH.busy ? "disabled" : ""}>📷 Scatta</button><button type="button" class="btn sm" data-act="ph-lib" ${PH.busy ? "disabled" : ""}>🖼️ Dalla galleria</button><button type="button" class="btn ghost sm" data-act="ph-cancel">Annulla</button></div>
-      ${PH.busy ? `<span class="small muted"><span class="spin"></span> Salvo la foto…</span>` : `<span class="small muted">Scegli prima data e posa, poi scatta o prendi la foto. Puoi mettere anche una data passata.</span>`}</form>` : "";
-  return `<details class="card ph-card" data-pnl="photos" ${pnlOpen("photos") || (need ? "open" : "")}><summary>📸 Foto dei progressi <span class="small muted" style="font-weight:500;margin-left:auto">${P.length ? `${P.length} · ultima ${esc(fmtDay(P[0].d, { day: "numeric", month: "short" }))}` : "nessuna"}</span></summary>
+      <div class="row" style="gap:8px"><button type="button" class="btn sm acc" data-act="ph-lib" ${PH.busy ? "disabled" : ""}>📸 Carica foto</button><button type="button" class="btn ghost sm" data-act="ph-cancel">Annulla</button></div>
+      ${PH.busy ? `<span class="small muted"><span class="spin"></span> Salvo la foto…</span>` : `<span class="small muted">Scegli prima data e posa, poi carica la foto (scatta, libreria o file). Puoi mettere anche una data passata.</span>`}</form>` : "";
+  return `<details class="ph-card ph-in" data-pnl="photos" ${pnlOpen("photos") || (need ? "open" : "")}><summary>📸 Foto dei progressi <span class="small muted" style="font-weight:500;margin-left:auto">${P.length ? `${P.length} · ultima ${esc(fmtDay(P[0].d, { day: "numeric", month: "short" }))}` : "nessuna"}</span></summary>
     <div class="stack" style="margin-top:10px;gap:10px">
       ${need ? `<div class="ph-need">📋 Per il check di questa settimana carica una foto: il coach la confronterà con quella precedente.<div class="row" style="gap:8px;margin-top:8px"><button class="btn sm acc" data-act="ph-new">📸 Carica la foto</button><button class="btn ghost sm" data-act="ph-skipcheck">Fai il check senza foto</button></div></div>` : ""}
       ${form || `<button class="btn" data-act="ph-new">📸 Aggiungi foto</button>`}
@@ -2924,7 +2926,7 @@ document.addEventListener("click", ev => {
   if (a === "ph-new") { PH.add = { d: today(), pose: "fronte", note: "" }; PH.busy = false; render(); }
   else if (a === "ph-cancel") { PH.add = null; render(); }
   else if (a === "ph-pose") { if (PH.add) { PH.add.pose = b.dataset.k; render(); } }
-  else if (a === "ph-cam" || a === "ph-lib") { if (PH.add) { PH.add.d = ($("#phDate") || {}).value || today(); PH.add.note = ($("#phNote") || {}).value || ""; } $(a === "ph-cam" ? "#phCam" : "#phLib").click(); }
+  else if (a === "ph-lib") { if (PH.add) { PH.add.d = ($("#phDate") || {}).value || today(); PH.add.note = ($("#phNote") || {}).value || ""; } $("#phLib").click(); }
   else if (a === "ph-open") phOpen(b.dataset.id, false);
   else if (a === "ph-cmp") phOpen(b.dataset.id, b.dataset.c === "1");
   else if (a === "ph-close") { $("#phView").hidden = true; document.body.style.overflow = ""; render(); }
@@ -2932,7 +2934,7 @@ document.addEventListener("click", ev => {
   else if (a === "ph-skipcheck") { S.checkNeedPhoto = false; render(); runCheck(true); }
 }, true);
 document.addEventListener("change", ev => {
-  if (ev.target.id === "phCam" || ev.target.id === "phLib") { const f = ev.target.files[0]; ev.target.value = ""; if (f) phSave(f); return; }
+  if (ev.target.id === "phLib") { const f = ev.target.files[0]; ev.target.value = ""; if (f) phSave(f); return; }
   const k = ev.target.dataset && ev.target.dataset.phed; if (!k) return; const p = (S.profile.photos || []).find(x => x.id === ev.target.dataset.id); if (!p) return;
   if (k === "d") { if (ev.target.value) p.d = ev.target.value; } else if (k === "pose") p.pose = ev.target.value; else p.note = ev.target.value.slice(0, 300);
   store.saveProfile(); toast("Salvato");
@@ -2953,7 +2955,7 @@ function vProgressi() {
   const ex = S.progEx && exMap[S.progEx];
   const recent = sess.slice().reverse().slice(0, 8);
   if (gOn()) { setTimeout(() => { gLoad(false); gScan(false); }, 50); }
-  return `<h2>Progressi</h2>${groupCard()}${photosCard()}<div class="stack prog-v">
+  return `<h2>Progressi</h2>${groupCard()}<div class="stack prog-v">
     <div class="card stack">
       <div class="row between"><span class="eyebrow">Peso corporeo</span>${ws.length ? `<span class="num" style="font-size:22px">${fmtN(ws[ws.length - 1].kg)} kg</span>` : ""}</div>
       ${delta != null ? `<span class="small muted">${delta > 0 ? "+" : ""}${fmtN(delta)} kg dal ${esc(fmtDay(ws[0].d, { day: "numeric", month: "long" }))}</span>` : ""}
@@ -2966,6 +2968,7 @@ function vProgressi() {
     <div class="card stack">
       <div class="row between"><span class="eyebrow">📋 Check settimanali</span><button class="btn ghost sm" data-act="check-run">Fai il check ora</button></div>
       <span class="small muted">Ogni ${DOW[checkDay()].toLowerCase()} il Coach fa il punto della settimana (giorno modificabile in Piano → Il tuo profilo).</span>
+      ${photosCard()}
       ${(S.profile.checks || []).length ? (S.profile.checks || []).slice(0, 8).map((c, i) => `<details class="chk-h" ${S.openCheck === i ? "open" : ""}><summary>${esc(fmtDay(c.date, { weekday: "long", day: "numeric", month: "long" }))}</summary><div class="chk-b">${md(c.text)}</div></details>`).join("") : ""}
     </div>
     <div class="card stack">
