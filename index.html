@@ -936,7 +936,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.5 · 23 ottobre";
+const APP_VERSION = "11.6 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1785,15 +1785,19 @@ const ICON_BAR = '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke
 const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 
 function exDone(l, ex) { return l && l.w.ex[ex.id] ? (l.w.ex[ex.id].s || []).filter(s => s && s.done).length : 0; }
-function migrateAlts() { // una volta: "Hack squat oppure leg press" -> nome + alternative
-  const W = plan().workout; if (!W || W.altsSplit) return false; let ch = false;
+function migrateAlts() { // una volta: "Hack squat oppure leg press", "(alt. leg press)", note "Alternativa: leg press" -> nome + alternative
+  const W = plan().workout; if (!W || W.altsSplit2) return false;
+  const RX = /\(?\s*(?:\b(?:o\s+)?in\s+alternativa|\balternativ[ae]|\balt\.|\boppure|\bse\s+(?:è\s+)?occupat[oa])\s*(?:[:\-–]\s*)?([^.;\n)]+)\)?/i;
+  const list = t => t.split(/\s*(?:,|\/|\boppure\b|\bo\b)\s*/i).map(x => x.trim()).filter(x => x.length > 2);
+  const add = (ex, L) => { ex.alts = ex.alts || []; L.forEach(n => { if (norm(n) !== norm(ex.name) && !ex.alts.some(y => norm(y) === norm(n))) ex.alts.push(n.slice(0, 60)); }); };
   (W.days || []).forEach(d => (d.exercises || []).forEach(ex => {
-    const sp = String(ex.name).split(/\s+(?:oppure|in alternativa|or)\s+|\s+\/\s+/i).map(x => x.trim()).filter(Boolean);
-    if (sp.length > 1) { ex.name = sp[0]; ex.alts = [...(ex.alts || []), ...sp.slice(1)]; ch = true; }
-    const mn = String(ex.notes || "").match(/(?:oppure|in alternativa|in alt\.?|se occupat[oa])[:\s]+([^.;\n]+)/i);
-    if (mn) { const L = mn[1].split(/\s*(?:,|\/|\boppure\b|\bo\b)\s*/i).map(x => x.trim()).filter(x => x.length > 2); if (L.length) { ex.alts = [...(ex.alts || []), ...L.filter(x => !(ex.alts || []).includes(x))]; ex.notes = ex.notes.replace(mn[0], "").replace(/^[\s.,;:-]+|[\s,;:-]+$/g, ""); ch = true; } }
+    let nm = String(ex.name);
+    const mn = nm.match(RX); if (mn && mn.index > 2) { nm = nm.slice(0, mn.index).trim(); ex.name = nm; add(ex, list(mn[1])); }
+    const sp = nm.split(/\s+\/\s+/).map(x => x.trim()).filter(Boolean); if (sp.length > 1) { ex.name = sp[0]; add(ex, sp.slice(1)); }
+    const no = String(ex.notes || "").match(RX);
+    if (no) { const L = list(no[1]); if (L.length) { add(ex, L); ex.notes = ex.notes.replace(no[0], "").replace(/^[\s.,;:-]+|[\s,;:-]+$/g, ""); } }
   }));
-  W.altsSplit = true; return true;
+  W.altsSplit2 = true; return true;
 }
 /* alternative degli esercizi: la scelta vale per il giorno (l.altSel), storico separato per nome */
 const xn = (ex, l) => { l = l || peekLog(); const a = l && l.altSel && l.altSel[ex.id]; return a || ex.name; };
@@ -3642,6 +3646,7 @@ function ssBody(day, l) {
 document.addEventListener("pointerdown", ev => { if (LV.over && ev.target.closest && ev.target.closest("#live")) stopAlarm(); }, true);
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#live")) return;
+  if (/^xa-/.test(b.dataset.act)) return; // alternative: le gestisce il gestore principale (anche qui dentro)
   ev.stopPropagation(); const a = b.dataset.act; const day = lvDay();
   if (a === "lv-overview") { LV.browse = false; renderLive(); }
   else if (a === "lv-start") { const l = dayLog(); useSession(l, day); l.w.start = Date.now(); delete l.w.end; LV.needStart = false; LV.browse = false; store.saveDay(S.date); unlockAlarm(); lvDefaults(); renderLive(); }
