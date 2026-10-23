@@ -1055,7 +1055,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "12.8 · 23 ottobre";
+const APP_VERSION = "12.9 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1770,23 +1770,15 @@ function fxCountFrom(el, from, to, ms = 700) { // il numero passa dal valore di 
 const FX_GAP = 3600e3;
 function fxSeen(check, cold) { // ogni ritorno nell'app: anelli che si riempiono; dopo almeno 1 ora anche i piccoli effetti extra
   try { const last = fxStore("seen"); if (check) { FX.intro = Date.now(); FX.introFull = !last || Date.now() - last >= FX_GAP; FX.introCold = !!cold; } fxStore("seen", Date.now()); } catch (e) {} }
-function fxIntro(v) { fxRun(() => {
-  const hs = v.querySelector(".hero-sum"); if (!hs) return;
-  hs.querySelectorAll(".rp").forEach((c, i) => { const da = c.dataset.da || c.getAttribute("stroke-dasharray"); if (!da) return; const tot = da.split(" ")[1];
-    c.style.transition = "none"; c.setAttribute("stroke-dasharray", "0 " + tot); void c.getBoundingClientRect();
-    setTimeout(() => { c.style.transition = "stroke-dasharray 1.1s cubic-bezier(.3,.9,.3,1)"; c.setAttribute("stroke-dasharray", da); setTimeout(() => { c.style.transition = ""; }, 1300); }, 120 + i * 120); });
-  if (!hs.dataset.counted) countUp(hs);
-  if (!FX.full) return;
-  const wk = hs.querySelector(".ring.wk-full"); if (wk) setTimeout(() => fxClass(wk, "fx-glow", 1600), 1100);
-  const st = hs.querySelector(".streak"); if (st) setTimeout(() => fxClass(st, "fx-flare", 1600), 700);
-  const bm = hs.querySelector(".badge-main"); if (bm && /fatto/.test(bm.textContent)) setTimeout(() => fxClass(bm, "fx-pop", 700), 500);
+function fxExtras(v) { fxRun(() => { // dopo almeno 1 ora: piccoli effetti sui traguardi
+  const hs = v && v.querySelector(".hero-sum"); if (!hs || S.tab !== "oggi") return;
+  const wk = hs.querySelector(".ring.wk-full"); if (wk) fxClass(wk, "fx-glow", 1600);
+  const st = hs.querySelector(".streak"); if (st) setTimeout(() => fxClass(st, "fx-flare", 1600), 250);
+  const bm = hs.querySelector(".badge-main"); if (bm && /fatto/.test(bm.textContent)) fxClass(bm, "fx-pop", 700);
 }); }
 fxSeen(true, true); // apertura a freddo dell'app
 function fxAfterRender(v) { fxRun(() => {
-  if (FX.intro && S.tab === "oggi") { // aspetto che l'avvio finisca (l'app ridisegna la Home più volte), intanto anelli vuoti
-    if (Date.now() - FX.intro > 20000) FX.intro = null;
-    else { v.querySelectorAll(".hero-sum .rp").forEach(c => { const da = c.getAttribute("stroke-dasharray"); c.dataset.da = da; c.setAttribute("stroke-dasharray", "0 " + da.split(" ")[1]); });
-      clearTimeout(FX.introT); FX.introT = setTimeout(() => { FX.introT = null; FX.intro = null; FX.full = FX.introFull; if (S.tab === "oggi") fxIntro($("#view")); }, FX.introCold ? 700 : 120); } }
+  if (FX.intro && S.tab === "oggi") { const full = FX.introFull; FX.intro = null; if (full) setTimeout(() => fxExtras($("#view")), 1100); }
   // 1) serie segnata nella scheda: la riga fa "pop"
   if (S.tab === "allenamento") { const cur = {}; v.querySelectorAll(".set.done").forEach(r => cur[r.dataset.ex + ":" + r.dataset.i] = r);
     if (FX.sets && FX.setsDate === S.date) for (const k in cur) if (!FX.sets[k]) fxClass(cur[k], "fx-pop", 700);
@@ -4923,7 +4915,7 @@ let TODAY_REF = today();
   }, { passive: true });
 })();
 let HIDDEN_AT = 0;
-document.addEventListener("visibilitychange", () => { try { if (document.hidden) fxSeen(false); else { fxSeen(true, false); if (S.tab === "oggi" && $("#live").hidden) { const hs = $("#view .hero-sum"); if (hs) delete hs.dataset.counted; render(); } } } catch (e) {} });
+document.addEventListener("visibilitychange", () => { try { if (document.hidden) fxSeen(false); else { fxSeen(true, false); if (S.tab === "oggi" && $("#live").hidden && $("#coach").hidden) { S.homeEnter = true; render(); } } } catch (e) {} });
 setInterval(() => { if (!document.hidden) fxSeen(false); }, 5 * 60000);
 document.addEventListener("visibilitychange", () => { if (document.hidden) { HIDDEN_AT = Date.now(); return; } if (HIDDEN_AT && Date.now() - HIDDEN_AT > 2 * 3600e3 && TODAY_REF === today()) { S.selDay = null; S.wkSel = null; render(); } });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && TODAY_REF !== today()) { if (S.date === TODAY_REF) S.date = today(); TODAY_REF = today(); S.selDay = null; S.selVariant = null; render(); } });
@@ -5144,7 +5136,7 @@ if (ntSupported()) {
   }
   setTimeout(autoExtract, 1200);
   setTimeout(autoSnapshot, 2500);
-  setTimeout(() => { try { autoSplit(); autoSuperset(); if (migrateAlts()) { store.saveProfile(); setTimeout(tagMuscles, 500); } render(); } catch (e) { console.warn(e); } }, 900);
+  setTimeout(() => { try { const before = JSON.stringify(plan().workout || {}); autoSplit(); autoSuperset(); if (migrateAlts()) { store.saveProfile(); setTimeout(tagMuscles, 500); } if (JSON.stringify(plan().workout || {}) !== before) render(); } catch (e) { console.warn(e); } }, 900);
   document.addEventListener("click", function wl() { try { navigator.wakeLock && navigator.wakeLock.request("screen").catch(() => {}); } catch (e) {} }, { once: true });
 })();
 })();
