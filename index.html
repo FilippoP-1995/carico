@@ -847,6 +847,7 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 #live .lv-rec>span{font-size:9.5px;letter-spacing:.05em}
 #live .lv-rec b{font-family:var(--f-display);font-size:clamp(17px,2.4vh,21px);font-variant-numeric:tabular-nums;line-height:1.1}
 #live .lv-rec>div{justify-content:center;gap:4px}
+#live .lv-rec b.chg{color:var(--hero-d)}
 #live .lv-rec button{width:30px;height:clamp(28px,3.3vh,32px);font-size:19px}
 
 /* esercizi saltati */
@@ -1006,7 +1007,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.9 · 23 ottobre";
+const APP_VERSION = "12.0 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1970,7 +1971,7 @@ function vAllenamento() {
     return `${ssPos === 0 ? `<div class="ss-label">🔗 Super serie · ${ssg.length} esercizi di fila, poi recupero</div>` : ""}<div class="card ex pc${EX_PC[xi % EX_PC.length]} ${isSkipped(peekLog(), ex.id) ? "skipped" : ""} ${complete ? "complete" : ""} ${open ? "open" : ""} ${ssPos >= 0 ? "ss" + (ssPos === 0 ? " ss-first" : "") + (ssPos === ssg.length - 1 ? " ss-last" : "") : ""}">
       <button class="exbtn" data-act="toggle-ex" data-ex="${ex.id}" aria-expanded="${open}">
         <span class="ex-top">${ssPos >= 0 ? `<span class="ss-k">${String.fromCharCode(65 + ssPos)}</span>` : ""}<span class="h3">${esc(xn(ex))}${xn(ex) !== ex.name ? `<small class="xa-was">al posto di ${esc(ex.name)}</small>` : ""}</span><span class="prog">${isSkipped(peekLog(), ex.id) ? "⏭ saltato" : (complete ? "✓ " : "") + doneN + "/" + sets}</span>${ICON_CHEV}</span>
-        <span class="ex-t"><span><b>${sets}</b> serie</span>${ex.reps ? `<span>× <b>${esc(ex.reps)}</b></span>` : ""}${ex.rest ? `<span>rec. <b>${esc(ex.rest)}s</b></span>` : ""}${ex.load ? `<span>carico <b>${esc(ex.load)}</b></span>` : ""}</span>
+        <span class="ex-t"><span><b>${sets}</b> serie</span>${ex.reps ? `<span>× <b>${esc(ex.reps)}</b></span>` : ""}${ex.rest || exRest(ex) !== planRest(ex) ? `<span>rec. <b>${exRest(ex)}s</b>${exRest(ex) !== planRest(ex) ? ` <small class="muted">(piano ${planRest(ex)}s)</small>` : ""}</span>` : ""}${ex.load ? `<span>carico <b>${esc(ex.load)}</b></span>` : ""}</span>
       </button>
       ${open ? `<div class="row" style="gap:0;flex-wrap:wrap"><button class="xa-btn ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ ${(ex.alts || []).length ? `Alternative (${ex.alts.length})` : "Alternativa"}</button><button class="xa-btn sk" data-act="${isSkipped(peekLog(), ex.id) ? "xa-unskip" : "xa-skip"}" data-ex="${ex.id}">${isSkipped(peekLog(), ex.id) ? "↩ Fallo lo stesso" : "⏭ Salta oggi"}</button></div>` : ""}
       ${inner}
@@ -3058,7 +3059,7 @@ document.addEventListener("click", ev => {
         if (e.s.filter(x => x && x.done).length >= sets) { // esercizio finito: chiudo e apro il prossimo
           S.openEx.delete(ex.id); const nx = day.exercises.find(x => exDone(l, x) < exSets(x)); if (nx) S.openEx.add(nx.id);
         }
-        if (i < sets - 1 || day.exercises.indexOf(ex) < day.exercises.length - 1) startRest(ex.rest || 90, xn(ex) + (i < sets - 1 ? " · serie " + (i + 2) : " · prossimo esercizio"));
+        if (i < sets - 1 || day.exercises.indexOf(ex) < day.exercises.length - 1) startRest(exRest(ex), xn(ex) + (i < sets - 1 ? " · serie " + (i + 2) : " · prossimo esercizio"));
       } else s.done = false;
       store.saveDay(S.date); render(); return;
     }
@@ -3488,6 +3489,8 @@ function lvFinish() {
 }
 function lastSetAt(l, day) { let t = 0; const ids = day ? new Set((day.exercises || []).map(x => x.id)) : null; for (const k in (l.w.ex || {})) { if (ids && !ids.has(k)) continue; (l.w.ex[k].s || []).forEach(s => { if (s && s.done && s.at > t) t = s.at; }); } return t; }
 const exs0 = day => day.exercises || [];
+const planRest = ex => parseInt(ex.rest) || 90;
+const exRest = (ex, l) => { l = l || peekLog(); const v = l && l.restSel && l.restSel[ex.id]; return v || planRest(ex); }; // recupero di oggi (modificabile), il piano resta com'è
 const fmtRest = sec => sec >= 60 ? Math.floor(sec / 60) + ":" + pad(sec % 60) : sec + " s";
 function setRest(ex, sec) { // cambia il recupero nel piano, anche dove è scritto nelle note
   ex.rest = sec;
@@ -3630,7 +3633,7 @@ function renderLive() {
     const last = lastPerformance(xn(ex), S.date);
     const t = repTargets(ex.reps, n)[LV.setIdx];
     body = `<div class="lv-ex"><span class="lv-k">Esercizio ${LV.exIdx + 1} di ${exs.length}</span><h1>${esc(xn(ex))}</h1>${xn(ex) !== ex.name ? `<div class="xa-was">al posto di ${esc(ex.name)}</div>` : ""}
-        <div class="lv-tools"><span class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · rec. " + esc(ex.rest) + " s" : ""}${ex.load ? " · " + esc(ex.load) : ""}</span><button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${noteBox(ex.id, true)}${isSkipped(l, ex.id) ? "" : `<button class="xa-btn dark sk" data-act="xa-skip" data-ex="${ex.id}">⏭ Salta</button>`}</div>${altPicker(ex, true)}</div>
+        <div class="lv-tools"><span class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · rec. " + esc(ex.rest) + " s (piano)" : ""}${ex.load ? " · " + esc(ex.load) : ""}</span><button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${noteBox(ex.id, true)}${isSkipped(l, ex.id) ? "" : `<button class="xa-btn dark sk" data-act="xa-skip" data-ex="${ex.id}">⏭ Salta</button>`}</div>${altPicker(ex, true)}</div>
       ${isSkipped(l, ex.id) ? `<div class="lv-skipped">⏭ <b>Esercizio saltato oggi</b><span>Non conta nelle serie della seduta.</span><button class="lv-btn" data-act="xa-unskip" data-ex="${ex.id}">↩ Fallo lo stesso</button></div>` : ""}
       ${muscleBlock(exView(ex), true, ex.notes ? `<div class="lv-note in">${esc(ex.notes)}</div>` : "")}
       <div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span>${t ? `<span>obiettivo <b>${esc(t)}</b> rip.</span>` : ""}</div>
@@ -3639,7 +3642,7 @@ function renderLive() {
       <div class="lv-steps">
         <div class="lv-step"><span>kg</span><div><button data-act="lv-adj" data-f="kg" data-d="-2.5" aria-label="Meno 2,5 kg">−</button><input id="lvKg" inputmode="decimal" value="${esc(fmtN(num(LV.kg)))}" aria-label="Chili"><button data-act="lv-adj" data-f="kg" data-d="2.5" aria-label="Più 2,5 kg">+</button></div></div>
         <div class="lv-step"><span>ripetizioni</span><div><button data-act="lv-adj" data-f="reps" data-d="-1" aria-label="Una ripetizione in meno">−</button><input id="lvReps" inputmode="numeric" value="${esc(LV.reps)}" aria-label="Ripetizioni"><button data-act="lv-adj" data-f="reps" data-d="1" aria-label="Una ripetizione in più">+</button></div></div>
-        <div class="lv-step lv-rec"><span>recupero</span><b>${fmtRest(parseInt(ex.rest) || 90)}</b><div><button data-act="lv-rec" data-ex="${ex.id}" data-d="-15" aria-label="Recupero 15 secondi in meno">−</button><button data-act="lv-rec" data-ex="${ex.id}" data-d="15" aria-label="Recupero 15 secondi in più">+</button></div></div>
+        <div class="lv-step lv-rec"><span>recupero</span><b class="${exRest(ex, l) !== planRest(ex) ? "chg" : ""}">${fmtRest(exRest(ex, l))}</b><div><button data-act="lv-rec" data-ex="${ex.id}" data-d="-15" aria-label="Recupero 15 secondi in meno">−</button><button data-act="lv-rec" data-ex="${ex.id}" data-d="15" aria-label="Recupero 15 secondi in più">+</button></div></div>
       </div>
       <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte</button>` : ""}</div>
       <button class="lv-go" data-act="lv-done">✓ Serie fatta</button>
@@ -3695,7 +3698,7 @@ function lvSetDone() {
   try { if (T.audio && T.audio.state === "suspended") T.audio.resume(); } catch (er) {}
   const f = lvNextOpen(LV.exIdx);
   if (!f) { l.w.end = Date.now(); store.saveDay(S.date); LV.phase = "done"; renderLive(); return; }
-  const rest = parseInt(ex.rest) || 90;
+  const rest = exRest(ex, l);
   if (exComplete && f[0] !== LV.exIdx) { // esercizio finito: schermata di passaggio al prossimo, niente recupero automatico
     LV.doneEx = ex.id; LV.doneGroup = null; LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "exdone"; LV.resting = false; LV.over = false; LV.restTotal = rest; lvDefaults(); renderLive(); return;
   }
@@ -3719,7 +3722,7 @@ function lvSsDone() {
   try { if (T.audio && T.audio.state === "suspended") T.audio.resume(); } catch (er) {}
   const f = lvNextOpen(LV.exIdx);
   if (!f) { l.w.end = Date.now(); store.saveDay(S.date); LV.phase = "done"; renderLive(); return; }
-  const lastEx = day.exercises[g[g.length - 1]]; const rest = parseInt(lastEx.rest) || parseInt(day.exercises[g[0]].rest) || 90;
+  const lastEx = day.exercises[g[g.length - 1]]; const rest = (l.restSel && (l.restSel[lastEx.id] || l.restSel[day.exercises[g[0]].id])) || parseInt(lastEx.rest) || parseInt(day.exercises[g[0]].rest) || 90;
   if (!g.includes(f[0])) { LV.doneEx = null; LV.doneGroup = g.map(i => day.exercises[i].id); LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "exdone"; LV.resting = false; LV.over = false; LV.restTotal = rest; lvDefaults(); renderLive(); return; }
   LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = "Super serie · giro " + (f[1] + 1); LV.restTotal = rest; LV.restEnd = Date.now() + rest * 1000;
   lvDefaults(); renderLive();
@@ -3769,7 +3772,8 @@ document.addEventListener("click", ev => {
     LV.kg = kg; LV.reps = reps; store.saveDay(S.date); renderLive(); toast(`${fmtN(num(kg))} kg × ${reps} su tutte le ${c} serie`);
   }
   else if (a === "lv-rec") { const ex = exs0(day).find(x => x.id === b.dataset.ex); if (ex) { const kg = $("#lvKg"), rp = $("#lvReps"); if (kg) LV.kg = kg.value; if (rp) LV.reps = rp.value;
-      setRest(ex, Math.min(600, Math.max(15, (parseInt(ex.rest) || 90) + +b.dataset.d))); store.saveProfile(); renderLive(); } }
+      const l = dayLog(); const v = Math.min(600, Math.max(15, exRest(ex, l) + +b.dataset.d)); l.restSel = l.restSel || {};
+      if (v === planRest(ex)) delete l.restSel[ex.id]; else l.restSel[ex.id] = v; store.saveDay(S.date); renderLive(); } }
   else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); }
   else if (a === "lv-ex") { LV.browse = true; LV.listView = false; if (LV.phase === "exdone") { LV.doneEx = null; LV.doneGroup = null; } const r = lvOpenAt(day, +b.dataset.i); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-set") { LV.setIdx = +b.dataset.i; LV.phase = "set"; lvDefaults(); renderLive(); }
