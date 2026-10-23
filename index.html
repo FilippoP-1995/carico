@@ -848,6 +848,8 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 #live .lv-rec b{font-family:var(--f-display);font-size:clamp(17px,2.4vh,21px);font-variant-numeric:tabular-nums;line-height:1.1}
 #live .lv-rec>div{justify-content:center;gap:4px}
 #live .lv-rec b.chg{color:var(--hero-d)}
+#live .lv-s.lv-pm{min-width:36px;padding:0;font-size:20px;color:var(--hero-mut);border-style:dashed}
+#live .lv-s.lv-pm:disabled{opacity:.3}
 #live .lv-rec button{width:30px;height:clamp(28px,3.3vh,32px);font-size:19px}
 
 
@@ -1055,7 +1057,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "12.9 · 23 ottobre";
+const APP_VERSION = "13.0 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2113,7 +2115,7 @@ function vAllenamento() {
           ${ex.notes ? `<div class="ex-n">${esc(ex.notes)}</div>` : ""}</div>` : ""}
         <div class="sets">${rows}</div>
         ${complete ? `<div style="padding:8px 12px 0;border-top:1px solid var(--line)">${feelRow(ex.id, false)}</div>` : ""}
-        <div class="row" style="padding:8px 12px;border-top:1px solid var(--line)"><button class="btn ghost small" data-act="add-set" data-ex="${ex.id}">+ Aggiungi serie</button></div>`;
+        <div class="row" style="padding:8px 12px;border-top:1px solid var(--line);gap:8px"><button class="btn ghost small" data-act="xa-setadd" data-ex="${ex.id}">+ Aggiungi serie</button>${sets > 1 ? `<button class="btn ghost small" data-act="xa-setdel" data-ex="${ex.id}">− Togli serie</button>` : ""}<span class="small muted" style="margin-left:auto">vale anche per le prossime volte</span></div>`;
     }
     return `${ssPos === 0 ? `<div class="ss-label">🔗 Super serie · ${ssg.length} esercizi di fila, poi recupero</div>` : ""}<div class="card ex pc${EX_PC[xi % EX_PC.length]} ${isSkipped(peekLog(), ex.id) ? "skipped" : ""} ${complete ? "complete" : ""} ${open ? "open" : ""} ${ssPos >= 0 ? "ss" + (ssPos === 0 ? " ss-first" : "") + (ssPos === ssg.length - 1 ? " ss-last" : "") : ""}">
       <button class="exbtn" data-act="toggle-ex" data-ex="${ex.id}" aria-expanded="${open}">
@@ -3301,6 +3303,17 @@ document.addEventListener("click", ev => {
       store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su tutte le ${n + 1} serie`); return;
     }
     case "xa-open": S.altPick = S.altPick === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); return;
+    case "xa-setadd": case "xa-setdel": {
+      const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === b.dataset.ex); if (!ex) return;
+      const n = exSets(ex); const l = dayLog(); const e = l.w.ex[ex.id];
+      if (a === "xa-setadd") ex.sets = Math.min(12, n + 1);
+      else { if (n <= 1) return; const last = e && e.s && e.s[n - 1];
+        if (last && last.done) { toast("L'ultima serie è già segnata come fatta: togli prima la spunta"); return; }
+        ex.sets = n - 1; if (e && e.s && e.s.length > ex.sets) { e.s.length = ex.sets; store.saveDay(S.date); } }
+      store.saveProfile();
+      if (!$("#live").hidden) { if (LV.setIdx >= exSets(ex)) LV.setIdx = exSets(ex) - 1; lvDefaults(); renderLive(); } else render();
+      toast(a === "xa-setadd" ? `+1 serie: ${xn(ex)} ora ha ${exSets(ex)} serie` : `−1 serie: ${xn(ex)} ora ha ${exSets(ex)} serie`, 2200); return;
+    }
     case "xa-skip": case "xa-unskip": {
       const day = currentDay(); if (!day) return; const i = (day.exercises || []).findIndex(x => x.id === b.dataset.ex); if (i < 0) return;
       const l = dayLog(); l.skipEx = l.skipEx || {}; const g = ssGroup(day, i); const ids = g.map(k => day.exercises[k].id);
@@ -3792,7 +3805,7 @@ function renderLive() {
         <div class="lv-step"><span>ripetizioni</span><div><button data-act="lv-adj" data-f="reps" data-d="-1" aria-label="Una ripetizione in meno">−</button><input id="lvReps" inputmode="numeric" value="${esc(LV.reps)}" aria-label="Ripetizioni"><button data-act="lv-adj" data-f="reps" data-d="1" aria-label="Una ripetizione in più">+</button></div></div>
         <div class="lv-step lv-rec"><span>recupero</span><b class="${exRest(ex, l) !== planRest(ex) ? "chg" : ""}">${fmtRest(exRest(ex, l))}</b><div><button data-act="lv-rec" data-ex="${ex.id}" data-d="-15" aria-label="Recupero 15 secondi in meno">−</button><button data-act="lv-rec" data-ex="${ex.id}" data-d="15" aria-label="Recupero 15 secondi in più">+</button></div></div>
       </div>
-      <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte</button>` : ""}</div>
+      <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}<button class="lv-s lv-pm" data-act="xa-setdel" data-ex="${ex.id}" aria-label="Togli una serie" ${n > 1 ? "" : "disabled"}>−</button><button class="lv-s lv-pm" data-act="xa-setadd" data-ex="${ex.id}" aria-label="Aggiungi una serie">+</button>${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte</button>` : ""}</div>
       <button class="lv-go" data-act="lv-done">✓ Serie fatta</button>
       <div class="lv-row"><button class="lv-btn" data-act="lv-prev" ${LV.exIdx ? "" : "disabled"}>← Precedente</button><button class="lv-btn" data-act="lv-next" ${LV.exIdx < exs.length - 1 ? "" : "disabled"}>Prossimo →</button></div>`;
   }
