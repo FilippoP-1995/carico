@@ -868,6 +868,29 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .ring.celebrate .rw{animation:ringBoom 1.4s cubic-bezier(.2,1.5,.4,1)}
 @keyframes ringBoom{0%{transform:scale(1)}25%{transform:scale(1.28)}45%{transform:scale(.94)}65%{transform:scale(1.08)}100%{transform:none}}
 @media (prefers-reduced-motion:reduce){.lv-done.anim *,.ring.celebrate .rw{animation:none!important}}
+
+.fx-pop{animation:fxPop .6s cubic-bezier(.2,1.6,.4,1)}
+@keyframes fxPop{0%{transform:scale(1)}35%{transform:scale(1.18)}70%{transform:scale(.96)}100%{transform:none}}
+.set.done.fx-pop{animation:fxRow .7s ease-out}
+@keyframes fxRow{0%{background:rgba(79,210,150,.45)}100%{}}
+.lv-prog.fx-shine{position:relative}
+.lv-prog.fx-shine::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);animation:fxShine .8s ease-out;border-radius:99px}
+@keyframes fxShine{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+.xd-check.fx-draw{animation:fxDraw 1s cubic-bezier(.2,1.5,.4,1)}
+@keyframes fxDraw{0%{transform:scale(0) rotate(-90deg);opacity:0;box-shadow:0 0 0 0 rgba(79,210,150,.7)}55%{transform:scale(1.2) rotate(8deg);opacity:1}100%{transform:none;box-shadow:0 0 0 22px rgba(79,210,150,0)}}
+.fx-pr{position:fixed;left:50%;top:38%;z-index:95;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 22px;border-radius:20px;background:radial-gradient(120% 120% at 50% 0%,#ffe08a,#e2a521);color:#3a2600;box-shadow:0 0 50px 8px rgba(242,191,69,.6);text-align:center;pointer-events:none;animation:fxPr 2.2s cubic-bezier(.2,1.4,.4,1) both;max-width:80vw}
+.fx-pr b{font-size:26px;font-family:var(--f-display)}.fx-pr span{font-size:13px;font-weight:700}
+@keyframes fxPr{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}25%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%) scale(.95)}}
+.fx-ending{animation:fxEnd .8s ease-in-out infinite}
+@keyframes fxEnd{0%,100%{transform:scale(1)}50%{transform:scale(1.06);filter:drop-shadow(0 0 10px rgba(79,210,150,.8))}}
+.mchk.fx-pop{animation:fxPop .6s cubic-bezier(.2,1.6,.4,1),fxGlow .8s ease-out}
+@keyframes fxGlow{0%{box-shadow:0 0 0 0 var(--pc,rgba(79,210,150,.7))}100%{box-shadow:0 0 0 14px transparent}}
+.mtile.fx-bump{animation:fxPop .6s cubic-bezier(.2,1.6,.4,1)}
+.mtile.fx-goal{animation:fxGoal 2.4s ease-in-out}
+@keyframes fxGoal{0%,100%{box-shadow:inset 0 3px 0 var(--pc)}30%,60%{box-shadow:inset 0 3px 0 var(--pc),0 0 0 2px var(--pc),0 0 24px 4px var(--pc)}}
+.streak.fx-flare svg{animation:fxFlare 1.4s ease-out;transform-origin:50% 90%}
+@keyframes fxFlare{0%{transform:scale(1)}25%{transform:scale(1.6) rotate(-6deg);filter:drop-shadow(0 0 10px #ff8a3d) saturate(1.6)}50%{transform:scale(1.2) rotate(5deg)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none!important}.fx-pr{display:none}}
 /* esercizi saltati */
 .lv-pill.sk{text-decoration:line-through;opacity:.55}
 .lv-start .st-x.sk{opacity:.55}
@@ -1025,7 +1048,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "12.4 · 23 ottobre";
+const APP_VERSION = "12.5 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1591,7 +1614,7 @@ function tick() {
   const over = left <= 0;
   if (over && !T.beeped) { T.beeped = true; beep(); }
   const a = Math.abs(left);
-  el.hidden = false; el.classList.toggle("over", over);
+  el.hidden = false; el.classList.toggle("over", over); try { el.classList.toggle("fx-ending", !REDUCED() && !over && left <= 5); } catch (e) {}
   el.innerHTML = `<div class="tb"><span class="tt">${over ? "Via!" : Math.floor(a / 60) + ":" + pad(a % 60)}</span><span class="tl">${over ? "Recupero finito" : "Recupero"}<br>${esc(T.label)}</span><button data-act="rest-add">+15s</button><button data-act="rest-stop">${over ? "OK" : "Salta"}</button></div>`;
 }
 function stopRest() { clearInterval(T.iv); $("#timer").hidden = true; }
@@ -1615,7 +1638,7 @@ function render() {
         toast("🏆 Settimana completata! Tutti gli allenamenti in programma sono fatti", 3800); setTimeout(() => wr.classList.remove("celebrate"), 1800); }, 450); } }
   if (neo && S.viewEnter && S.tab !== "oggi") { v.classList.remove("view-in"); void v.offsetWidth; v.classList.add("view-in"); setTimeout(() => v.classList.remove("view-in"), 700); }
   S.viewEnter = false;
-  S.stripKey = String(Date.now()); stripSync();
+  S.stripKey = String(Date.now()); stripSync(); fxAfterRender(v);
 }
 function go(tab) { if (tab === "oggi" && S.tab !== "oggi") S.homeEnter = true; if (S.tab === "oggi" && tab !== "oggi") { S.wkOpen = new Set(); S.wkSel = null; S.wkFocus = null; } if (tab !== S.tab) S.viewEnter = true; S.tab = tab; render(); window.scrollTo(0, 0); }
 
@@ -1726,6 +1749,49 @@ function countNums(root, sel, ms = 900) { // i numeri salgono da 0
       node.textContent = m[1] + (dec ? v.toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("it-IT")) + m[3]; if (k < 1) requestAnimationFrame(step); else node.textContent = m[1] + m[2] + m[3]; };
     requestAnimationFrame(step); });
 }
+/* ---------- effetti visivi: solo grafica, nessun dato dell'app viene toccato (ogni errore è ignorato) ---------- */
+const FX = { sets: null, setsDate: null, lv: null, lvOk: null, exdone: null, pr: null, eaten: null, eatDate: null, tiles: null };
+function fxStore(k, v) { try { const o = JSON.parse(localStorage.getItem("carico.fx") || "{}"); if (v === undefined) return o[k]; o[k] = v; localStorage.setItem("carico.fx", JSON.stringify(o)); } catch (e) { return undefined; } }
+function fxRun(f) { try { if (!REDUCED()) f(); } catch (e) {} }
+function fxClass(el, c, ms = 900) { if (!el) return; el.classList.remove(c); void el.offsetWidth; el.classList.add(c); setTimeout(() => el.classList.remove(c), ms); }
+function fxCountFrom(el, from, to, ms = 700) { // il numero passa dal valore di prima al nuovo
+  const node = [...el.childNodes].find(n => n.nodeType === 3 && /\d/.test(n.textContent)); if (!node || from === to) return; const t0 = performance.now(); const fin = node.textContent;
+  const step = t => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); node.textContent = Math.round(from + (to - from) * e).toLocaleString("it-IT"); if (k < 1) requestAnimationFrame(step); else node.textContent = fin; };
+  requestAnimationFrame(step);
+}
+function fxAfterRender(v) { fxRun(() => {
+  // 1) serie segnata nella scheda: la riga fa "pop"
+  if (S.tab === "allenamento") { const cur = {}; v.querySelectorAll(".set.done").forEach(r => cur[r.dataset.ex + ":" + r.dataset.i] = r);
+    if (FX.sets && FX.setsDate === S.date) for (const k in cur) if (!FX.sets[k]) fxClass(cur[k], "fx-pop", 700);
+    FX.sets = Object.fromEntries(Object.keys(cur).map(k => [k, 1])); FX.setsDate = S.date; } else FX.sets = null;
+  // 5) pasto spuntato: il ✓ fa pop e i numeri in cima salgono al nuovo totale
+  if (S.tab === "dieta") { const ml = mealLog(); const now = Object.keys(ml.eaten).filter(k => ml.eaten[k]);
+    if (FX.eaten && FX.eatDate === S.date) now.filter(k => !FX.eaten.includes(k)).forEach(k => { const b = v.querySelector(`.mchk[data-id="${CSS.escape(k)}"]`); fxClass(b, "fx-pop", 700); });
+    const tiles = [...v.querySelectorAll(".mtile .num")]; const vals = tiles.map(t => parseInt(t.textContent.replace(/\D/g, "")) || 0);
+    if (FX.tiles && FX.eatDate === S.date) tiles.forEach((t, i) => { if (FX.tiles[i] != null && vals[i] !== FX.tiles[i]) { fxCountFrom(t, FX.tiles[i], vals[i]); fxClass(t.closest(".mtile"), "fx-bump", 700); } });
+    FX.eaten = now; FX.tiles = vals; FX.eatDate = S.date;
+    // 6) obiettivo proteine raggiunto: il riquadro si illumina una volta al giorno
+    const pt = v.querySelector(".mtile.pc2.good, .mtile.pc2.over"); if (pt && S.date === today() && fxStore("prot") !== today()) { fxStore("prot", today()); fxClass(pt, "fx-goal", 2600); toast("💪 Obiettivo proteine raggiunto", 2600); }
+  } else { FX.eaten = null; FX.tiles = null; }
+  // 7) giorni di fila: la fiammella divampa quando il numero sale
+  if (S.tab === "oggi") { const st = v.querySelector(".streak"); const n = st ? parseInt((st.querySelector("b") || {}).textContent) || 0 : null;
+    if (st && n != null) { const prev = fxStore("streak"); if (prev != null && n > prev) fxClass(st, "fx-flare", 1600); if (prev !== n) fxStore("streak", n); } }
+}); }
+function fxLive(el) { fxRun(() => {
+  const day = lvDay(); const l = peekLog(); const done = l && l.w && l.w.dayId === day.id ? setsFor(l, day) : 0;
+  // 1) serie fatta: barra con guizzo e casella che diventa verde
+  if (FX.lv != null && done > FX.lv) { fxClass(el.querySelector(".lv-prog"), "fx-shine", 900); const oks = el.querySelectorAll(".lv-s.ok"); fxClass(oks[oks.length - 1], "fx-pop", 700); }
+  FX.lv = done;
+  // 3) esercizio completato: la ✓ si disegna e la pillola diventa verde con un pop
+  if (LV.phase === "exdone") { const key = (LV.doneEx || (LV.doneGroup || []).join()) + done; if (FX.exdone !== key) { FX.exdone = key; el.querySelectorAll(".xd-check").forEach(c => fxClass(c, "fx-draw", 1200)); } }
+  const okIds = [...el.querySelectorAll(".lv-pill.ok")].map(p => p.dataset.i);
+  if (FX.lvOk) okIds.filter(i => !FX.lvOk.includes(i)).forEach(i => fxClass(el.querySelector(`.lv-pill[data-i="${i}"]`), "fx-pop", 800));
+  FX.lvOk = okIds;
+  // 2) nuovo record: lampo dorato
+  if (LV.flash && /record/i.test(LV.flash) && FX.pr !== LV.flash) { FX.pr = LV.flash;
+    const b = document.createElement("div"); b.className = "fx-pr"; b.innerHTML = `<b>🏆 Record!</b><span>${esc(LV.flash.replace(/^🏆\s*/, ""))}</span>`; document.body.appendChild(b); setTimeout(() => b.remove(), 2300);
+    confetti({ x: 0.5, y: 0.4, n: 60, power: 0.8, dur: 1800 }); }
+}); }
 function ring(pct, color, label, val, cls = "") {
   const r = 26, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, pct || 0));
   return `<div class="ring ${cls}"><div class="rw"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--hero-track)" stroke-width="7"/>
@@ -3595,7 +3661,7 @@ function lvFirstOpen() {
 function openLive() {
   const day = lvDay(); if (!day || !(day.exercises || []).length) { toast("Carica prima una scheda di allenamento"); return; }
   { const l0 = dayLog(); useSession(l0, day); if (setsFor(l0, day) === 0 && !l0.w.done && (l0.w.start || l0.w.end)) { const prev = (l0.w.also || []).slice(-1)[0]; if (prev && l0.w.end) { l0.w.times = l0.w.times || {}; if (!l0.w.times[prev]) l0.w.times[prev] = { start: l0.w.start || 0, end: l0.w.end }; } delete l0.w.start; delete l0.w.end; } }
-  LV.ask = null; LV.keepShort = false; LV.archived = false; LV.browse = false; LV.listView = false;
+  LV.ask = null; LV.keepShort = false; LV.archived = false; LV.browse = false; LV.listView = false; FX.lv = null; FX.lvOk = null; FX.exdone = null; FX.pr = null;
   { const l1 = dayLog(); if (l1.w.dayId === day.id && l1.w.done && setsFor(l1, day) > 0) { archiveRun(l1, day); LV.archived = true; store.saveDay(S.date); } }
   { const l2 = dayLog(); useSession(l2, day); LV.needStart = !l2.w.start && setsFor(l2, day) === 0 && !l2.w.done; if (!LV.needStart && !l2.w.start) l2.w.start = Date.now(); } const f = lvFirstOpen();
   if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; }
@@ -3616,6 +3682,7 @@ function lvTick() {
   if (LV.resting) {
     const left = Math.max(0, Math.ceil((LV.restEnd - Date.now()) / 1000));
     const n = $("#lvRestN"), r = $("#lvRestArc");
+    try { const ring = r && (r.closest(".lv-ring") || r.closest(".dk-ring")); if (ring) ring.classList.toggle("fx-ending", !REDUCED() && left > 0 && left <= 5 && !LV.over); } catch (e) {}
     if (n && !LV.over) n.textContent = Math.floor(left / 60) + ":" + pad(left % 60);
     if (r) { const C = 2 * Math.PI * (+r.getAttribute("r") || 22); r.setAttribute("stroke-dasharray", `${(C * left / Math.max(1, LV.restTotal)).toFixed(1)} ${C.toFixed(1)}`); }
     if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); if (LV.restTotal >= 5) beep(true); renderLive(); } // niente suono per recuperi nulli o appena partiti
@@ -3742,6 +3809,7 @@ function renderLive() {
   const on = el.querySelector(".lv-pill.on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
   if (LV.phase === "done" && !LV.celebrated) { LV.celebrated = true; const d = el.querySelector(".lv-done"); if (d && !REDUCED()) { d.classList.add("anim"); countNums(d, ".lv-stats b", 1100); setTimeout(() => confetti({ x: 0.5, y: 0.22, n: 160, power: 1.15 }), 150); setTimeout(() => confetti({ x: 0.15, y: 0.5, n: 50, spread: 0.6, power: 0.9 }), 650); setTimeout(() => confetti({ x: 0.85, y: 0.5, n: 50, spread: 0.6, power: 0.9 }), 800); try { navigator.vibrate && navigator.vibrate([30, 60, 30]); } catch (e) {} } }
   if (LV.phase !== "done") LV.celebrated = false;
+  fxLive(el);
 }
 function lvSetDone() {
   unlockAlarm();
