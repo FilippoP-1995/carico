@@ -558,7 +558,7 @@ html.neo-home nav.tabs button[aria-current="page"] svg{filter:drop-shadow(0 0 5p
 .neo-home .home-in>*:nth-child(2){animation-delay:.08s}.neo-home .home-in>*:nth-child(3){animation-delay:.16s}.neo-home .home-in>*:nth-child(4){animation-delay:.24s}.neo-home .home-in>*:nth-child(5){animation-delay:.32s}.neo-home .home-in>*:nth-child(n+6){animation-delay:.4s}
 @keyframes neoRise{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
 html.neo-home header.top{background:none;backdrop-filter:none;-webkit-backdrop-filter:none;isolation:isolate}
-html.neo-home header.top::before{content:"";position:fixed;z-index:-1;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px) + var(--hdrH,92px) + 30px);pointer-events:none;
+html.neo-home header.top::before{content:"";position:fixed;z-index:-1;top:0;left:0;right:0;opacity:0;transition:opacity .18s;height:calc(env(safe-area-inset-top,0px) + var(--hdrH,92px) + 30px);pointer-events:none;
   background:linear-gradient(to bottom,var(--bg) 0%,var(--bg) calc(100% - 56px),color-mix(in srgb,var(--bg) 88%,transparent) calc(100% - 38px),color-mix(in srgb,var(--bg) 55%,transparent) calc(100% - 20px),color-mix(in srgb,var(--bg) 18%,transparent) calc(100% - 8px),transparent 100%)}
 .neo-home h2{background:linear-gradient(90deg,var(--ink) 30%,#3c63e0 78%,#7b4fe0);-webkit-background-clip:text;background-clip:text;color:transparent}
 .neo-home .chip[aria-pressed="true"],.neo-home .chip.on-acc{background:linear-gradient(100deg,#3f7bff,#7a5cff);color:#fff;border-color:transparent;box-shadow:0 6px 18px -8px rgba(90,110,255,.8)}
@@ -589,6 +589,7 @@ html.neo-dark{--bg:#060914;--surface:#10172e;--surface-2:#18213d;--ink:#e9eefc;-
 html.neo-dark body{background:radial-gradient(90% 55% at 15% -5%,rgba(88,110,255,.30),transparent 60%),radial-gradient(70% 45% at 110% 25%,rgba(167,123,255,.22),transparent 60%),radial-gradient(80% 50% at 50% 115%,rgba(63,240,208,.12),transparent 60%),#060914;background-attachment:fixed}
 html.neo-dark body::before{background-image:linear-gradient(rgba(120,160,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(120,160,255,.07) 1px,transparent 1px)}
 html.neo-dark header.top{background:none}
+html.neo-home.scrolled header.top::before{opacity:1}
 html.neo-dark nav.tabs{background:rgba(10,14,28,.8);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--line)}
 html.neo-dark nav.tabs button[aria-current="page"]{color:#9cc0ff;text-shadow:0 0 12px rgba(120,170,255,.8)}
 html.neo-dark nav.tabs button[aria-current="page"] svg{filter:drop-shadow(0 0 6px rgba(120,170,255,.9))}
@@ -1167,7 +1168,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "14.2 · 24 ottobre";
+const APP_VERSION = "14.3 · 24 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3491,7 +3492,7 @@ function pickAdd() {
   let t; const set = () => { clearTimeout(t); t = setTimeout(() => { document.documentElement.classList.toggle("kb", isTxt(document.activeElement)); stripSync(); }, 60); };
   document.addEventListener("focusin", set); document.addEventListener("focusout", set);
 })();
-window.addEventListener("scroll", () => { if (S.tab === "dieta") stripSync(); }, { passive: true });
+window.addEventListener("scroll", () => { if (S.tab === "dieta") stripSync(); const sc = window.scrollY > 6; if (sc !== document.documentElement.classList.contains("scrolled")) document.documentElement.classList.toggle("scrolled", sc); }, { passive: true });
 // iOS a volte lascia il "layout viewport" sfasato (dopo la tastiera o durante lo scroll) e la barra fissa sale a metà schermo:
 // la misuro e la riaggancio al fondo reale dello schermo
 (() => {
