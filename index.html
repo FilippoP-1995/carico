@@ -1007,7 +1007,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "12.2 · 23 ottobre";
+const APP_VERSION = "12.3 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3803,7 +3803,7 @@ document.addEventListener("click", ev => {
   else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (nx ? xn(nx) : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
   else if (a === "lv-mini") { LV.mini = !LV.mini; renderLive(); }
   else if (a === "lv-skip") { stopAlarm(); const wasRestPhase = LV.phase === "rest"; LV.phase = "set"; LV.resting = false; LV.over = false; LV.flash = ""; if (wasRestPhase) lvDefaults(); renderLive(); }
-  else if (a === "lv-finish") lvFinish();
+  else if (a === "lv-finish") { lvFinish(); setTimeout(() => ntAiRefresh(true), 1500); }
   else if (a === "ask-save") { const w = LV.ask; LV.ask = null; LV.keepShort = true; if (w === "finish") lvFinish(); else closeLive(); }
   else if (a === "ask-drop") { const l = dayLog(); (day.exercises || []).forEach(x => { delete l.w.ex[x.id]; }); if (!(LV.archived && restoreRun(l, day))) discardSession(l, day); store.saveDay(S.date); LV.ask = null; closeLive(); toast("Allenamento non salvato"); }
   else if (a === "ask-back") { LV.ask = null; renderLive(); }
@@ -4394,8 +4394,8 @@ function coachContext0() {
   } else L.push("\nNessuna scheda di allenamento caricata.");
   const sess = sessionDates().slice(-15);
   if (sess.length) {
-    L.push("\nALLENAMENTI RECENTI (serie fatte kg x rip):");
-    sess.forEach(d => { const w = S.days[d].w; L.push(`- ${d} ${w.dayName || ""}: ` + Object.values(exOf(d)).map(e => { const sd = (e.s || []).filter(x => x && x.done); return sd.length ? `${e.name} ${sd.map(x => (x.kg || "–") + "x" + (x.reps || "–")).join(",")}${e.feel && feelOf(e.feel) ? " (sensazione: " + feelOf(e.feel)[2].toLowerCase() + ")" : ""}${e.note ? ' [nota: "' + e.note.slice(0, 120) + '"]' : ""}` : null; }).filter(Boolean).join("; ")); });
+    L.push("\nALLENAMENTI RECENTI (dettaglio reale: esercizi fatti con kg x rip, sostituiti, saltati, recupero, durata):");
+    sess.forEach(d => L.push(sessDetail(d)));
   } else L.push("Nessun allenamento registrato finora.");
   { const hk = hkDay(today()); if (hk) L.push(`Anelli di Salute oggi: ${fmtI(hk.kcal)} kcal attive (obiettivo ${fmtI(HKG().kcal)}), ${fmtI(hk.ex)} min di esercizio (obiettivo ${HKG().ex}), ${fmtI(hk.steps)} passi (obiettivo ${fmtI(HKG().steps)}).`); }
   { const h = hydro(today()); L.push(`Acqua oggi: ${fmtN(Math.round((h.w || 0) / 100) / 10)} L su ${fmtN(waterGoal())} L.${supps().length ? " Integratori: " + supps().map(x => `${x.name}${x.dose ? " " + x.dose : ""} ${h.s && h.s[x.id] ? "(preso)" : "(non ancora)"}`).join(", ") + "." : ""}`); }
@@ -4420,6 +4420,27 @@ function coachContext0() {
   L.push(registroTxt());
   return L.join("\n");
 }
+function sessDetail(d) { // tutto quello che è registrato di un giorno di allenamento, per il coach
+  const Lg = S.days[d]; if (!Lg) return ""; const out = [];
+  const ss = sessionsOn(d); const w = Lg.w || {};
+  const dur = (st, en) => st && en && en > st ? Math.round((en - st) / 60000) + " min" : "";
+  const runs = Lg.runs || []; let ri = 0;
+  ss.forEach(x => {
+    let st = 0, en = 0;
+    if (x.active) { st = w.start; en = w.end; } else if (x.finished && runs[ri] && runs[ri].dayId === x.day.id) { st = runs[ri].start; en = runs[ri].end; ri++; } else { const t = (w.times || {})[x.day.id]; if (t) { st = t.start; en = t.end; } }
+    const rows = (x.day.exercises || []).map(ex => {
+      const e = (x.ex || {})[ex.id]; const sd = ((e && e.s) || []).filter(z => z && z.done);
+      const nm = (e && e.name) || ex.name; const swap = norm(nm) !== norm(ex.name) ? ` (al posto di ${ex.name})` : "";
+      if (Lg.skipEx && Lg.skipEx[ex.id]) return `${ex.name}: SALTATO`;
+      const rs = Lg.restSel && Lg.restSel[ex.id] ? ` [recupero cambiato a ${Lg.restSel[ex.id]} s, piano ${planRest(ex)} s]` : "";
+      if (!sd.length) return `${nm}${swap}: non fatto (previsto ${exSets(ex)}x${ex.reps || "?"})`;
+      return `${nm}${swap} ${sd.map(z => (z.kg || "–") + "x" + (z.reps || "–")).join(",")} (previsto ${exSets(ex)}x${ex.reps || "?"}${sd.length < exSets(ex) ? `, fatte ${sd.length} serie su ${exSets(ex)}` : ""})${rs}${e.feel && feelOf(e.feel) ? " sensazione: " + feelOf(e.feel)[2].toLowerCase() : ""}${e.note ? ' [nota: "' + String(e.note).slice(0, 120) + '"]' : ""}`;
+    });
+    out.push(`- ${d} ${x.day.name}${x.finished ? "" : " (in corso)"}${dur(st, en) ? ", durata " + dur(st, en) : ""}: ${rows.join("; ")}`);
+  });
+  if (!ss.length) { const ex = exOf(d); const r = Object.values(ex).map(e => { const sd = (e.s || []).filter(z => z && z.done); return sd.length ? `${e.name} ${sd.map(z => (z.kg || "–") + "x" + (z.reps || "–")).join(",")}` : null; }).filter(Boolean); if (r.length) out.push(`- ${d} ${w.dayName || ""}: ${r.join("; ")}`); }
+  return out.join("\n");
+}
 function registroTxt() { // quello che è DAVVERO registrato nelle sezioni Dieta e Allenamento (oggi + ultimi giorni)
   const keep = S.date; const t0 = today(); const out = [];
   const it = x => `${x.qty ? x.qty + " " : ""}${x.food}${hasMac(x) ? ` (${fmtI(x.kcal)} kcal P${fmtI(x.p)} C${fmtI(x.c)} G${fmtI(x.f)})` : ""}`;
@@ -4438,10 +4459,10 @@ function registroTxt() { // quello che è DAVVERO registrato nelle sezioni Dieta
     }
     const L0 = S.days[t0]; const ss = sessionsOn(t0);
     out.push("ALLENAMENTO:");
-    if (ss.length) ss.forEach(x => { const ex = Object.values(x.ex || {}).map(e => { const sd = (e.s || []).filter(z => z && z.done); return sd.length ? `${e.name} ${sd.map(z => (z.kg || "–") + "x" + (z.reps || "–")).join(",")}` : null; }).filter(Boolean);
-      out.push(`- ${x.day.name}: ${x.finished ? "terminato" : "in corso"}, ${x.sets} serie su ${totalSets(x.day, L0)}${Object.keys((L0 && L0.skipEx) || {}).length ? " (saltati: " + (x.day.exercises || []).filter(e => isSkipped(L0, e.id)).map(e => e.name).join(", ") + ")" : ""}${ex.length ? " — " + ex.join("; ") : ""}`); });
+    if (ss.length) out.push(sessDetail(t0));
     else if (L0 && L0.rest) out.push("- Oggi l'utente ha segnato RIPOSO (nessun allenamento).");
     else { const pl = hasSched() ? plannedOn(t0) : undefined; out.push("- Nessuna serie registrata oggi" + (pl ? ` (in programma: ${(wDays().find(d => d.id === pl) || {}).name})` : pl === null ? " (giorno di riposo da programma)" : "") + "."); }
+    if (L0 && L0.altSel && Object.keys(L0.altSel).length) out.push("Sostituzioni scelte per oggi: " + Object.entries(L0.altSel).map(([id, n]) => { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === id); return ex ? `${n} al posto di ${ex.name}` : n; }).join(", "));
     // ultimi giorni di dieta
     const past = Object.keys(S.days).filter(d => d < t0).sort().slice(-6).reverse(); const rows = [];
     past.forEach(d => { S.date = d; const ml = mealLog(); const nE = slots().filter(sl => ml.eaten[sl.key]).length; if (!nE && !ml.extra.length) return; rows.push(`${d}: ${mac(dayTotals())} (${nE}/${slots().length} pasti spuntati)`); });
@@ -4820,6 +4841,30 @@ function ntBank() {
   for (const k in b) b[k] = b[k].map(s => femTxt(nm && k === "coach" && Math.random() < 0.4 ? nm + ", " + s[0].toLowerCase() + s.slice(1) : s));
   return b;
 }
+// frasi del coach per le notifiche scritte ogni giorno dall'AI sui dati veri (carichi, sostituzioni, esercizi saltati, pasti)
+let NT_AI_BUSY = false;
+async function ntAiRefresh(force) {
+  const n = ntCfg(); if (!n || !n.on || !(n.coach && +n.coach.n > 0) || !AI.ready() || NT_AI_BUSY) return;
+  const t = today(); const cur = S.profile.ntAi || {}; const L0 = S.days[t];
+  const sig = t + "|" + (L0 ? setsDone(L0) + "|" + Object.keys((L0.m || {}).eaten || {}).length : "0");
+  if (!force && cur.d === t && cur.sig === sig) return;
+  if (!force && cur.d === t && Date.now() - (cur.at || 0) < 3 * 3600e3) return; // al massimo ogni 3 ore, salvo fine allenamento
+  NT_AI_BUSY = true;
+  try {
+    const tone = coachTone();
+    const r = await AI.json(`Sei il coach dell'app Carico. Scrivi 8 frasi per le NOTIFICHE PUSH che l'utente riceverà oggi in orari casuali.
+Ogni frase: massimo 130 caratteri, in italiano, una sola idea, con 1 emoji. Devono essere PERSONALI e basate sui DATI VERI qui sotto: carichi e ripetizioni delle ultime sedute (es. proporre +2,5 kg dove ha chiuso tutte le rip.), esercizi saltati o sostituiti, seduta in programma oggi o riposo, record, pasti e macro registrati oggi, costanza della settimana. Almeno 5 frasi su 8 devono citare un dato concreto (esercizio, kg, rip., giorno). Non parlare di acqua né integratori. Non inventare dati che non ci sono.
+TONO (obbligatorio):
+${TONES[tone].txt}
+
+DATI:
+${coachContext()}
+
+Rispondi solo con JSON: {"lines":["...", "..."]}`, { tier: "quick", maxTokens: 1500 });
+    const lines = (r && Array.isArray(r.lines) ? r.lines : []).map(x => String(x).trim().slice(0, 180)).filter(x => x.length > 8).slice(0, 10);
+    if (lines.length) { S.profile.ntAi = { d: t, sig, at: Date.now(), lines }; store.saveProfile(); pushSync(); }
+  } catch (e) {} finally { NT_AI_BUSY = false; }
+}
 function ntPayload() {
   const n = ntCfg(); const t = today(); const l = S.days[t];
   const eaten = l && l.m && l.m.eaten ? Object.keys(l.m.eaten).filter(k => l.m.eaten[k]) : [];
@@ -4831,7 +4876,7 @@ function ntPayload() {
   let planMap; if (hasSched()) { planMap = {}; for (let i = 0; i < 8; i++) { const x = new Date(); x.setDate(x.getDate() + i); const ds = dstr(x); const pl = plannedOn(ds); planMap[ds] = pl ? (wDays().find(y => y.id === pl) || {}).name || "" : ""; } }
   return { tz: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Rome", next: d ? d.name : "", checkDay: checkDay(), plan: planMap,
     coachTitle: tone === "cazzaro" ? "🍻 Il Cazzaro" : tone === "roast" ? "🔥 Il Mental Coach" : "💬 Il Coach",
-    rem: { ...n.rem, meals, work: wDays().length ? n.rem.work : { ...n.rem.work, on: false } }, coach: n.coach, bank: ntBank(), today: { date: t, eaten, wDone } };
+    rem: { ...n.rem, meals, work: wDays().length ? n.rem.work : { ...n.rem.work, on: false } }, coach: n.coach, bank: { ...ntBank(), coachP: S.profile.ntAi && S.profile.ntAi.d === t ? { d: t, lines: S.profile.ntAi.lines } : null }, today: { date: t, eaten, wDone } };
 }
 let NT_URL = null;
 async function ntUrl() {
@@ -4943,8 +4988,8 @@ if (ntSupported()) {
   showOnboarding();
   try { const inv = new URLSearchParams(location.search).get("invito"); if (inv && inv.length >= 4) { lsSet("carico.code", inv); setTimeout(() => toast("Codice invito salvato: il coach è attivo 🤝", 4000), 800); } } catch (e) {}
   try { const q = new URLSearchParams(location.search).get("go"); if (q && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(q)) { go(q); history.replaceState(null, "", location.pathname); } } catch (e) {}
-  if (((S.profile.user || {}).notif || {}).on && ntSupported()) { navigator.serviceWorker.register("./sw.js").catch(() => {}); pushSync(); }
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) pushSync(); });
+  if (((S.profile.user || {}).notif || {}).on && ntSupported()) { navigator.serviceWorker.register("./sw.js").catch(() => {}); pushSync(); setTimeout(() => ntAiRefresh(false), 6000); }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) { pushSync(); setTimeout(() => ntAiRefresh(false), 4000); } });
   if (IN_CLAUDE) {
     try { AI.sample = await claude.use("sample"); if (AI.sample) AI.limits = await AI.sample.limits().catch(() => null); } catch (e) { AI.sample = null; }
     if (S.tab === "piano") render();

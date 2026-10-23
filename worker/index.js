@@ -110,7 +110,7 @@ export function dueMessages(u, now) {
     const span = b - a;
     for (let i = 0; i < n; i++) {
       const m = a + Math.floor(span * (i + (hash(u.id + L.date + i) % 1000) / 1000) / n);
-      if (m === L.min) out.push({ title: c.coachTitle || "💬 Il Coach", body: pick(B.coach, u.id + L.date + "q" + i), tag: "coach", go: "oggi" });
+      if (m === L.min) out.push({ title: c.coachTitle || "💬 Il Coach", body: pick(B.coachP && B.coachP.d === L.date && (B.coachP.lines || []).length ? B.coachP.lines : B.coach, u.id + L.date + "q" + i), tag: "coach", go: "oggi" });
     }
   }
   return out.filter(m => m.body);
