@@ -1572,7 +1572,7 @@ function repTargets(reps, sets) { // "10-12" = range uguale per tutte; "10-8-8-6
 }
 function repEditor(ex, dark) { // obiettivo ripetizioni per ogni serie: numero o range (es. 10-12)
   if (S.repEdit !== ex.id) return "";
-  const n = exSets(ex); const T = repTargets(ex.reps, n);
+  const n = exSets(ex); const T = repTargets(ex.reps, n).map((t, i) => S.repDraft && S.repDraft[i] != null ? S.repDraft[i] : t);
   return `<form class="rep-ed ${dark ? "dark" : ""}" data-form="rep-ed" data-ex="${ex.id}">
     <span class="re-t">Ripetizioni obiettivo per serie</span>
     <div class="re-grid">${T.map((t, i) => `<label>Serie ${i + 1}<input class="in re-in" data-i="${i}" value="${esc(t)}" placeholder="10 o 8-12" autocomplete="off"></label>`).join("")}</div>
@@ -3138,6 +3138,7 @@ document.addEventListener("input", ev => {
   else if (el.id === "pkQty" && S.picker) { S.picker.qty = el.value; const pv = $("#pkPrev"); if (pv) pv.innerHTML = macLine(pickMac(S.picker)); }
   else if (el.id === "pkName" && S.picker) S.picker.name = el.value;
   else if (el.id === "varName" && S.varBuild) S.varBuild.name = el.value;
+  else if (el.classList && el.classList.contains("re-in")) { S.repDraft = S.repDraft || {}; S.repDraft[+el.dataset.i] = el.value; }
   else if (el.id === "altHint" && S.altOpen) S.drafts["alt:" + S.altOpen] = el.value;
 });
 document.addEventListener("change", ev => {
@@ -3191,7 +3192,7 @@ document.addEventListener("submit", ev => {
     const L = [...f.querySelectorAll(".re-in")].map(i => i.value.trim().replace(/\s*[–—-]\s*/g, "-").replace(/[,;]/g, "").slice(0, 16));
     if (L.some(x => !/\d/.test(x))) { toast("Scrivi per ogni serie un numero o un range, es. 8-12"); return; }
     const v = L.every(x => x === L[0]) ? L[0] : L.join(", ");
-    if (ex) { ex.reps = v; store.saveProfile(); toast(`${xn(ex)}: obiettivo ${v} rip.`, 2400); }
+    if (ex) { ex.reps = v; store.saveProfile(); toast(`${xn(ex)}: obiettivo ${v} rip.`, 2400); } S.repDraft = null;
     S.repEdit = null; if (!$("#live").hidden) { lvDefaults(); renderLive(); } else render(); }
   else if (f.dataset.form === "xa-add") { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === f.dataset.ex); const n = ($("#xaIn") || {}).value ? $("#xaIn").value.trim().slice(0, 60) : "";
     if (ex && n && norm(n) !== norm(ex.name)) { ex.alts = ex.alts || []; if (!ex.alts.some(y => norm(y) === norm(n))) ex.alts.push(n); store.saveProfile(); tagMuscles(); }
@@ -3333,9 +3334,9 @@ document.addEventListener("click", ev => {
       store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su tutte le ${n + 1} serie`); return;
     }
     case "xa-open": S.altPick = S.altPick === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); return;
-    case "xa-repedit": S.repEdit = S.repEdit === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); setTimeout(() => { const i = document.querySelector(".re-in"); if (i) { i.focus(); i.select(); } }, 40); return;
-    case "xa-repall": { const f = b.closest("form"); const ins = f ? [...f.querySelectorAll(".re-in")] : []; if (ins.length) ins.forEach(i => i.value = ins[0].value); return; }
-    case "xa-repclose": S.repEdit = null; if (!$("#live").hidden) renderLive(); else render(); return;
+    case "xa-repedit": S.repDraft = null; S.repEdit = S.repEdit === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); setTimeout(() => { const i = document.querySelector(".re-in"); if (i) { i.focus(); i.select(); } }, 40); return;
+    case "xa-repall": { const f = b.closest("form"); const ins = f ? [...f.querySelectorAll(".re-in")] : []; if (ins.length) { S.repDraft = S.repDraft || {}; ins.forEach((i, k) => { i.value = ins[0].value; S.repDraft[k] = ins[0].value; }); } return; }
+    case "xa-repclose": S.repEdit = null; S.repDraft = null; if (!$("#live").hidden) renderLive(); else render(); return;
     case "xa-setadd": case "xa-setdel": {
       const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === b.dataset.ex); if (!ex) return;
       const n = exSets(ex); const l = dayLog(); const e = l.w.ex[ex.id];
