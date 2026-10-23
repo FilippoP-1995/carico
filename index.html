@@ -850,6 +850,24 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 #live .lv-rec b.chg{color:var(--hero-d)}
 #live .lv-rec button{width:30px;height:clamp(28px,3.3vh,32px);font-size:19px}
 
+
+/* ===== animazioni ===== */
+.confetti{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:90}
+.lv-done.anim .lv-emoji{animation:celebPop .9s cubic-bezier(.2,1.6,.4,1) both}
+.lv-done.anim h1{animation:celebUp .6s .15s both}
+.lv-done.anim>p{animation:celebUp .6s .25s both}
+.lv-done.anim .lv-stats>div{animation:celebUp .55s both;box-shadow:0 0 0 1px rgba(79,210,150,.25)}
+.lv-done.anim .lv-stats>div:nth-child(1){animation-delay:.35s}.lv-done.anim .lv-stats>div:nth-child(2){animation-delay:.45s}.lv-done.anim .lv-stats>div:nth-child(3){animation-delay:.55s}
+.lv-done.anim .lv-prs{animation:celebUp .6s .7s both,prGlow 2.2s 1.2s ease-in-out 2}
+.lv-done.anim .lv-feels,.lv-done.anim .lv-go,.lv-done.anim .lv-btn{animation:celebUp .5s .8s both}
+@keyframes celebPop{0%{transform:scale(.2) rotate(-25deg);opacity:0}60%{transform:scale(1.25) rotate(8deg);opacity:1}100%{transform:none}}
+@keyframes celebUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes prGlow{0%,100%{box-shadow:0 0 0 0 rgba(242,191,69,0)}50%{box-shadow:0 0 24px 2px rgba(242,191,69,.55)}}
+.ring.wk-full .rp{filter:drop-shadow(0 0 5px var(--hero-g))}
+.ring.wk-full .rl::after{content:" 🏆"}
+.ring.celebrate .rw{animation:ringBoom 1.4s cubic-bezier(.2,1.5,.4,1)}
+@keyframes ringBoom{0%{transform:scale(1)}25%{transform:scale(1.28)}45%{transform:scale(.94)}65%{transform:scale(1.08)}100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.lv-done.anim *,.ring.celebrate .rw{animation:none!important}}
 /* esercizi saltati */
 .lv-pill.sk{text-decoration:line-through;opacity:.55}
 .lv-start .st-x.sk{opacity:.55}
@@ -1007,7 +1025,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "12.3 · 23 ottobre";
+const APP_VERSION = "12.4 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1591,6 +1609,10 @@ function render() {
   document.documentElement.classList.toggle("neo-home", neo); applyTheme();
   if (S.heroDir) { const h = v.querySelector(".hero-sum"); if (h) h.classList.add("in-" + S.heroDir); S.heroDir = null; }
   if (neo && S.homeEnter && S.tab === "oggi") { const hs = v.querySelector(".hero-sum"); if (hs) countUp(hs); S.homeEnter = false; }
+  if (S.tab === "oggi") { const wr = v.querySelector(".ring.wk-full"); const wk = dstr(weekStart(today()));
+    if (wr && dstr(weekStart(S.date)) === wk && S.profile.celebWeek !== wk) { S.profile.celebWeek = wk; store.saveProfile();
+      setTimeout(() => { wr.classList.add("celebrate"); const r = wr.getBoundingClientRect(); confetti({ x: (r.left + r.width / 2) / innerWidth, y: (r.top + r.height / 2) / innerHeight, n: 70, power: 0.7, dur: 2000 });
+        toast("🏆 Settimana completata! Tutti gli allenamenti in programma sono fatti", 3800); setTimeout(() => wr.classList.remove("celebrate"), 1800); }, 450); } }
   if (neo && S.viewEnter && S.tab !== "oggi") { v.classList.remove("view-in"); void v.offsetWidth; v.classList.add("view-in"); setTimeout(() => v.classList.remove("view-in"), 700); }
   S.viewEnter = false;
   S.stripKey = String(Date.now()); stripSync();
@@ -1678,9 +1700,35 @@ function recentPR() { // ultimo record personale di carico negli ultimi 21 giorn
     if (best[key] != null && top > best[key] && d >= lim) last = { name: ex[k].name, kg: top, prev: best[key], d }; best[key] = Math.max(best[key] || 0, top); } }
   return last;
 }
-function ring(pct, color, label, val) {
+const REDUCED = () => window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+function confetti({ x = 0.5, y = 0.3, n = 120, spread = 1, power = 1, dur = 2600 } = {}) { // coriandoli leggeri su canvas, poi spariscono
+  if (REDUCED()) return;
+  const cv = document.createElement("canvas"); cv.className = "confetti"; const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = innerWidth, H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; document.body.appendChild(cv);
+  const g = cv.getContext("2d"); g.scale(dpr, dpr);
+  const C = ["#4fd296", "#7aa2ff", "#f2b33d", "#ff7a8c", "#b88cff", "#3fd0dc", "#ffffff"];
+  const P = Array.from({ length: n }, () => { const a = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.9 * spread, v = (6 + Math.random() * 9) * power;
+    return { x: x * W, y: y * H, vx: Math.cos(a) * v, vy: Math.sin(a) * v, r: 3 + Math.random() * 4, c: C[(Math.random() * C.length) | 0], rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4, sh: Math.random() < 0.5 }; });
+  const t0 = performance.now();
+  const fr = t => { const k = (t - t0) / dur; g.clearRect(0, 0, W, H);
+    P.forEach(p => { p.vy += 0.32; p.vx *= 0.985; p.vy *= 0.985; p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      g.save(); g.globalAlpha = Math.max(0, 1 - Math.max(0, k - 0.6) / 0.4); g.translate(p.x, p.y); g.rotate(p.rot); g.fillStyle = p.c;
+      if (p.sh) g.fillRect(-p.r, -p.r / 2, p.r * 2, p.r); else { g.beginPath(); g.arc(0, 0, p.r / 1.4, 0, 7); g.fill(); } g.restore(); });
+    if (k < 1) requestAnimationFrame(fr); else cv.remove(); };
+  requestAnimationFrame(fr);
+}
+function countNums(root, sel, ms = 900) { // i numeri salgono da 0
+  if (REDUCED()) return;
+  root.querySelectorAll(sel).forEach(el => { const node = [...el.childNodes].find(n => n.nodeType === 3 && /\d/.test(n.textContent)); if (!node) return;
+    const m = /^(\D*)([\d.]+(?:,\d+)?)(.*)$/.exec(node.textContent); if (!m) return; const target = parseFloat(m[2].replace(/\./g, "").replace(",", ".")); if (!isFinite(target)) return;
+    const dec = m[2].includes(",") ? 1 : 0; const t0 = performance.now();
+    const step = t => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); const v = target * e;
+      node.textContent = m[1] + (dec ? v.toFixed(1).replace(".", ",") : Math.round(v).toLocaleString("it-IT")) + m[3]; if (k < 1) requestAnimationFrame(step); else node.textContent = m[1] + m[2] + m[3]; };
+    requestAnimationFrame(step); });
+}
+function ring(pct, color, label, val, cls = "") {
   const r = 26, c = 2 * Math.PI * r, p = Math.max(0, Math.min(1, pct || 0));
-  return `<div class="ring"><div class="rw"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--hero-track)" stroke-width="7"/>
+  return `<div class="ring ${cls}"><div class="rw"><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--hero-track)" stroke-width="7"/>
     ${p > 0.005 ? "" : "<!--"}<circle class="rp" cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${(c * p).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)"/>${p > 0.005 ? "" : "-->"}</svg>
     <span class="rv">${val}</span></div><span class="rl">${label}</span></div>`;
 }
@@ -1776,7 +1824,7 @@ function summaryCard() {
     <div class="rings">
       ${restToday() ? ring(0, "var(--hero-a)", "Allenamento", "💤") : hs && hs.finished && !done ? ring(1, "var(--hero-a)", "Allenamento", "✓") : ring(tot ? done / tot : 0, "var(--hero-a)", "Allenamento", tot ? `${done}/${tot}` : "–")}
       ${ring(Tg.kcal ? t.kcal / Tg.kcal : 0, t.kcal > (Tg.kcal || 1e9) * 1.05 ? "var(--danger)" : "var(--hero-d)", "Calorie", Tg.kcal ? fmtI(t.kcal / Tg.kcal * 100) + "%" : (hasDiet ? fmtI(t.kcal) : "–"))}
-      ${ring(weekN / target, "var(--hero-g)", "Settimana", `${weekN}/${target}`)}
+      ${ring(weekN / target, "var(--hero-g)", "Settimana", weekN >= target && target > 0 ? `${weekN}/${target}` : `${weekN}/${target}`, weekN >= target && target > 0 ? "wk-full" : "")}
     </div>
     <div class="week">${strip}</div>${wkTog}${wkPick}
     <div class="hs-grid">
@@ -3692,6 +3740,8 @@ function renderLive() {
   el.innerHTML = `<div class="lv-in ${dock && LV.mini ? "docked" : ""}">${top}${startBar}${lsl ? `<div class="lv-lastsess">${lsl}</div>` : ""}${LV.flash && LV.resting ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}<div class="lv-body">${body}</div></div>${dock}`;
   lvTick();
   const on = el.querySelector(".lv-pill.on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
+  if (LV.phase === "done" && !LV.celebrated) { LV.celebrated = true; const d = el.querySelector(".lv-done"); if (d && !REDUCED()) { d.classList.add("anim"); countNums(d, ".lv-stats b", 1100); setTimeout(() => confetti({ x: 0.5, y: 0.22, n: 160, power: 1.15 }), 150); setTimeout(() => confetti({ x: 0.15, y: 0.5, n: 50, spread: 0.6, power: 0.9 }), 650); setTimeout(() => confetti({ x: 0.85, y: 0.5, n: 50, spread: 0.6, power: 0.9 }), 800); try { navigator.vibrate && navigator.vibrate([30, 60, 30]); } catch (e) {} } }
+  if (LV.phase !== "done") LV.celebrated = false;
 }
 function lvSetDone() {
   unlockAlarm();
