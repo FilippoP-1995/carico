@@ -851,7 +851,11 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 #live .lv-tgt{border:0;background:none;color:var(--hero-mut);font:inherit;font-size:14px;padding:0;display:flex;align-items:baseline;gap:4px}
 #live .lv-tgt b{color:var(--hero-ink);font-family:var(--f-display);font-size:18px;background:var(--hero-a);color:#0b1020;border-radius:8px;padding:0 7px}
 .rep-ed{display:flex;flex-direction:column;gap:8px;background:var(--pc-soft,var(--surface-2));border-radius:12px;padding:10px}
-.rep-ed label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700}
+.rep-ed label{display:flex;flex-direction:column;gap:3px;font-size:11.5px;font-weight:700}
+.rep-ed .re-t{font-size:12px;font-weight:800}
+.re-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
+.re-grid .in{text-align:center;padding:8px 4px}
+.rep-ed.dark .re-t{color:var(--hero-mut)}
 .rep-ed .in{font-size:16px}
 .rep-ed .small{color:var(--muted)}
 .rep-ed.dark{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14)}
@@ -1066,7 +1070,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "13.1 · 23 ottobre";
+const APP_VERSION = "13.2 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1566,11 +1570,14 @@ function repTargets(reps, sets) { // "10-12" = range uguale per tutte; "10-8-8-6
   if (byComma.length === 1 && parts.length === sets && parts.length > 2) return parts;
   return Array(sets).fill(r);
 }
-function repEditor(ex, dark) { // obiettivo ripetizioni modificabile: numero, range o una per serie
+function repEditor(ex, dark) { // obiettivo ripetizioni per ogni serie: numero o range (es. 10-12)
   if (S.repEdit !== ex.id) return "";
-  return `<form class="rep-ed ${dark ? "dark" : ""}" data-form="rep-ed" data-ex="${ex.id}"><label>Ripetizioni obiettivo<input class="in" id="repIn" value="${esc(ex.reps || "")}" placeholder="es. 10, 8-12 o 10-8-8-6" autocomplete="off" inputmode="text"></label>
-    <div class="row" style="gap:6px"><button class="btn sm diet" type="submit">Salva</button><button class="btn sm ghost" type="button" data-act="xa-repclose">Annulla</button></div>
-    <span class="small">Un numero (10), un range (8-12) o una per serie (10-8-8-6 oppure 10-12, 8-10, 8-10). Vale anche per le prossime volte.</span></form>`;
+  const n = exSets(ex); const T = repTargets(ex.reps, n);
+  return `<form class="rep-ed ${dark ? "dark" : ""}" data-form="rep-ed" data-ex="${ex.id}">
+    <span class="re-t">Ripetizioni obiettivo per serie</span>
+    <div class="re-grid">${T.map((t, i) => `<label>Serie ${i + 1}<input class="in re-in" data-i="${i}" value="${esc(t)}" placeholder="10 o 8-12" autocomplete="off"></label>`).join("")}</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm ghost" type="button" data-act="xa-repall">⤵ Uguale per tutte</button><button class="btn sm diet" type="submit">Salva</button><button class="btn sm ghost" type="button" data-act="xa-repclose">Annulla</button></div>
+    <span class="small">Ogni serie può avere un numero (10) o un range (8-12). Vale anche per le prossime volte.</span></form>`;
 }
 function totalSets(day, l) { const sk = (l && l.skipEx) || {}; return (day.exercises || []).reduce((a, e) => a + (sk[e.id] ? 0 : Math.max(1, parseInt(e.sets) || 3)), 0); }
 const isSkipped = (l, id) => !!(l && l.skipEx && l.skipEx[id]);
@@ -3180,8 +3187,11 @@ document.addEventListener("submit", ev => {
     ws.sort((a, b) => a.d < b.d ? -1 : 1); if (ws.length > 730) ws.splice(0, ws.length - 730);
     store.saveProfile(); toast(wd === today() ? "Peso salvato" : "Peso salvato per " + fmtDay(wd, { weekday: "long", day: "numeric", month: "long" })); render();
   } else if (f.dataset.form === "food") { const k = f.dataset.key; const list = S.sug[k] || []; if (list.length && list[0].sc >= 3 * parseQuery(S.drafts[k] || "").terms.length) openPicker(k, list[0]); else addFood(k); }
-  else if (f.dataset.form === "rep-ed") { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === f.dataset.ex); const v = (($("#repIn") || {}).value || "").trim().replace(/\s*[–—]\s*/g, "-").replace(/\s*-\s*/g, "-").slice(0, 40);
-    if (ex && v && /\d/.test(v)) { ex.reps = v; store.saveProfile(); toast(`${xn(ex)}: obiettivo ${v} rip.`, 2200); } else if (v) { toast("Scrivi un numero o un range, es. 8-12"); return; }
+  else if (f.dataset.form === "rep-ed") { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === f.dataset.ex);
+    const L = [...f.querySelectorAll(".re-in")].map(i => i.value.trim().replace(/\s*[–—-]\s*/g, "-").replace(/[,;]/g, "").slice(0, 16));
+    if (L.some(x => !/\d/.test(x))) { toast("Scrivi per ogni serie un numero o un range, es. 8-12"); return; }
+    const v = L.every(x => x === L[0]) ? L[0] : L.join(", ");
+    if (ex) { ex.reps = v; store.saveProfile(); toast(`${xn(ex)}: obiettivo ${v} rip.`, 2400); }
     S.repEdit = null; if (!$("#live").hidden) { lvDefaults(); renderLive(); } else render(); }
   else if (f.dataset.form === "xa-add") { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === f.dataset.ex); const n = ($("#xaIn") || {}).value ? $("#xaIn").value.trim().slice(0, 60) : "";
     if (ex && n && norm(n) !== norm(ex.name)) { ex.alts = ex.alts || []; if (!ex.alts.some(y => norm(y) === norm(n))) ex.alts.push(n); store.saveProfile(); tagMuscles(); }
@@ -3323,7 +3333,8 @@ document.addEventListener("click", ev => {
       store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su tutte le ${n + 1} serie`); return;
     }
     case "xa-open": S.altPick = S.altPick === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); return;
-    case "xa-repedit": S.repEdit = S.repEdit === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); setTimeout(() => { const i = $("#repIn"); if (i) { i.focus(); i.select(); } }, 40); return;
+    case "xa-repedit": S.repEdit = S.repEdit === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); setTimeout(() => { const i = document.querySelector(".re-in"); if (i) { i.focus(); i.select(); } }, 40); return;
+    case "xa-repall": { const f = b.closest("form"); const ins = f ? [...f.querySelectorAll(".re-in")] : []; if (ins.length) ins.forEach(i => i.value = ins[0].value); return; }
     case "xa-repclose": S.repEdit = null; if (!$("#live").hidden) renderLive(); else render(); return;
     case "xa-setadd": case "xa-setdel": {
       const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === b.dataset.ex); if (!ex) return;
