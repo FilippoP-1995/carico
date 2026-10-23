@@ -763,6 +763,37 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .prog-v>.card:nth-child(7n+1){--pc:var(--p3);--pc-soft:var(--p3s)}.prog-v>.card:nth-child(7n+2){--pc:var(--p0);--pc-soft:var(--p0s)}.prog-v>.card:nth-child(7n+3){--pc:var(--p2);--pc-soft:var(--p2s)}.prog-v>.card:nth-child(7n+4){--pc:var(--p5);--pc-soft:var(--p5s)}.prog-v>.card:nth-child(7n+5){--pc:var(--p1);--pc-soft:var(--p1s)}.prog-v>.card:nth-child(7n+6){--pc:var(--p6);--pc-soft:var(--p6s)}.prog-v>.card:nth-child(7n+7){--pc:var(--p4);--pc-soft:var(--p4s)}
 .prog-v>.card{--accent:var(--pc);--accent-soft:var(--pc-soft);box-shadow:inset 0 3px 0 var(--pc)}
 .prog-v>.card .eyebrow,html.neo-dark .prog-v>.card .eyebrow,.neo-home .prog-v>.card .eyebrow{color:var(--pc)}
+/* alternative esercizi */
+.xa-btn{margin:0 16px 10px;align-self:flex-start;border:1px dashed var(--pc,var(--accent));color:var(--pc,var(--accent));background:transparent;border-radius:99px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700}
+.xa-btn.on{background:var(--pc-soft,var(--accent-soft));border-style:solid}
+.xa-btn.dark{margin:8px 0 0;border-color:var(--hero-a);color:var(--hero-a)}
+.xa-was{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-top:2px}
+.lv-ex .xa-was{color:var(--hero-mut);font-size:13px;margin-top:4px}
+.xa{display:flex;flex-direction:column;gap:6px;background:var(--pc-soft,var(--surface-2));border-radius:12px;padding:10px;margin-bottom:10px}
+.xa.dark{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);margin:10px 0;text-align:left}
+.xa-t{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--pc,var(--accent))}
+.xa.dark .xa-t{color:var(--hero-a)}
+.xa-o{display:flex;align-items:stretch;gap:6px}
+.xa-u{flex:1;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 12px;font:inherit;font-size:14.5px;font-weight:600}
+.xa-u small{font-weight:500;color:var(--muted);font-size:11.5px}
+.xa-o.on .xa-u{border-color:var(--pc,var(--accent));box-shadow:0 0 0 1px var(--pc,var(--accent))}
+.xa-d{flex:none;width:40px;border:1px solid var(--line);background:var(--surface);border-radius:10px;display:grid;place-items:center}
+.xa-d svg{width:14px;height:14px;stroke:var(--muted)}
+.xa.dark .xa-u,.xa.dark .xa-d{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#fff}
+.xa.dark .xa-o.on .xa-u{border-color:var(--hero-a);box-shadow:0 0 0 1px var(--hero-a)}
+.xa.dark .xa-u small,.xa.dark .xa-h{color:var(--hero-mut)}
+.xa-f .in{flex:1;font-size:16px}
+.xa.dark .xa-f .in{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.16)}
+.xa.dark .btn{background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.16)}
+.xa-h{font-size:11.5px;color:var(--muted)}
+.xa-mini{border:0;background:rgba(255,255,255,.1);color:var(--hero-a);border-radius:8px;padding:2px 8px;font-weight:700}
+/* inizio allenamento */
+.lv-start{display:flex;flex-direction:column;gap:12px;text-align:center;padding-top:6px}
+.lv-start h1{margin:0}
+.lv-start .st-list{display:flex;flex-direction:column;gap:6px;text-align:left;max-height:42vh;overflow:auto}
+.lv-start .st-x{display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 12px;font-size:14.5px}
+.lv-start .st-x span{color:var(--hero-mut);white-space:nowrap}
+.lv-go.st-go{font-size:22px;padding:22px}
 .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mtile{background:var(--surface-2);border-radius:12px;padding:9px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .mtile .num{font-size:21px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -901,7 +932,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.3 · 23 ottobre";
+const APP_VERSION = "11.4 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1372,7 +1403,7 @@ function noteBox(exId, dark) {
 function setNote(exId, txt) {
   const l = dayLog(); const day = currentDay(); const ex = day && (day.exercises || []).find(x => x.id === exId); if (!ex) return;
   if (l.w.dayId !== day.id && setsDone(l) === 0) l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false };
-  const e = l.w.ex[exId] = l.w.ex[exId] || { name: ex.name, s: [] }; e.note = txt.slice(0, 500); store.saveDay(S.date);
+  const e = l.w.ex[exId] = l.w.ex[exId] || { name: xn(ex), s: [] }; e.note = txt.slice(0, 500); store.saveDay(S.date);
 }
 function feelHint(last) {
   const nt = last && last.note ? ` · 📝 "${last.note.length > 60 ? last.note.slice(0, 60) + "…" : last.note}"` : "";
@@ -1750,6 +1781,30 @@ const ICON_BAR = '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke
 const ICON_CAM = '<svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 
 function exDone(l, ex) { return l && l.w.ex[ex.id] ? (l.w.ex[ex.id].s || []).filter(s => s && s.done).length : 0; }
+function migrateAlts() { // una volta: "Hack squat oppure leg press" -> nome + alternative
+  const W = plan().workout; if (!W || W.altsSplit) return false; let ch = false;
+  (W.days || []).forEach(d => (d.exercises || []).forEach(ex => {
+    const sp = String(ex.name).split(/\s+(?:oppure|in alternativa|or)\s+|\s+\/\s+/i).map(x => x.trim()).filter(Boolean);
+    if (sp.length > 1) { ex.name = sp[0]; ex.alts = [...(ex.alts || []), ...sp.slice(1)]; ch = true; }
+    const mn = String(ex.notes || "").match(/(?:oppure|in alternativa|in alt\.?|se occupat[oa])[:\s]+([^.;\n]+)/i);
+    if (mn) { const L = mn[1].split(/\s*(?:,|\/|\boppure\b|\bo\b)\s*/i).map(x => x.trim()).filter(x => x.length > 2); if (L.length) { ex.alts = [...(ex.alts || []), ...L.filter(x => !(ex.alts || []).includes(x))]; ex.notes = ex.notes.replace(mn[0], "").replace(/^[\s.,;:-]+|[\s,;:-]+$/g, ""); ch = true; } }
+  }));
+  W.altsSplit = true; return true;
+}
+/* alternative degli esercizi: la scelta vale per il giorno (l.altSel), storico separato per nome */
+const xn = (ex, l) => { l = l || peekLog(); const a = l && l.altSel && l.altSel[ex.id]; return a || ex.name; };
+function exView(ex) { const n = xn(ex); if (n === ex.name) return ex; const m = (ex.altMus || {})[norm(n)]; const v = { ...ex, name: n, notes: "" }; delete v.muscles; if (m) v.muscles = m; return v; }
+function altPicker(ex, dark) {
+  if (S.altPick !== ex.id) return "";
+  const cur = xn(ex); const A = ex.alts || []; const busy = S.busy["xa:" + ex.id];
+  const opt = (n, i) => `<div class="xa-o ${cur === n ? "on" : ""}"><button class="xa-u" data-act="xa-use" data-ex="${ex.id}" data-i="${i}">${cur === n ? "✓ " : ""}${esc(n)}${i < 0 ? ' <small>dalla scheda</small>' : ""}</button>${i >= 0 ? `<button class="xa-d" data-act="xa-del" data-ex="${ex.id}" data-i="${i}" aria-label="Togli ${esc(n)}">${ICON_X}</button>` : ""}</div>`;
+  return `<div class="xa ${dark ? "dark" : ""}"><span class="xa-t">⇄ Fai un altro esercizio oggi</span>
+    ${opt(ex.name, -1)}${A.map((n, i) => opt(n, i)).join("")}
+    <form class="row xa-f" data-form="xa-add" data-ex="${ex.id}"><input class="in" id="xaIn" placeholder="Aggiungi alternativa (es. Leg press)" autocomplete="off"><button class="btn sm">Aggiungi</button></form>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn ghost sm" data-act="xa-ai" data-ex="${ex.id}" ${busy ? "disabled" : ""}>${busy ? '<span class="spin"></span> Cerco…' : "✨ Suggerisci con l'AI"}</button>
+    ${cur !== ex.name ? `<button class="btn ghost sm" data-act="xa-always" data-ex="${ex.id}">📌 Usa sempre ${esc(cur)}</button>` : ""}</div>
+    <span class="xa-h">Carichi e progressi restano separati per ogni esercizio.</span></div>`;
+}
 function exSets(ex) { return Math.max(1, parseInt(ex.sets) || 3); }
 function ssGroup(day, i) { // indici degli esercizi in super serie con i (esercizi consecutivi con lo stesso ss)
   const X = (day && day.exercises) || []; const g = X[i] && X[i].ss; if (!g) return [i];
@@ -1806,7 +1861,7 @@ function vAllenamento() {
     const sets = exSets(ex);
     const logged = isThis && l.w.ex[ex.id] ? l.w.ex[ex.id].s || [] : [];
     const targets = repTargets(ex.reps, sets);
-    const last = lastPerformance(ex.name, S.date);
+    const last = lastPerformance(xn(ex), S.date);
     const doneN = logged.filter(s => s && s.done).length;
     const open = S.openEx.has(ex.id);
     const complete = doneN >= sets;
@@ -1825,7 +1880,7 @@ function vAllenamento() {
         const copy = i === 0 && sets > 1 ? `<div class="copyrow" data-copy="${ex.id}" ${copyVisible(ex.id) ? "" : "hidden"}><button data-act="copy-first" data-ex="${ex.id}">${ICON_DOWN}Stessi kg e rip. per le altre serie</button></div>` : "";
         return row + copy;
       }).join("");
-      inner = `<div class="ex-b">${muscleBlock(ex, false)}${noteBox(ex.id, false)}</div>${last || ex.notes ? `<div class="ex-b">
+      inner = `<div class="ex-b">${altPicker(ex, false)}${muscleBlock(exView(ex), false)}${noteBox(ex.id, false)}</div>${last || ex.notes ? `<div class="ex-b">
           ${last ? `<div class="last">Ultima volta (${esc(fmtDay(last.date, { day: "numeric", month: "short" }))}): ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${esc(feelHint(last))}</div>` : ""}
           ${ex.notes ? `<div class="ex-n">${esc(ex.notes)}</div>` : ""}</div>` : ""}
         <div class="sets">${rows}</div>
@@ -1834,9 +1889,10 @@ function vAllenamento() {
     }
     return `${ssPos === 0 ? `<div class="ss-label">🔗 Super serie · ${ssg.length} esercizi di fila, poi recupero</div>` : ""}<div class="card ex pc${EX_PC[xi % EX_PC.length]} ${complete ? "complete" : ""} ${open ? "open" : ""} ${ssPos >= 0 ? "ss" + (ssPos === 0 ? " ss-first" : "") + (ssPos === ssg.length - 1 ? " ss-last" : "") : ""}">
       <button class="exbtn" data-act="toggle-ex" data-ex="${ex.id}" aria-expanded="${open}">
-        <span class="ex-top">${ssPos >= 0 ? `<span class="ss-k">${String.fromCharCode(65 + ssPos)}</span>` : ""}<span class="h3">${esc(ex.name)}</span><span class="prog">${complete ? "✓ " : ""}${doneN}/${sets}</span>${ICON_CHEV}</span>
+        <span class="ex-top">${ssPos >= 0 ? `<span class="ss-k">${String.fromCharCode(65 + ssPos)}</span>` : ""}<span class="h3">${esc(xn(ex))}${xn(ex) !== ex.name ? `<small class="xa-was">al posto di ${esc(ex.name)}</small>` : ""}</span><span class="prog">${complete ? "✓ " : ""}${doneN}/${sets}</span>${ICON_CHEV}</span>
         <span class="ex-t"><span><b>${sets}</b> serie</span>${ex.reps ? `<span>× <b>${esc(ex.reps)}</b></span>` : ""}${ex.rest ? `<span>rec. <b>${esc(ex.rest)}s</b></span>` : ""}${ex.load ? `<span>carico <b>${esc(ex.load)}</b></span>` : ""}</span>
       </button>
+      ${open ? `<button class="xa-btn ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ ${(ex.alts || []).length ? `Alternative (${ex.alts.length})` : "Alternativa"}</button>` : ""}
       ${inner}
     </div>`;
   }).join("");
@@ -2492,7 +2548,7 @@ function vPiano() {
 const PROMPT = `Trasforma questo materiale (scheda di allenamento e/o piano alimentare, di solito in italiano, scritto da un personal trainer o un nutrizionista) in dati strutturati.
 Non inventare esercizi o alimenti: riporta solo quello che c'è. Mantieni i nomi in italiano come scritti. Se un valore manca usa null o "".
 Rispondi solo con un oggetto JSON con questa forma:
-{"workout": {"days": [{"name": "Giorno A - Petto e tricipiti", "exercises": [{"name": "Panca piana", "sets": 4, "reps": "8-10", "rest": 90, "load": "", "notes": "", "ss": ""}]}]} oppure null se non c'è una scheda,
+{"workout": {"days": [{"name": "Giorno A - Petto e tricipiti", "exercises": [{"name": "Panca piana", "sets": 4, "reps": "8-10", "rest": 90, "load": "", "notes": "", "ss": "", "alts": []}]}]} oppure null se non c'è una scheda,
  "diet": {"targets": {"kcal": 2400, "protein": 160, "carbs": 280, "fat": 70}, "notes": "", "variants": [{"name": "Giorno di allenamento", "meals": [{"name": "Colazione", "time": "07:30", "items": [{"food": "Fiocchi d'avena", "qty": "80 g", "alt": "Pane integrale 100 g", "kcal": 300, "p": 11, "c": 54, "f": 6}], "notes": ""}]}]} oppure null se non c'è una dieta}
 Regole:
 - sets è un numero intero; reps è testo (es. "10", "8-10", "12-10-8-6", "30 sec", "max").
@@ -2500,7 +2556,8 @@ Regole:
 - Copia tutti i numeri (serie, ripetizioni, recuperi, carichi, grammi) esattamente come scritti: non stimare, non arrotondare, non "correggere". Se un numero non si legge bene, rileggilo nel contesto (i recuperi sono quasi sempre multipli di 15 secondi).
 - load è il carico o l'intensità se indicati (es. "70%", "RPE 8", "20 kg"), altrimenti "".
 - SUPER SERIE: se più esercizi vanno fatti di fila senza recupero tra loro (superserie, "SS", "+", A1/A2, giant set, circuito, esercizi uniti da una graffa), dai a tutti lo stesso valore "ss" ("A" per la prima super serie del giorno, "B" per la seconda…), nell'ordine in cui vanno eseguiti. Gli esercizi singoli hanno "ss": "". Ogni esercizio della super serie è un elemento separato con il suo nome, le sue serie e ripetizioni: non unire due esercizi in uno solo con "+". Il recupero indicato dopo il giro va sull'ultimo esercizio del gruppo.
-- Tempo sotto tensione, tecnica o varianti vanno in notes dell'esercizio.
+- ALTERNATIVE: se per un esercizio sono indicati altri esercizi da fare in alternativa ("oppure", "in alternativa", "o", "/", "se occupato…"), il primo è "name" e gli altri vanno in "alts" (lista di nomi), non nel nome né nelle note.
+- Tempo sotto tensione e tecnica vanno in notes dell'esercizio.
 - Se la dieta ha giornate diverse (allenamento/riposo, giorni della settimana) o più opzioni numerate per i pasti (Variante/Opzione 1, 2, 3), crea una variante per ciascuna, con lo stesso elenco di pasti e gli stessi nomi dei pasti (Colazione, Spuntino, Pranzo…); i pasti che non cambiano vanno ripetuti uguali. Altrimenti una sola variante chiamata "Giornata tipo".
 - Alternative tra alimenti ("oppure", "in alternativa") vanno in alt.
 - Per ogni alimento stima kcal, p (proteine g), c (carboidrati g), f (grassi g) per la quantità indicata (non per 100 g), con valori medi da tabelle nutrizionali. Per "a volontà" stima una porzione tipica (verdure 200 g).
@@ -2510,7 +2567,7 @@ Regole:
 function normalizePlan(r) {
   const out = {};
   if (r && r.workout && Array.isArray(r.workout.days) && r.workout.days.length) {
-    out.workout = { days: r.workout.days.map((d, i) => ({ id: uid(), name: String(d.name || "Giorno " + String.fromCharCode(65 + i)), exercises: (d.exercises || []).filter(e => e && e.name).map(e => ({ id: uid(), name: String(e.name), sets: parseInt(e.sets) || 3, reps: e.reps == null ? "" : String(e.reps), rest: parseInt(e.rest) || "", load: e.load ? String(e.load) : "", ss: e.ss ? String(e.ss).slice(0, 12) : "", notes: e.notes ? String(e.notes) : "" })) })) };
+    out.workout = { days: r.workout.days.map((d, i) => ({ id: uid(), name: String(d.name || "Giorno " + String.fromCharCode(65 + i)), exercises: (d.exercises || []).filter(e => e && e.name).map(e => ({ id: uid(), name: String(e.name), sets: parseInt(e.sets) || 3, reps: e.reps == null ? "" : String(e.reps), rest: parseInt(e.rest) || "", load: e.load ? String(e.load) : "", ss: e.ss ? String(e.ss).slice(0, 12) : "", notes: e.notes ? String(e.notes) : "", alts: Array.isArray(e.alts) ? e.alts.map(x => String(x).trim().slice(0, 60)).filter(Boolean).slice(0, 6) : [] })) })) };
     out.workout.days.forEach(d => { d.exercises = splitCombined(d.exercises).list; }); out.workout.ssSplit = true;
   }
   if (r && r.diet && Array.isArray(r.diet.variants) && r.diet.variants.length) {
@@ -2712,8 +2769,8 @@ function setField(el) {
   const exId = card.dataset.ex, i = +card.dataset.i;
   const day = currentDay(); const ex = (day.exercises || []).find(e => e.id === exId); if (!ex) return;
   useSession(l, day);
-  const e = l.w.ex[exId] = l.w.ex[exId] || { name: ex.name, s: [] };
-  e.name = ex.name; e.s[i] = e.s[i] || { kg: "", reps: "", done: false };
+  const e = l.w.ex[exId] = l.w.ex[exId] || { name: xn(ex), s: [] };
+  e.name = xn(ex); e.s[i] = e.s[i] || { kg: "", reps: "", done: false };
   const f = el.dataset.f, old = e.s[i][f], nv = el.value.replace(",", ".").trim();
   e.s[i][f] = nv;
   for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
@@ -2876,6 +2933,9 @@ document.addEventListener("submit", ev => {
     ws.sort((a, b) => a.d < b.d ? -1 : 1); if (ws.length > 730) ws.splice(0, ws.length - 730);
     store.saveProfile(); toast(wd === today() ? "Peso salvato" : "Peso salvato per " + fmtDay(wd, { weekday: "long", day: "numeric", month: "long" })); render();
   } else if (f.dataset.form === "food") { const k = f.dataset.key; const list = S.sug[k] || []; if (list.length && list[0].sc >= 3 * parseQuery(S.drafts[k] || "").terms.length) openPicker(k, list[0]); else addFood(k); }
+  else if (f.dataset.form === "xa-add") { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === f.dataset.ex); const n = ($("#xaIn") || {}).value ? $("#xaIn").value.trim().slice(0, 60) : "";
+    if (ex && n && norm(n) !== norm(ex.name)) { ex.alts = ex.alts || []; if (!ex.alts.some(y => norm(y) === norm(n))) ex.alts.push(n); store.saveProfile(); tagMuscles(); }
+    if (!$("#live").hidden) renderLive(); else render(); }
   else if (f.dataset.form === "hk") { const o = parseHK($("#hkTxt").value); if (!o) { toast("Non riconosco il testo: deve iniziare con CARICO", 4500); return; } applyHK(o); }
   else if (f.dataset.form === "supp") { const n = $("#suppName").value.trim(); if (!n) { toast("Scrivi il nome dell'integratore"); return; } S.profile.supps = [...supps(), { id: uid(), name: n.slice(0, 40), dose: $("#suppDose").value.trim().slice(0, 20) }]; store.saveProfile(); render(); }
   else if (f.dataset.form === "meas") {
@@ -2906,7 +2966,7 @@ document.addEventListener("click", ev => {
     case "set": { unlockAlarm();
       const row = b.closest(".set"); const day = currentDay(); const ex = day.exercises.find(e => e.id === row.dataset.ex); const i = +row.dataset.i;
       const l = dayLog(); useSession(l, day);
-      const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] };
+      const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: xn(ex), s: [] };
       for (let k = 0; k <= i; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
       const s = e.s[i];
       if (!s.done) {
@@ -2918,7 +2978,7 @@ document.addEventListener("click", ev => {
         if (e.s.filter(x => x && x.done).length >= sets) { // esercizio finito: chiudo e apro il prossimo
           S.openEx.delete(ex.id); const nx = day.exercises.find(x => exDone(l, x) < exSets(x)); if (nx) S.openEx.add(nx.id);
         }
-        if (i < sets - 1 || day.exercises.indexOf(ex) < day.exercises.length - 1) startRest(ex.rest || 90, ex.name + (i < sets - 1 ? " · serie " + (i + 2) : " · prossimo esercizio"));
+        if (i < sets - 1 || day.exercises.indexOf(ex) < day.exercises.length - 1) startRest(ex.rest || 90, xn(ex) + (i < sets - 1 ? " · serie " + (i + 2) : " · prossimo esercizio"));
       } else s.done = false;
       store.saveDay(S.date); render(); return;
     }
@@ -3011,6 +3071,29 @@ document.addEventListener("click", ev => {
       const s0 = e.s[0]; const sets = Math.max(parseInt(ex.sets) || 3, e.s.length); let n = 0;
       for (let i = 1; i < sets; i++) { const s = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; s.kg = s0.kg; s.reps = s0.reps; n++; }
       store.saveDay(S.date); render(); toast(`${fmtN(num(s0.kg))} kg × ${s0.reps} su tutte le ${n + 1} serie`); return;
+    }
+    case "xa-open": S.altPick = S.altPick === b.dataset.ex ? null : b.dataset.ex; if (!$("#live").hidden) renderLive(); else render(); return;
+    case "xa-use": case "xa-del": case "xa-always": case "xa-ai": {
+      const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === b.dataset.ex); if (!ex) return; const i = +b.dataset.i;
+      const rr = () => { if (!$("#live").hidden) { lvDefaults(); renderLive(); } else render(); };
+      if (a === "xa-use") { const l = dayLog(); const n = i < 0 ? ex.name : (ex.alts || [])[i]; l.altSel = l.altSel || {};
+        if (n === ex.name) delete l.altSel[ex.id]; else l.altSel[ex.id] = n;
+        const e = l.w.ex[ex.id]; if (e) e.name = xn(ex, l);
+        store.saveDay(S.date); S.altPick = null; rr(); toast(n === ex.name ? "Torni all'esercizio della scheda" : `⇄ Oggi fai ${n}`); return; }
+      if (a === "xa-del") { const n = (ex.alts || [])[i]; ex.alts.splice(i, 1); const l = dayLog(); if (l.altSel && l.altSel[ex.id] === n) { delete l.altSel[ex.id]; store.saveDay(S.date); } store.saveProfile(); rr(); return; }
+      if (a === "xa-always") { const l = dayLog(); const n = xn(ex, l); if (n === ex.name) return; const old = ex.name;
+        ex.alts = [old, ...(ex.alts || []).filter(x => x !== n)]; ex.altMus = ex.altMus || {}; if (ex.muscles) ex.altMus[norm(old)] = ex.muscles;
+        const m = ex.altMus[norm(n)]; delete ex.altMus[norm(n)]; if (m) ex.muscles = m; else { delete ex.muscles; delete ex.muscleTried; }
+        ex.name = n; delete l.altSel[ex.id]; store.saveDay(S.date); store.saveProfile(); S.altPick = null; rr(); tagMuscles(); toast(`📌 ${n} è ora l'esercizio della scheda`); return; }
+      if (a === "xa-ai") { if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
+        const k = "xa:" + ex.id; S.busy[k] = true; rr(); const mu = exMuscles(ex);
+        AI.json(`Sei un preparatore atletico. Suggerisci 3 esercizi alternativi a "${ex.name}"${mu ? ` (muscoli principali: ${mu.p.map(x => MNAMES[x]).join(", ")})` : ""} che si trovano in una normale palestra, per gli stessi muscoli e con un movimento simile, utili se l'attrezzo è occupato. Escludi: ${[ex.name, ...(ex.alts || [])].join(", ")}. Nomi brevi in italiano come li scrive un personal trainer. Rispondi solo con JSON: {"alts":["...","...","..."]}`, { tier: "quick" })
+          .then(r => { const L = (r && Array.isArray(r.alts) ? r.alts : []).map(x => String(x).trim().slice(0, 60)).filter(Boolean);
+            ex.alts = ex.alts || []; L.forEach(n => { if (!ex.alts.some(y => norm(y) === norm(n)) && norm(n) !== norm(ex.name)) ex.alts.push(n); });
+            store.saveProfile(); S.busy[k] = false; rr(); tagMuscles(); toast(L.length ? "Alternative aggiunte" : "Nessun suggerimento"); })
+          .catch(e => { S.busy[k] = false; rr(); const m = aiErr(e); if (m) toast(m, 4500); });
+        return; }
+      return;
     }
     case "add-set": { const day = currentDay(); const ex = day.exercises.find(e => e.id === b.dataset.ex); ex.sets = (parseInt(ex.sets) || 3) + 1; store.saveProfile(); render(); return; }
     case "finish": { const l = dayLog(); const fd = currentDay(); if (fd && l.w.dayId !== fd.id && setsDone(l) === 0) { l.w = { dayId: fd.id, dayName: fd.name, ex: {}, done: false }; } l.w.done = true; store.saveDay(S.date); stopRest(); toast("Allenamento salvato. Ottimo lavoro!"); render(); return; }
@@ -3265,7 +3348,8 @@ function muscleBlock(ex, dark) {
 let tagging = false;
 async function tagMuscles() { // esercizi con nomi non riconosciuti: chiedo all'AI una volta sola
   if (tagging || !AI.ready()) return;
-  const list = []; wDays().forEach(d => (d.exercises || []).forEach(ex => { if (!ex.muscles && !ex.muscleTried) list.push(ex); }));
+  const list = []; wDays().forEach(d => (d.exercises || []).forEach(ex => { if (!ex.muscles && !ex.muscleTried) list.push(ex);
+    (ex.alts || []).forEach(n => { const k = norm(n); ex.altMus = ex.altMus || {}; ex.altTried = ex.altTried || {}; if (!ex.altMus[k] && !ex.altTried[k] && !exMuscles({ name: n })) list.push({ name: n, _alt: ex, _k: k }); }); }));
   if (!list.length) return;
   tagging = true;
   try {
@@ -3273,9 +3357,11 @@ async function tagMuscles() { // esercizi con nomi non riconosciuti: chiedo all'
 Usa SOLO queste chiavi: ${Object.keys(MNAMES).join(", ")} (delt_a = deltoidi anteriori, delt_l = laterali, delt_p = posteriori).
 ${list.map((ex, i) => `e${i}: ${ex.name}`).join("\n")}
 Rispondi solo con JSON: {"e0":{"p":["pettorali"],"s":["tricipiti"]}, ...}`, { tier: "quick" });
-    list.forEach((ex, i) => { const m = r && r["e" + i]; ex.muscleTried = true; if (m && Array.isArray(m.p)) { const ok = k => MNAMES[k]; ex.muscles = { p: m.p.filter(ok), s: (m.s || []).filter(ok) }; } });
+    list.forEach((ex, i) => { const m = r && r["e" + i]; const ok = k => MNAMES[k]; const mu = m && Array.isArray(m.p) ? { p: m.p.filter(ok), s: (m.s || []).filter(ok) } : null;
+      if (ex._alt) { ex._alt.altTried[ex._k] = true; if (mu) ex._alt.altMus[ex._k] = mu; return; }
+      ex.muscleTried = true; if (mu) ex.muscles = mu; });
     store.saveProfile(); render(); if (!$("#live").hidden) renderLive();
-  } catch (e) { list.forEach(ex => ex.muscleTried = true); }
+  } catch (e) { list.forEach(ex => { if (ex._alt) ex._alt.altTried[ex._k] = true; else ex.muscleTried = true; }); }
   tagging = false;
 }
 
@@ -3309,7 +3395,7 @@ function lvLog() { const day = lvDay(); const l = dayLog(); useSession(l, day); 
 function exDefaultsFor(ex, j) {
   const l = dayLog(); const e = l.w.ex[ex.id]; const s = e && e.s && e.s[j];
   const prev = e && e.s && e.s[j - 1];
-  const last = lastPerformance(ex.name, S.date); const ls = last && last.sets[Math.min(j, last.sets.length - 1)];
+  const last = lastPerformance(xn(ex), S.date); const ls = last && last.sets[Math.min(j, last.sets.length - 1)];
   const t = repTargets(ex.reps, exSets(ex))[j];
   return { kg: s && s.kg !== "" && s.kg != null ? String(s.kg) : prev && prev.kg ? String(prev.kg) : ls && ls.kg ? String(ls.kg) : (ex.load && num(ex.load) != null && !/%|rpe|rir/i.test(ex.load) ? String(num(ex.load)) : ""),
     reps: s && s.reps ? String(s.reps) : prev && prev.reps ? String(prev.reps) : String(parseInt(t) || (ls && ls.reps) || "") };
@@ -3337,7 +3423,7 @@ function openLive() {
   { const l0 = dayLog(); useSession(l0, day); if (setsFor(l0, day) === 0 && !l0.w.done && (l0.w.start || l0.w.end)) { const prev = (l0.w.also || []).slice(-1)[0]; if (prev && l0.w.end) { l0.w.times = l0.w.times || {}; if (!l0.w.times[prev]) l0.w.times[prev] = { start: l0.w.start || 0, end: l0.w.end }; } delete l0.w.start; delete l0.w.end; } }
   LV.ask = null; LV.keepShort = false; LV.archived = false;
   { const l1 = dayLog(); if (l1.w.dayId === day.id && l1.w.done && setsFor(l1, day) > 0) { archiveRun(l1, day); LV.archived = true; store.saveDay(S.date); } }
-  lvLog(); const f = lvFirstOpen();
+  { const l2 = dayLog(); useSession(l2, day); LV.needStart = !l2.w.start && setsFor(l2, day) === 0 && !l2.w.done; if (!LV.needStart && !l2.w.start) l2.w.start = Date.now(); } const f = lvFirstOpen();
   if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; }
   else { // seduta già finita: si riapre dal primo esercizio, con le serie fatte e i carichi segnati, pronta da rivedere o modificare
     LV.exIdx = 0; LV.setIdx = 0; LV.phase = "set"; LV.doneGroup = null;
@@ -3368,7 +3454,7 @@ function lvTick() {
 }
 function lvSummary() {
   const l = peekLog(); const day = lvDay(); let sets = 0, vol = 0; const prs = [];
-  (day.exercises || []).forEach(ex => { const e = l && l.w.ex[ex.id]; if (!e) return; const done = (e.s || []).filter(s => s && s.done); sets += done.length; done.forEach(s => vol += (num(s.kg) || 0) * (num(s.reps) || 0)); const top = Math.max(0, ...done.map(s => num(s.kg) || 0)); const b = bestBefore(ex.name); if (top && b && top > b) prs.push(`${ex.name}: ${fmtN(top)} kg (prima ${fmtN(b)})`); });
+  (day.exercises || []).forEach(ex => { const e = l && l.w.ex[ex.id]; if (!e) return; const done = (e.s || []).filter(s => s && s.done); sets += done.length; done.forEach(s => vol += (num(s.kg) || 0) * (num(s.reps) || 0)); const top = Math.max(0, ...done.map(s => num(s.kg) || 0)); const b = bestBefore(xn(ex)); if (top && b && top > b) prs.push(`${ex.name}: ${fmtN(top)} kg (prima ${fmtN(b)})`); });
   const mins = l && l.w.start ? Math.max(1, Math.round(((l.w.end || lastSetAt(l, lvDay()) || Date.now()) - l.w.start) / 60000)) : 0;
   return { sets, vol, prs, mins };
 }
@@ -3377,24 +3463,31 @@ function renderLive() {
   const tot = totalSets(day), done = l.w.dayId === day.id ? setsFor(l, day) : 0;
   const top = `<div class="lv-top"><button class="lv-x" data-act="lv-close" aria-label="Chiudi">${ICON_X}</button><div class="lv-day"><span>${esc(day.name)}</span><b id="lvClock">0:00</b></div><button class="lv-spot" data-act="lv-spot" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button><span class="lv-cnt">${done}/${tot}</span></div>
     <div class="lv-prog"><i style="width:${tot ? done / tot * 100 : 0}%"></i></div>
-    <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(ex.name)}</button>`; }).join("")}</div>`;
+    <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(xn(ex))}</button>`; }).join("")}</div>`;
   let body = "";
   const lsl = LV.phase === "set" && setsFor(l, day) === 0 ? lastSessionLine(day) : "";
-  if (LV.phase === "exdone" && LV.doneGroup) {
+  if (LV.needStart) {
+    const exs2 = exs; const ll = lastSessionLine(day);
+    body = `<div class="lv-start"><span class="lv-k">Pronto?</span><h1>${esc(day.name)}</h1>
+      <div class="lv-meta">${exs2.length} esercizi · ${tot} serie</div>
+      <div class="st-list">${exs2.map((x, i) => `<div class="st-x"><b>${i + 1}. ${esc(xn(x))}</b><span>${exSets(x)}${x.reps ? " × " + esc(x.reps) : ""}</span></div>`).join("")}</div>
+      <button class="lv-go st-go" data-act="lv-start">▶ Inizia allenamento</button>
+      <span class="small" style="color:var(--hero-mut)">Il cronometro parte quando tocchi il tasto.</span></div>`;
+  } else if (LV.phase === "exdone" && LV.doneGroup) {
     const gx = LV.doneGroup.map(id => exs.find(x => x.id === id)).filter(Boolean); const nx = exs[LV.exIdx];
     body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Super serie completata</span><h1>${gx.map(x => esc(x.name)).join(" + ")}</h1>
       ${gx.map(x => { const sets = ((l.w.ex[x.id] || {}).s || []).filter(y => y && y.done); return `<div class="ss-done"><b>${esc(x.name)}</b><div class="xd-sets">${sets.map(y => `<span>${esc(y.kg || "–")}×${esc(y.reps || "–")}</span>`).join("")}</div>${feelRow(x.id, true)}</div>`; }).join("")}
       ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
-      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? nx.name : "")} →</b></button></div>`;
+      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? xn(nx) : "")} →</b></button></div>`;
   } else if (LV.phase === "exdone") {
     const dx = exs.find(x => x.id === LV.doneEx) || {}; const de = l.w.ex[dx.id] || { s: [] }; const nx = exs[LV.exIdx];
     const sets = (de.s || []).filter(x => x && x.done);
-    body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Esercizio completato</span><h1>${esc(dx.name || "")}</h1>
+    body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Esercizio completato</span><h1>${esc(dx.id ? xn(dx) : "")}</h1>
       <div class="xd-sets">${sets.map(x => `<span>${esc(x.kg || "–")}×${esc(x.reps || "–")}</span>`).join("")}</div>
       ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
       ${feelRow(dx.id, true)}
       ${noteBox(dx.id, true)}
-      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? nx.name : "")} →</b></button></div>`;
+      <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? xn(nx) : "")} →</b></button></div>`;
   } else if (LV.phase === "done") {
     const s = lvSummary();
     body = `<div class="lv-done"><div class="lv-emoji">🎉</div><h1>Allenamento completato</h1><p>${esc(day.name)}. Ottimo lavoro, ora recupera bene.</p>
@@ -3405,7 +3498,7 @@ function renderLive() {
       <button class="lv-btn" data-act="lv-review" style="width:100%">✏️ Rivedi o modifica le serie</button></div>`;
   } else if (LV.phase === "rest") {
     const ex = exs[LV.exIdx]; const C = 2 * Math.PI * 88;
-    const nextLabel = ex ? `${ex.name} · serie ${LV.setIdx + 1} di ${exSets(ex)}` : "";
+    const nextLabel = ex ? `${xn(ex)} · serie ${LV.setIdx + 1} di ${exSets(ex)}` : "";
     if (LV.over) body = `<div class="lv-rest over"><span class="lv-k">Recupero finito</span>
       <button class="lv-ring go" data-act="lv-skip" aria-label="Inizia la prossima serie"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="rgba(79,210,150,.14)" stroke="var(--hero-g)" stroke-width="12"/></svg><b>VIA!<small id="lvOver">+0:00</small></b></button>
       ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
@@ -3420,11 +3513,12 @@ function renderLive() {
     body = ssBody(day, l);
   } else {
     const ex = exs[LV.exIdx]; const n = exSets(ex); const e = l.w.ex[ex.id];
-    const last = lastPerformance(ex.name, S.date);
+    const last = lastPerformance(xn(ex), S.date);
     const t = repTargets(ex.reps, n)[LV.setIdx];
-    body = `<div class="lv-ex"><span class="lv-k">Esercizio ${LV.exIdx + 1} di ${exs.length}</span><h1>${esc(ex.name)}</h1>
+    body = `<div class="lv-ex"><span class="lv-k">Esercizio ${LV.exIdx + 1} di ${exs.length}</span><h1>${esc(xn(ex))}</h1>${xn(ex) !== ex.name ? `<div class="xa-was">al posto di ${esc(ex.name)}</div>` : ""}
+        <button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${altPicker(ex, true)}
         <div class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · recupero " + esc(ex.rest) + " s" : ""}${ex.load ? " · " + esc(ex.load) : ""}</div>${noteBox(ex.id, true)}</div>
-      ${muscleBlock(ex, true)}
+      ${muscleBlock(exView(ex), true)}
       ${ex.notes ? `<div class="lv-note">${esc(ex.notes)}</div>` : ""}
       <div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span>${t ? `<span>obiettivo <b>${esc(t)}</b> rip.</span>` : ""}</div>
       ${last ? `<div class="lv-last">Ultima volta: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${esc(feelHint(last))}</div>` : ""}
@@ -3473,7 +3567,7 @@ function lvSetDone() {
   unlockAlarm();
   const day = lvDay(); const ex = day.exercises[LV.exIdx]; const l = lvLog();
   const kgI = $("#lvKg"), rI = $("#lvReps"); if (kgI) LV.kg = String(num(kgI.value) ?? ""); if (rI) LV.reps = String(parseInt(rI.value) || "");
-  const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] }; e.name = ex.name;
+  const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: xn(ex), s: [] }; e.name = xn(ex);
   for (let k = 0; k <= LV.setIdx; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
   const kg = LV.kg === "null" ? "" : LV.kg;
   const prevS = e.s[LV.setIdx] || {};
@@ -3483,7 +3577,7 @@ function lvSetDone() {
   store.saveDay(S.date);
   const exComplete = e.s.filter(x => x && x.done).length >= exSets(ex);
   LV.feelEx = null;
-  const b = bestBefore(ex.name); LV.flash = num(kg) && b && num(kg) > b ? `🏆 Nuovo record su ${ex.name}: ${fmtN(num(kg))} kg` : "";
+  const b = bestBefore(xn(ex)); LV.flash = num(kg) && b && num(kg) > b ? `🏆 Nuovo record su ${xn(ex)}: ${fmtN(num(kg))} kg` : "";
   try { if (T.audio && T.audio.state === "suspended") T.audio.resume(); } catch (er) {}
   const f = lvFirstOpen();
   if (!f) { l.w.end = Date.now(); store.saveDay(S.date); LV.phase = "done"; renderLive(); return; }
@@ -3491,7 +3585,7 @@ function lvSetDone() {
   if (exComplete && f[0] !== LV.exIdx) { // esercizio finito: schermata di passaggio al prossimo, niente recupero automatico
     LV.doneEx = ex.id; LV.doneGroup = null; LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "exdone"; LV.resting = false; LV.over = false; LV.restTotal = rest; lvDefaults(); renderLive(); return;
   }
-  LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (day.exercises[f[0]] || {}).name + " · serie " + (f[1] + 1); LV.restTotal = rest; LV.restEnd = Date.now() + rest * 1000;
+  LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (day.exercises[f[0]] ? xn(day.exercises[f[0]]) : "") + " · serie " + (f[1] + 1); LV.restTotal = rest; LV.restEnd = Date.now() + rest * 1000;
   lvDefaults(); renderLive();
 }
 function lvSsDone() {
@@ -3501,7 +3595,7 @@ function lvSsDone() {
   g.forEach(i => {
     const x = day.exercises[i]; if (j >= exSets(x)) return;
     const v = LV.ssv[x.id] || {}; const kg = v.kg && v.kg !== "null" ? v.kg : ""; const reps = v.reps || "";
-    const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: x.name, s: [] }; e.name = x.name;
+    const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: xn(x), s: [] }; e.name = xn(x);
     for (let k = 0; k <= j; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
     const prevS = e.s[j] || {}; e.s[j] = { kg, reps, done: true, at: Date.now() }; delete l.w.end;
     [["kg", kg], ["reps", reps]].forEach(([f, nv]) => { const old = prevS[f]; if (old === "" || old == null || old === nv) return; for (let k = j + 1; k < e.s.length; k++) { const sk = e.s[k]; if (sk && !sk.done && sk[f] === old) sk[f] = nv; } });
@@ -3523,15 +3617,15 @@ function ssBody(day, l) {
   const roundDone = k => g.every(i => k >= exSets(exs[i]) || ((l.w.ex[exs[i].id] || {}).s || [])[k] && l.w.ex[exs[i].id].s[k].done);
   const cards = g.map((i, k) => {
     const x = exs[i]; const has = j < exSets(x); const v = LV.ssv[x.id] || {};
-    const last = lastPerformance(x.name, S.date); const t = repTargets(x.reps, exSets(x))[j];
+    const last = lastPerformance(xn(x), S.date); const t = repTargets(x.reps, exSets(x))[j];
     const step = (f, d, lab) => `<div class="lv-step"><span>${lab}</span><div><button data-act="ss-adj" data-x="${x.id}" data-f="${f}" data-d="${-d}" aria-label="Meno">−</button><input data-ssx="${x.id}" data-ssf="${f}" inputmode="${f === "kg" ? "decimal" : "numeric"}" value="${esc(f === "kg" ? fmtN(num(v.kg)) : (v.reps || ""))}" aria-label="${lab} ${esc(x.name)}"><button data-act="ss-adj" data-x="${x.id}" data-f="${f}" data-d="${d}" aria-label="Più">+</button></div></div>`;
-    return `<div class="ss-card ${has ? "" : "off"}"><div class="ss-n"><span class="ss-k">${String.fromCharCode(65 + k)}</span><b>${esc(x.name)}</b>${noteBox(x.id, true)}</div>
+    return `<div class="ss-card ${has ? "" : "off"}"><div class="ss-n"><span class="ss-k">${String.fromCharCode(65 + k)}</span><b>${esc(xn(x))}</b> <button class="xa-mini" data-act="xa-open" data-ex="${x.id}" aria-label="Cambia esercizio">⇄</button>${noteBox(x.id, true)}</div>${altPicker(x, true)}
       ${has ? `<div class="ss-meta">${exSets(x)} serie${x.reps ? " × " + esc(x.reps) : ""}${t ? ` · ora <b>${esc(t)}</b> rip.` : ""}${x.load ? " · " + esc(x.load) : ""}</div>
       ${last ? `<div class="lv-last">Ultima volta: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}</div>` : ""}
       ${x.notes ? `<div class="lv-note">${esc(x.notes)}</div>` : ""}
       <div class="lv-steps ss-steps">${step("kg", 2.5, "kg")}${step("reps", 1, "rip.")}</div>` : `<div class="ss-meta">Serie di questo esercizio già finite</div>`}</div>`;
   }).join("");
-  return `<div class="lv-ex"><span class="lv-k">🔗 Super serie · ${g.length} esercizi</span><h1 class="ss-h">${g.map(i => esc(exs[i].name)).join(" + ")}</h1>
+  return `<div class="lv-ex"><span class="lv-k">🔗 Super serie · ${g.length} esercizi</span><h1 class="ss-h">${g.map(i => esc(xn(exs[i]))).join(" + ")}</h1>
       <div class="lv-meta">Di fila, senza pausa tra gli esercizi${rest ? ` · poi recupero ${rest} s` : ""}</div></div>
     <div class="lv-set"><span>Giro <b>${j + 1}</b> di ${n}</span></div>
     ${cards}
@@ -3544,7 +3638,8 @@ document.addEventListener("pointerdown", ev => { if (LV.over && ev.target.closes
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#live")) return;
   ev.stopPropagation(); const a = b.dataset.act; const day = lvDay();
-  if (a === "lv-close") lvCloseAsk();
+  if (a === "lv-start") { const l = dayLog(); useSession(l, day); l.w.start = Date.now(); delete l.w.end; LV.needStart = false; store.saveDay(S.date); unlockAlarm(); lvDefaults(); renderLive(); }
+  else if (a === "lv-close") { LV.needStart = false; lvCloseAsk(); }
   else if (a === "note") { S.noteOpen = S.noteOpen === b.dataset.ex ? null : b.dataset.ex; renderLive(); if (S.noteOpen) setTimeout(() => { const t = document.getElementById("note-" + S.noteOpen); t && t.focus(); }, 30); }
   else if (a === "feel") { setFeel(b.dataset.ex, b.dataset.f); if (LV.feelEx === b.dataset.ex) LV.feelEx = null; renderLive(); const fo = feelOf(b.dataset.f); if (fo) toast(fo[1] + " Segnato: " + fo[2].toLowerCase()); }
   else if (a === "lv-spot") openSpotify();
@@ -3553,7 +3648,7 @@ document.addEventListener("click", ev => {
     const ex = day.exercises[LV.exIdx]; const l = lvLog(); const kgI = $("#lvKg"), rI = $("#lvReps");
     const kg = kgI ? String(num(kgI.value) ?? "") : LV.kg, reps = rI ? String(parseInt(rI.value) || "") : LV.reps;
     if (!kg && !reps) { toast("Imposta prima kg e ripetizioni"); return; }
-    const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: ex.name, s: [] }; const n = exSets(ex); let c = 0;
+    const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: xn(ex), s: [] }; const n = exSets(ex); let c = 0;
     for (let i = 0; i < n; i++) { const s0 = e.s[i] = e.s[i] || { kg: "", reps: "", done: false }; s0.kg = kg; s0.reps = reps; c++; }
     LV.kg = kg; LV.reps = reps; store.saveDay(S.date); renderLive(); toast(`${fmtN(num(kg))} kg × ${reps} su tutte le ${c} serie`);
   }
@@ -3563,10 +3658,10 @@ document.addEventListener("click", ev => {
   else if (a === "lv-prev" || a === "lv-next") { const g = ssGroup(day, LV.exIdx); const t = Math.max(0, Math.min(day.exercises.length - 1, a === "lv-next" ? g[g.length - 1] + 1 : g[0] - 1)); const r = lvOpenAt(day, t); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "ss-done") lvSsDone();
   else if (a === "ss-adj") { const v = LV.ssv[b.dataset.x] = LV.ssv[b.dataset.x] || {}; const f = b.dataset.f; const cur = f === "kg" ? (num(v.kg) || 0) : (parseInt(v.reps) || 0); const nv = Math.max(0, Math.round((cur + +b.dataset.d) * 100) / 100); v[f] = String(nv); const inp = document.querySelector(`[data-ssx="${b.dataset.x}"][data-ssf="${f}"]`); if (inp) inp.value = f === "kg" ? fmtN(nv) : String(nv); }
-  else if (a === "ss-copy") { const l = lvLog(); ssGroup(day, LV.exIdx).forEach(i => { const x = day.exercises[i]; const v = LV.ssv[x.id] || {}; const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: x.name, s: [] }; e.name = x.name; for (let k = 0; k < exSets(x); k++) { const sk = e.s[k]; e.s[k] = { ...(sk || {}), kg: v.kg || "", reps: v.reps || "", done: !!(sk && sk.done) }; } for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false }; }); store.saveDay(S.date); toast("Valori copiati su tutti i giri"); renderLive(); }
+  else if (a === "ss-copy") { const l = lvLog(); ssGroup(day, LV.exIdx).forEach(i => { const x = day.exercises[i]; const v = LV.ssv[x.id] || {}; const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: xn(x), s: [] }; e.name = xn(x); for (let k = 0; k < exSets(x); k++) { const sk = e.s[k]; e.s[k] = { ...(sk || {}), kg: v.kg || "", reps: v.reps || "", done: !!(sk && sk.done) }; } for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false }; }); store.saveDay(S.date); toast("Valori copiati su tutti i giri"); renderLive(); }
   else if (a === "lv-rest") { if (LV.over || !LV.resting) return; LV.restEnd += +b.dataset.d * 1000; LV.restTotal = Math.max(LV.restTotal, Math.ceil((LV.restEnd - Date.now()) / 1000)); lvTick(); }
   else if (a === "lv-nextex") { LV.phase = "set"; LV.flash = ""; LV.doneEx = null; LV.doneGroup = null; lvDefaults(); renderLive(); window.scrollTo(0, 0); $("#live").scrollTop = 0; }
-  else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (nx ? nx.name : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
+  else if (a === "lv-restbtw") { const nx = day.exercises[LV.exIdx]; LV.phase = "set"; LV.doneEx = null; LV.resting = true; LV.over = false; LV.mini = false; LV.nextLabel = (nx ? xn(nx) : "") + " · serie " + (LV.setIdx + 1); LV.restEnd = Date.now() + LV.restTotal * 1000; lvDefaults(); renderLive(); $("#live").scrollTop = 0; }
   else if (a === "lv-mini") { LV.mini = !LV.mini; renderLive(); }
   else if (a === "lv-skip") { stopAlarm(); const wasRestPhase = LV.phase === "rest"; LV.phase = "set"; LV.resting = false; LV.over = false; LV.flash = ""; if (wasRestPhase) lvDefaults(); renderLive(); }
   else if (a === "lv-finish") lvFinish();
@@ -4153,7 +4248,7 @@ function coachContext0() {
   const days = wDays();
   if (days.length) {
     L.push("\nSCHEDA DI ALLENAMENTO:");
-    days.forEach(d => L.push(`- ${d.name}: ` + (d.exercises || []).map(e => `${e.name} ${e.sets}x${e.reps || "?"}${e.rest ? " rec " + e.rest + "s" : ""}${e.load ? " (" + e.load + ")" : ""}`).join("; ")));
+    days.forEach(d => L.push(`- ${d.name}: ` + (d.exercises || []).map(e => `${e.name} ${e.sets}x${e.reps || "?"}${e.rest ? " rec " + e.rest + "s" : ""}${e.load ? " (" + e.load + ")" : ""}${(e.alts || []).length ? " [alternative: " + e.alts.join(", ") + "]" : ""}`).join("; ")));
     if (hasSched()) { L.push("Programma settimanale: " + WEEK_ORDER.map(g => DOW[g].slice(0, 3) + " " + ((wDays().find(d => d.id === schedObj()[g]) || {}).name || "riposo")).join(", ") + ".");
       const pl = plannedOn(today()); L.push(pl ? "Oggi in programma: " + (wDays().find(d => d.id === pl) || {}).name : "Oggi è giorno di riposo."); L.push(`Allenamenti previsti questa settimana: ${weekTarget(today())}.`); }
     else { const cd = currentDay(); if (cd) L.push("Seduta prevista oggi secondo la rotazione: " + cd.name); }
@@ -4717,7 +4812,7 @@ if (ntSupported()) {
   }
   setTimeout(autoExtract, 1200);
   setTimeout(autoSnapshot, 2500);
-  setTimeout(() => { try { autoSplit(); autoSuperset(); render(); } catch (e) { console.warn(e); } }, 900);
+  setTimeout(() => { try { autoSplit(); autoSuperset(); if (migrateAlts()) { store.saveProfile(); setTimeout(tagMuscles, 500); } render(); } catch (e) { console.warn(e); } }, 900);
   document.addEventListener("click", function wl() { try { navigator.wakeLock && navigator.wakeLock.request("screen").catch(() => {}); } catch (e) {} }, { once: true });
 })();
 })();
