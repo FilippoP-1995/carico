@@ -794,6 +794,10 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .lv-start .st-x{display:flex;justify-content:space-between;gap:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 12px;font-size:14.5px}
 .lv-start .st-x span{color:var(--hero-mut);white-space:nowrap}
 .lv-go.st-go{font-size:22px;padding:22px}
+.lv-start .st-x{color:#fff;font:inherit;text-align:left;width:100%;cursor:pointer}
+.lv-startbar{display:flex;gap:8px;margin:0 0 10px}
+.lv-sb-back{flex:none;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#fff;border-radius:14px;padding:12px 14px;font:inherit;font-weight:700}
+.lv-sb-go{flex:1;border:0;border-radius:14px;padding:12px;font:inherit;font-weight:800;font-size:16px;color:#06281a;background:linear-gradient(135deg,#4fd296,#8be8bd);box-shadow:0 10px 26px -12px rgba(79,210,150,.8)}
 .mtiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .mtile{background:var(--surface-2);border-radius:12px;padding:9px 6px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .mtile .num{font-size:21px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
@@ -932,7 +936,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "11.4 · 23 ottobre";
+const APP_VERSION = "11.5 · 23 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3391,7 +3395,7 @@ function lvFinish() {
   const l = dayLog(); l.w.done = true; if (!l.w.end) l.w.end = lastSetAt(l, lvDay()) || Date.now(); store.saveDay(S.date); closeLive(); toast("Allenamento salvato 💪");
 }
 function lastSetAt(l, day) { let t = 0; const ids = day ? new Set((day.exercises || []).map(x => x.id)) : null; for (const k in (l.w.ex || {})) { if (ids && !ids.has(k)) continue; (l.w.ex[k].s || []).forEach(s => { if (s && s.done && s.at > t) t = s.at; }); } return t; }
-function lvLog() { const day = lvDay(); const l = dayLog(); useSession(l, day); if (!l.w.start) l.w.start = Date.now(); return l; }
+function lvLog() { const day = lvDay(); const l = dayLog(); useSession(l, day); if (!l.w.start) l.w.start = Date.now(); LV.needStart = false; LV.browse = false; return l; }
 function exDefaultsFor(ex, j) {
   const l = dayLog(); const e = l.w.ex[ex.id]; const s = e && e.s && e.s[j];
   const prev = e && e.s && e.s[j - 1];
@@ -3421,7 +3425,7 @@ function lvFirstOpen() {
 function openLive() {
   const day = lvDay(); if (!day || !(day.exercises || []).length) { toast("Carica prima una scheda di allenamento"); return; }
   { const l0 = dayLog(); useSession(l0, day); if (setsFor(l0, day) === 0 && !l0.w.done && (l0.w.start || l0.w.end)) { const prev = (l0.w.also || []).slice(-1)[0]; if (prev && l0.w.end) { l0.w.times = l0.w.times || {}; if (!l0.w.times[prev]) l0.w.times[prev] = { start: l0.w.start || 0, end: l0.w.end }; } delete l0.w.start; delete l0.w.end; } }
-  LV.ask = null; LV.keepShort = false; LV.archived = false;
+  LV.ask = null; LV.keepShort = false; LV.archived = false; LV.browse = false;
   { const l1 = dayLog(); if (l1.w.dayId === day.id && l1.w.done && setsFor(l1, day) > 0) { archiveRun(l1, day); LV.archived = true; store.saveDay(S.date); } }
   { const l2 = dayLog(); useSession(l2, day); LV.needStart = !l2.w.start && setsFor(l2, day) === 0 && !l2.w.done; if (!LV.needStart && !l2.w.start) l2.w.start = Date.now(); } const f = lvFirstOpen();
   if (f) { LV.exIdx = f[0]; LV.setIdx = f[1]; LV.phase = "set"; }
@@ -3466,13 +3470,13 @@ function renderLive() {
     <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""}" data-act="lv-ex" data-i="${i}">${dn >= n ? "✓ " : ""}${esc(xn(ex))}</button>`; }).join("")}</div>`;
   let body = "";
   const lsl = LV.phase === "set" && setsFor(l, day) === 0 ? lastSessionLine(day) : "";
-  if (LV.needStart) {
+  if (LV.needStart && !LV.browse) {
     const exs2 = exs; const ll = lastSessionLine(day);
     body = `<div class="lv-start"><span class="lv-k">Pronto?</span><h1>${esc(day.name)}</h1>
       <div class="lv-meta">${exs2.length} esercizi · ${tot} serie</div>
-      <div class="st-list">${exs2.map((x, i) => `<div class="st-x"><b>${i + 1}. ${esc(xn(x))}</b><span>${exSets(x)}${x.reps ? " × " + esc(x.reps) : ""}</span></div>`).join("")}</div>
+      <div class="st-list">${exs2.map((x, i) => `<button class="st-x" data-act="lv-ex" data-i="${i}"><b>${i + 1}. ${esc(xn(x))}</b><span>${exSets(x)}${x.reps ? " × " + esc(x.reps) : ""} ›</span></button>`).join("")}</div>
       <button class="lv-go st-go" data-act="lv-start">▶ Inizia allenamento</button>
-      <span class="small" style="color:var(--hero-mut)">Il cronometro parte quando tocchi il tasto.</span></div>`;
+      <span class="small" style="color:var(--hero-mut)">Tocca un esercizio per vederlo. Il cronometro parte quando tocchi il tasto.</span></div>`;
   } else if (LV.phase === "exdone" && LV.doneGroup) {
     const gx = LV.doneGroup.map(id => exs.find(x => x.id === id)).filter(Boolean); const nx = exs[LV.exIdx];
     body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Super serie completata</span><h1>${gx.map(x => esc(x.name)).join(" + ")}</h1>
@@ -3559,7 +3563,8 @@ function renderLive() {
   if (LV.ask) { const m = Math.max(0, Math.round(((dayLog().w.end || Date.now()) - (dayLog().w.start || Date.now())) / 60000));
     dock += `<div class="lv-ask"><div class="lv-ask-b"><div style="font-size:34px">⏱️</div><b>Allenamento di ${m < 1 ? "meno di un minuto" : m + (m === 1 ? " minuto" : " minuti")}</b><p>È durato meno di 5 minuti. Vuoi salvarlo lo stesso?</p>
       <button class="lv-go" data-act="ask-save">Sì, salva</button><button class="lv-btn hi" data-act="ask-drop" style="width:100%">Non salvare</button><button class="lv-btn" data-act="ask-back" style="width:100%">Torna all'allenamento</button></div></div>`; }
-  el.innerHTML = `<div class="lv-in ${dock && LV.mini ? "docked" : ""}">${top}${lsl ? `<div class="lv-lastsess">${lsl}</div>` : ""}${LV.flash && LV.resting ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}<div class="lv-body">${body}</div></div>${dock}`;
+  const startBar = LV.needStart && LV.browse && !(l.w.start) ? `<div class="lv-startbar"><button class="lv-sb-back" data-act="lv-overview">‹ Elenco</button><button class="lv-sb-go" data-act="lv-start">▶ Inizia allenamento</button></div>` : "";
+  el.innerHTML = `<div class="lv-in ${dock && LV.mini ? "docked" : ""}">${top}${startBar}${lsl ? `<div class="lv-lastsess">${lsl}</div>` : ""}${LV.flash && LV.resting ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}<div class="lv-body">${body}</div></div>${dock}`;
   lvTick();
   const on = el.querySelector(".lv-pill.on"); if (on) on.scrollIntoView({ inline: "center", block: "nearest" });
 }
@@ -3638,7 +3643,8 @@ document.addEventListener("pointerdown", ev => { if (LV.over && ev.target.closes
 document.addEventListener("click", ev => {
   const b = ev.target.closest("[data-act]"); if (!b || !b.closest("#live")) return;
   ev.stopPropagation(); const a = b.dataset.act; const day = lvDay();
-  if (a === "lv-start") { const l = dayLog(); useSession(l, day); l.w.start = Date.now(); delete l.w.end; LV.needStart = false; store.saveDay(S.date); unlockAlarm(); lvDefaults(); renderLive(); }
+  if (a === "lv-overview") { LV.browse = false; renderLive(); }
+  else if (a === "lv-start") { const l = dayLog(); useSession(l, day); l.w.start = Date.now(); delete l.w.end; LV.needStart = false; LV.browse = false; store.saveDay(S.date); unlockAlarm(); lvDefaults(); renderLive(); }
   else if (a === "lv-close") { LV.needStart = false; lvCloseAsk(); }
   else if (a === "note") { S.noteOpen = S.noteOpen === b.dataset.ex ? null : b.dataset.ex; renderLive(); if (S.noteOpen) setTimeout(() => { const t = document.getElementById("note-" + S.noteOpen); t && t.focus(); }, 30); }
   else if (a === "feel") { setFeel(b.dataset.ex, b.dataset.f); if (LV.feelEx === b.dataset.ex) LV.feelEx = null; renderLive(); const fo = feelOf(b.dataset.f); if (fo) toast(fo[1] + " Segnato: " + fo[2].toLowerCase()); }
@@ -3653,7 +3659,7 @@ document.addEventListener("click", ev => {
     LV.kg = kg; LV.reps = reps; store.saveDay(S.date); renderLive(); toast(`${fmtN(num(kg))} kg × ${reps} su tutte le ${c} serie`);
   }
   else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); }
-  else if (a === "lv-ex") { const r = lvOpenAt(day, +b.dataset.i); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
+  else if (a === "lv-ex") { LV.browse = true; const r = lvOpenAt(day, +b.dataset.i); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-set") { LV.setIdx = +b.dataset.i; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-prev" || a === "lv-next") { const g = ssGroup(day, LV.exIdx); const t = Math.max(0, Math.min(day.exercises.length - 1, a === "lv-next" ? g[g.length - 1] + 1 : g[0] - 1)); const r = lvOpenAt(day, t); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "ss-done") lvSsDone();
