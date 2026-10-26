@@ -1170,7 +1170,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "14.5 · 24 ottobre";
+const APP_VERSION = "14.6 · 26 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1438,7 +1438,13 @@ function dayTotals() {
   slots().forEach(sl => { if (ml.eaten[sl.key]) addT(t, sumItems(slotPick(ml, sl).items)); });
   return addT(t, sumItems(ml.extra));
 }
-function targetsFor(date = S.date) {
+function fillMacro(T) { // se manca un solo valore lo ricavo dagli altri tre (4 kcal/g prot e carb, 9 kcal/g grassi)
+  const miss = MK.filter(k => !T[k]); if (miss.length !== 1) return T; const k = miss[0]; let v = 0;
+  if (k === "kcal") v = 4 * T.p + 4 * T.c + 9 * T.f; else if (k === "c") v = (T.kcal - 4 * T.p - 9 * T.f) / 4; else if (k === "p") v = (T.kcal - 4 * T.c - 9 * T.f) / 4; else v = (T.kcal - 4 * T.p - 4 * T.c) / 9;
+  if (v > 0) { T[k] = Math.round(v / 5) * 5; T.calc = k; } return T;
+}
+function targetsFor(date = S.date) { return fillMacro(targetsFor0(date)); }
+function targetsFor0(date) {
   const lvl = (plan().diet.levels || []).length ? levelFor(date) : null;
   if (lvl) { const dt = dayTypeFor(date); const T0 = targetsFromObj(lvl[dt.t]); if (MK.some(k => T0[k])) { T0.dayType = dt.t; T0.level = lvl.name; return T0; } }
   const t = plan().diet.targets || {};
