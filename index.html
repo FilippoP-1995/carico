@@ -1174,7 +1174,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "15.0 · 27 ottobre";
+const APP_VERSION = "15.1 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2280,7 +2280,8 @@ function vAllenamento() {
     if (open) {
       const rows = Array.from({ length: Math.max(sets, logged.length) }, (_, i) => {
         const s = logged[i] || {}; const ls = last && last.sets[Math.min(i, last.sets.length - 1)];
-        const kgDef = ls && ls.kg !== "" && ls.kg != null ? String(ls.kg) : (ex.kg0 ? String(ex.kg0) : ""); const rDef = String((ls && parseInt(ls.reps)) || parseInt(targets[i]) || "");
+        const lgE = { s: logged.map(x => x && !x.done ? { ...x } : x) }; if (lgE.s[i]) lgE.s[i] = { ...lgE.s[i], kg: "", reps: "" };
+        const kgDef = setDef(ex, i, "kg", lgE, last); const rDef = setDef(ex, i, "reps", lgE, last);
         const row = `<div class="set ${s.done ? "done" : ""} ${i === nextI ? "next" : ""}" data-ex="${ex.id}" data-i="${i}">
           <span class="sn">${i + 1}</span>
           <div><input inputmode="decimal" data-f="kg" value="${esc(s.kg !== "" && s.kg != null ? s.kg : (s.done ? "" : kgDef))}" placeholder="${esc(kgDef || "–")}" aria-label="Serie ${i + 1} chili"><span class="unit">kg</span></div>
@@ -3459,6 +3460,7 @@ function setField(el) {
   for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
   // le serie successive ancora da fare che avevano lo stesso valore (copiato) seguono la modifica
   if (old !== "" && old != null) for (let k = i + 1; k < e.s.length; k++) { const sk = e.s[k]; if (!sk.done && sk[f] === old) { sk[f] = nv; const inp = document.querySelector(`.set[data-ex="${exId}"][data-i="${k}"] input[data-f="${f}"]`); if (inp) inp.value = nv; } }
+  { const last = lastPerformance(xn(ex), S.date); for (let k = i + 1; k < exSets(ex); k++) { const sk = e.s[k]; if (sk && (sk.done || (sk[f] !== "" && sk[f] != null))) continue; const inp = document.querySelector(`.set[data-ex="${exId}"][data-i="${k}"] input[data-f="${f}"]`); if (inp) { const v = setDef(ex, k, f, e, last); inp.value = v; inp.placeholder = v || "–"; } } }
   store.saveDay(S.date);
   const cr = document.querySelector(`[data-copy="${exId}"]`); if (cr) cr.hidden = !copyVisible(exId);
 }
@@ -4133,13 +4135,28 @@ function setRest(ex, sec) { // cambia il recupero nel piano, anche dove è scrit
     .replace(/(recupero|rec\.?|riposo)(\s*(?:di|:)?\s*)\d+(?:[.,]\d+)?(?:\s*[-–]\s*\d+(?:[.,]\d+)?)?\s*(?:min\w*|')/gi, (m, w, sp) => `${w}${sp}${sec} s`);
 }
 function lvLog() { const day = lvDay(); const l = dayLog(); useSession(l, day); if (!l.w.start) l.w.start = Date.now(); LV.needStart = false; LV.browse = false; return l; }
+function setDef(ex, i, f, e, last) { // valore proposto per la serie i: quello salvato, la tua modifica di oggi sulle serie prima, o l'ultima volta
+  const has = x => x != null && x !== ""; const S0 = (e && e.s) || [];
+  if (S0[i] && has(S0[i][f])) return String(S0[i][f]);
+  const T = repTargets(ex.reps, exSets(ex));
+  const ref = k => { const ls = last && last.sets[Math.min(k, last.sets.length - 1)]; if (ls && has(ls[f])) return f === "reps" ? String(parseInt(ls[f]) || ls[f]) : String(ls[f]); return f === "kg" ? (ex.kg0 ? String(ex.kg0) : "") : String(parseInt(T[k]) || ""); };
+  for (let k = i - 1; k >= 0; k--) { const p = S0[k]; if (p && has(p[f])) { if (String(p[f]) !== ref(k)) return String(p[f]); return ref(i) || String(p[f]); } }
+  return ref(i);
+}
+function lvPersist(exId, j, kg, reps) { // salva subito kg e rip. della serie mentre li cambi (anche senza "Serie fatta")
+  try { const day = lvDay(); const ex = (day.exercises || []).find(x => x.id === exId); if (!ex || j == null || j < 0) return;
+    const l = dayLog(); useSession(l, day); const e = l.w.ex[ex.id] = l.w.ex[ex.id] || { name: xn(ex), s: [] }; e.name = xn(ex);
+    for (let k = 0; k <= j; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false };
+    if (kg != null) e.s[j].kg = String(kg); if (reps != null) e.s[j].reps = String(reps); store.saveDay(S.date);
+    const b = document.querySelector(`.lv-s[data-act="lv-set"][data-i="${j}"]`); if (b && !e.s[j].done && (e.s[j].kg || e.s[j].reps) && LV.exIdx != null && (day.exercises[LV.exIdx] || {}).id === exId) { b.classList.add("pre"); b.textContent = `${e.s[j].kg || "–"}×${e.s[j].reps || "–"}`; }
+  } catch (err) {}
+}
 function exDefaultsFor(ex, j) {
   const l = dayLog(); const e = l.w.ex[ex.id]; const s = e && e.s && e.s[j];
   const prev = e && e.s && e.s[j - 1];
   const last = lastPerformance(xn(ex), S.date); const ls = last && last.sets[Math.min(j, last.sets.length - 1)];
   const t = repTargets(ex.reps, exSets(ex))[j];
-  return { kg: s && s.kg !== "" && s.kg != null ? String(s.kg) : ls && ls.kg ? String(ls.kg) : prev && prev.kg ? String(prev.kg) : (ex.kg0 ? String(ex.kg0) : ""),
-    reps: s && s.reps ? String(s.reps) : ls && parseInt(ls.reps) ? String(parseInt(ls.reps)) : prev && prev.reps ? String(prev.reps) : String(parseInt(t) || "") };
+  return { kg: setDef(ex, j, "kg", e, last), reps: setDef(ex, j, "reps", e, last) };
 }
 function lvDefaults() {
   const day = lvDay(); if (!day.exercises[LV.exIdx]) return;
@@ -4418,12 +4435,12 @@ document.addEventListener("click", ev => {
   else if (a === "lv-rec") { const ex = exs0(day).find(x => x.id === b.dataset.ex); if (ex) { const kg = $("#lvKg"), rp = $("#lvReps"); if (kg) LV.kg = kg.value; if (rp) LV.reps = rp.value;
       const l = dayLog(); const v = Math.min(600, Math.max(15, exRest(ex, l) + +b.dataset.d)); l.restSel = l.restSel || {};
       if (v === planRest(ex)) delete l.restSel[ex.id]; else l.restSel[ex.id] = v; store.saveDay(S.date); renderLive(); } }
-  else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); }
+  else if (a === "lv-adj") { const f = b.dataset.f, d = +b.dataset.d; const inp = $(f === "kg" ? "#lvKg" : "#lvReps"); let v = num(inp.value) || 0; v = Math.max(0, Math.round((v + d) * 100) / 100); inp.value = f === "kg" ? fmtN(v) : String(Math.round(v)); LV[f] = String(v); lvPersistCur(); }
   else if (a === "lv-ex") { LV.browse = true; LV.listView = false; if (LV.phase === "exdone") { LV.doneEx = null; LV.doneGroup = null; } const r = lvOpenAt(day, +b.dataset.i); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-set") { LV.setIdx = +b.dataset.i; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "lv-prev" || a === "lv-next") { const g = ssGroup(day, LV.exIdx); const t = Math.max(0, Math.min(day.exercises.length - 1, a === "lv-next" ? g[g.length - 1] + 1 : g[0] - 1)); const r = lvOpenAt(day, t); LV.exIdx = r[0]; LV.setIdx = r[1]; LV.phase = "set"; lvDefaults(); renderLive(); }
   else if (a === "ss-done") lvSsDone();
-  else if (a === "ss-adj") { const v = LV.ssv[b.dataset.x] = LV.ssv[b.dataset.x] || {}; const f = b.dataset.f; const cur = f === "kg" ? (num(v.kg) || 0) : (parseInt(v.reps) || 0); const nv = Math.max(0, Math.round((cur + +b.dataset.d) * 100) / 100); v[f] = String(nv); const inp = document.querySelector(`[data-ssx="${b.dataset.x}"][data-ssf="${f}"]`); if (inp) inp.value = f === "kg" ? fmtN(nv) : String(nv); }
+  else if (a === "ss-adj") { const v = LV.ssv[b.dataset.x] = LV.ssv[b.dataset.x] || {}; const f = b.dataset.f; const cur = f === "kg" ? (num(v.kg) || 0) : (parseInt(v.reps) || 0); const nv = Math.max(0, Math.round((cur + +b.dataset.d) * 100) / 100); v[f] = String(nv); const inp = document.querySelector(`[data-ssx="${b.dataset.x}"][data-ssf="${f}"]`); if (inp) inp.value = f === "kg" ? fmtN(nv) : String(nv); lvPersist(b.dataset.x, LV.setIdx, v.kg, v.reps); }
   else if (a === "ss-copy") { const l = lvLog(); ssGroup(day, LV.exIdx).forEach(i => { const x = day.exercises[i]; const v = LV.ssv[x.id] || {}; const e = l.w.ex[x.id] = l.w.ex[x.id] || { name: xn(x), s: [] }; e.name = xn(x); for (let k = 0; k < exSets(x); k++) { const sk = e.s[k]; e.s[k] = { ...(sk || {}), kg: v.kg || "", reps: v.reps || "", done: !!(sk && sk.done) }; } for (let k = 0; k < e.s.length; k++) if (!e.s[k]) e.s[k] = { kg: "", reps: "", done: false }; }); store.saveDay(S.date); toast("Valori copiati su tutti i giri"); renderLive(); }
   else if (a === "lv-rest") { if (LV.over || !LV.resting) return; LV.restEnd += +b.dataset.d * 1000; LV.restTotal = Math.max(LV.restTotal, Math.ceil((LV.restEnd - Date.now()) / 1000)); lvTick(); }
   else if (a === "lv-list") { LV.listView = true; renderLive(); $("#live").scrollTop = 0; }
@@ -4442,7 +4459,8 @@ document.addEventListener("click", ev => {
 }, true);
 document.addEventListener("input", ev => { if (ev.target.id === "mfQ") { S.mfQ = ev.target.value; const pos = ev.target.selectionStart; render(); const n = $("#mfQ"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } return; } });
 document.addEventListener("input", ev => { const nk = ev.target.dataset && ev.target.dataset.note; if (nk) { setNote(nk, ev.target.value); return; }
-  const sx = ev.target.dataset && ev.target.dataset.ssx; if (sx) { const v = LV.ssv[sx] = LV.ssv[sx] || {}; v[ev.target.dataset.ssf] = ev.target.dataset.ssf === "kg" ? String(num(ev.target.value) ?? "") : String(parseInt(ev.target.value) || ""); return; } if (ev.target.id === "lvKg") LV.kg = String(num(ev.target.value) ?? ""); else if (ev.target.id === "lvReps") LV.reps = String(parseInt(ev.target.value) || ""); });
+  const sx = ev.target.dataset && ev.target.dataset.ssx; if (sx) { const v = LV.ssv[sx] = LV.ssv[sx] || {}; v[ev.target.dataset.ssf] = ev.target.dataset.ssf === "kg" ? String(num(ev.target.value) ?? "") : String(parseInt(ev.target.value) || ""); lvPersist(sx, LV.setIdx, v.kg, v.reps); return; } if (ev.target.id === "lvKg") { LV.kg = String(num(ev.target.value) ?? ""); lvPersistCur(); } else if (ev.target.id === "lvReps") { LV.reps = String(parseInt(ev.target.value) || ""); lvPersistCur(); } });
+function lvPersistCur() { const ex = lvDay().exercises[LV.exIdx]; if (ex) lvPersist(ex.id, LV.setIdx, LV.kg, LV.reps); }
 
 /* ---------- foto del piatto ---------- */
 const PLATE_PROMPT = `Nella foto c'è un piatto o un pasto. Identifica gli alimenti visibili (anche condimenti evidenti come olio o sughi) e stima per ciascuno il peso in grammi così come appare (cotto se è cotto), usando le dimensioni del piatto e delle posate come riferimento.
