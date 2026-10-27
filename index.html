@@ -90,6 +90,7 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .ex-t b{color:var(--ink);font-weight:600}
 .ex-n{font-size:13.5px;background:var(--surface-2);border-radius:10px;padding:8px 10px;margin-top:4px;color:var(--ink)}
 .last{font-size:12.5px;color:var(--accent);font-weight:600}
+.alt-last{margin-bottom:4px}.lv-set+.lv-last{margin-top:-8px}.alt-again{margin-left:4px;padding:3px 10px;border-radius:999px;border:1px dashed currentColor;background:transparent;color:inherit;font:inherit;font-size:12px;font-weight:800}
 .feel-tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11.5px;font-weight:800;white-space:nowrap;background:color-mix(in srgb,currentColor 14%,transparent);margin-left:2px}
 .feel-tag.f-heavy{color:#e8833a}.feel-tag.f-pain{color:#e5484d}.feel-tag.f-light{color:#2ea6c9}.feel-tag.f-ok{color:#2fae6b}
 .sets{display:flex;flex-direction:column;border-top:1px solid var(--line)}
@@ -632,6 +633,7 @@ html.neo-dark .macros>div,html.neo-dark .ip-day{background:rgba(255,255,255,.04)
 .lv-ask-b b{font-size:19px}.lv-ask-b p{margin:0 0 6px;color:var(--hero-mut);font-size:14.5px}
 .lv-full{position:fixed;inset:0;z-index:47;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:calc(16px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));background:radial-gradient(120% 80% at 50% 0%,var(--hero-bg2),var(--hero-bg) 70%);color:var(--hero-ink);animation:rfIn .22s ease-out}
 .lv-full>*{width:100%;max-width:520px}
+.rf-app{margin-right:10px;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:inherit;font:inherit;font-size:12px;font-weight:800;letter-spacing:0}
 .rf-grab{position:absolute;left:50%;top:-8px;width:40px;height:5px;border-radius:3px;background:currentColor;opacity:.28;transform:translateX(-50%)}
 .lv-full{touch-action:none}
 .lv-full .lv-ring{width:min(300px,76vw)}
@@ -826,6 +828,11 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .lv-go{min-height:54px}
 .lv-pill{padding:6px 11px}
 .lv-x{width:38px;height:38px}
+.lv-mn{margin-left:-4px}
+.lvbar{position:fixed;z-index:9;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));bottom:calc(74px + env(safe-area-inset-bottom,0px));max-width:536px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:18px;border:1px solid rgba(255,255,255,.14);background:linear-gradient(135deg,#1c2238,#111526);color:#fff;box-shadow:0 10px 28px rgba(10,14,30,.35);text-align:left;font:inherit;animation:rfIn .22s ease-out}
+.lvbar .lp-i{font-size:22px}.lvbar .lp-t{display:flex;flex-direction:column;flex:1;min-width:0}.lvbar .lp-t b{font-size:14.5px}.lvbar .lp-t small{font-size:12px;opacity:.7}
+.lvbar .lp-r{font-family:var(--f-display);font-weight:700;font-size:22px;font-variant-numeric:tabular-nums}
+.lvbar.over{background:linear-gradient(135deg,#1d7a52,#14583b)}.lvbar .lp-r.over{color:#b8ffd9}
 .lv-step{padding:5px 8px}
 .lv-body{gap:8px}
 .lv-ex h1{font-size:30px;margin:2px 0 2px}
@@ -1072,12 +1079,13 @@ svg.chart{width:100%;height:auto;display:block}
 .weeks{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;align-items:end;height:90px}
 .weeks div{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
 .weeks i{display:block;width:100%;background:var(--accent);border-radius:6px 6px 2px 2px;min-height:3px}
+.weeks.vol i{background:var(--pc-c,#7c5cff)}.weeks span{font-size:11px;color:var(--muted)}
 .weeks span{font-size:11px;color:var(--muted)}
 .hist{display:flex;flex-direction:column}
 .hist div{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
 .hist div:first-child{border-top:0}
 /* Nav */
-html.kb nav.tabs,html.kb .fab{display:none!important}
+html.kb nav.tabs,html.kb .fab,html.kb .lvbar{display:none!important}
 nav.tabs{will-change:transform}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}
 nav.tabs .in-nav{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
@@ -1174,7 +1182,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "15.1 · 27 ottobre";
+const APP_VERSION = "15.3 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1656,6 +1664,17 @@ function setNote(exId, txt) {
 function lastLine(last, cls, withDate) { // "Ultima volta": serie, sensazione (giusto, pesante…) e nota
   if (!last) return ""; const fo = last.feel ? feelOf(last.feel) : null;
   return `<div class="${cls}">Ultima volta${withDate ? ` (${esc(fmtDay(last.date, { day: "numeric", month: "short" }))})` : ""}: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${fo ? ` <span class="feel-tag f-${esc(last.feel)}">${fo[1]} ${esc(fo[2])}</span>` : ""}${esc(feelHint(last, true))}</div>`;
+}
+function lastAltOf(ex) { // l'ultima volta che hai fatto questo esercizio della scheda: se era una variante, quale
+  const l0 = peekLog(); if (l0 && l0.altSel && l0.altSel[ex.id]) return null; // oggi stai già facendo una variante
+  const ds = Object.keys(S.days).filter(d => d < S.date).sort().reverse();
+  for (const d of ds) { const l = S.days[d]; const e = l && l.w && l.w.ex && l.w.ex[ex.id]; const D = e && (e.s || []).filter(x => x && x.done); if (!D || !D.length) continue;
+    const a = l.altSel && l.altSel[ex.id]; return a && a !== ex.name ? { date: d, name: a, sets: D, feel: e.feel || "" } : null; }
+  return null;
+}
+function altNote(ex, cls) {
+  const r = lastAltOf(ex); if (!r) return ""; const i = (ex.alts || []).indexOf(r.name); const fo = r.feel ? feelOf(r.feel) : null;
+  return `<div class="${cls} alt-last">🔁 L'ultima volta (${esc(fmtDay(r.date, { day: "numeric", month: "short" }))}) hai fatto la variante <b>${esc(r.name)}</b>: ${r.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${fo ? ` <span class="feel-tag f-${esc(r.feel)}">${fo[1]} ${esc(fo[2])}</span>` : ""}${i >= 0 ? ` <button class="alt-again" data-act="xa-use" data-ex="${ex.id}" data-i="${i}">⇄ Rifai la variante</button>` : ""}</div>`;
 }
 function feelHint(last, noLabel) {
   const nt = last && last.note ? ` · 📝 "${last.note.length > 60 ? last.note.slice(0, 60) + "…" : last.note}"` : "";
@@ -2292,8 +2311,8 @@ function vAllenamento() {
         const copy = i === 0 && sets > 1 ? `<div class="copyrow" data-copy="${ex.id}" ${copyVisible(ex.id) ? "" : "hidden"}><button data-act="copy-first" data-ex="${ex.id}">${ICON_DOWN}Stessi kg e rip. per le altre serie</button></div>` : "";
         return row + copy;
       }).join("");
-      inner = `<div class="ex-b">${altPicker(ex, false)}${muscleBlock(exView(ex), false)}${noteBox(ex.id, false)}</div>${last || ex.notes ? `<div class="ex-b">
-          ${lastLine(last, "last", true)}
+      inner = `<div class="ex-b">${altPicker(ex, false)}${muscleBlock(exView(ex), false)}${noteBox(ex.id, false)}</div>${last || ex.notes || lastAltOf(ex) ? `<div class="ex-b">
+          ${altNote(ex, "last")}${lastLine(last, "last", true)}
           ${ex.notes ? `<div class="ex-n">${esc(ex.notes)}</div>` : ""}</div>` : ""}
         <div class="sets">${rows}</div>
         ${complete ? `<div style="padding:8px 12px 0;border-top:1px solid var(--line)">${feelRow(ex.id, false)}</div>` : ""}
@@ -2985,6 +3004,7 @@ document.addEventListener("change", ev => {
   store.saveProfile(); toast("Salvato");
 });
 document.addEventListener("input", ev => { if (!PH.add) return; if (ev.target.id === "phNote") PH.add.note = ev.target.value; else if (ev.target.id === "phDate") PH.add.d = ev.target.value; });
+const PROG_M = [["kg", "Carico", "kg", "Il carico più alto usato in ogni seduta."], ["maxR", "Ripetizioni", "rip.", "Il numero più alto di ripetizioni fatte in una serie."], ["reps", "Rip. totali", "rip.", "Tutte le ripetizioni della seduta sommate."], ["vol", "Volume", "kg", "Kg × ripetizioni di tutte le serie: misura il lavoro totale."], ["rm", "Massimale stimato", "kg", "Stima del peso che alzeresti per 1 ripetizione (formula di Epley): utile per confrontare serie con rip. diverse."]];
 function vProgressi() {
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
   const wpts = ws.slice(-30).map(w => ({ y: w.kg, d: w.d, l: fmtDay(w.d, { day: "numeric", month: "short" }) }));
@@ -2994,7 +3014,10 @@ function vProgressi() {
   const weeks = Array.from({ length: 8 }, (_, i) => { const s = new Date(monday); s.setDate(monday.getDate() - (7 - i) * 7); const e = new Date(s); e.setDate(s.getDate() + 7); return { s, n: sess.filter(d => d >= dstr(s) && d < dstr(e)).length }; });
   const maxW = Math.max(3, ...weeks.map(w => w.n));
   const exMap = {};
-  sess.forEach(d => { const ex = exOf(d); for (const k in ex) { const top = Math.max(0, ...(ex[k].s || []).filter(s => s && s.done).map(s => num(s.kg) || 0)); if (top > 0) { const key = norm(ex[k].name); (exMap[key] = exMap[key] || { name: ex[k].name, pts: [] }).pts.push({ d, kg: top }); } } });
+  sess.forEach(d => { const ex = exOf(d); for (const k in ex) { const D = (ex[k].s || []).filter(s => s && s.done); if (!D.length) continue;
+    const top = Math.max(0, ...D.map(s => num(s.kg) || 0)); const reps = D.reduce((a, s) => a + (parseInt(s.reps) || 0), 0); const maxR = Math.max(0, ...D.map(s => parseInt(s.reps) || 0));
+    const vol = D.reduce((a, s) => a + (num(s.kg) || 0) * (parseInt(s.reps) || 0), 0); const rm = Math.max(0, ...D.map(s => (num(s.kg) || 0) * (1 + (parseInt(s.reps) || 0) / 30)));
+    if (top > 0 || reps > 0) { const key = norm(ex[k].name); (exMap[key] = exMap[key] || { name: ex[k].name, pts: [] }).pts.push({ d, kg: top, reps, maxR, vol, rm, sets: D.length }); } } });
   const exKeys = Object.keys(exMap).sort((a, b) => exMap[b].pts.length - exMap[a].pts.length);
   if (!S.progEx || !exMap[S.progEx]) S.progEx = exKeys[0] || null;
   const ex = S.progEx && exMap[S.progEx];
@@ -3019,12 +3042,24 @@ function vProgressi() {
     <div class="card stack">
       <div class="row between"><span class="eyebrow">Allenamenti a settimana</span><span class="small muted">${sess.length} in totale</span></div>
       <div class="weeks">${weeks.map((w, i) => `<div title="${w.n} allenamenti"><span class="num" style="font-size:14px;color:var(--ink)">${w.n || ""}</span><i style="height:${w.n / maxW * 64}px;${i === 7 ? "" : "opacity:.55"}"></i><span>${w.s.getDate()}/${w.s.getMonth() + 1}</span></div>`).join("")}</div>
+      ${(() => { const vw = weeks.map(w => { const e = new Date(w.s); e.setDate(e.getDate() + 7); let v = 0, st = 0; sess.filter(d => d >= dstr(w.s) && d < dstr(e)).forEach(d => { const ex = exOf(d); for (const k in ex) (ex[k].s || []).forEach(x => { if (x && x.done) { st++; v += (num(x.kg) || 0) * (parseInt(x.reps) || 0); } }); }); return { s: w.s, v, st }; });
+        const mv = Math.max(1, ...vw.map(w => w.v)); if (!vw.some(w => w.v)) return "";
+        const f = v => v >= 10000 ? fmtN(Math.round(v / 100) / 10) + "t" : v >= 1000 ? fmtN(Math.round(v / 100) / 10) + "k" : String(Math.round(v));
+        return `<div class="row between" style="margin-top:6px"><span class="eyebrow">Volume a settimana</span><span class="small muted">kg × rip.</span></div>
+        <div class="weeks vol">${vw.map((w, i) => `<div title="${Math.round(w.v)} kg · ${w.st} serie"><span class="num" style="font-size:12px;color:var(--ink)">${w.v ? f(w.v) : ""}</span><i style="height:${w.v / mv * 64}px;${i === 7 ? "" : "opacity:.55"}"></i><span>${w.st ? w.st + " s" : ""}</span></div>`).join("")}</div>`; })()}
     </div>
     <div class="card stack">
-      <span class="eyebrow">Carico massimo per esercizio</span>
+      <span class="eyebrow">Andamento per esercizio</span>
       ${exKeys.length ? `<select class="in" id="progSel" aria-label="Esercizio">${exKeys.map(k => `<option value="${esc(k)}" ${k === S.progEx ? "selected" : ""}>${esc(exMap[k].name)}</option>`).join("")}</select>
-      ${lineChart(ex.pts.slice(-20).map(p => ({ y: p.kg, d: p.d, l: fmtDay(p.d, { day: "numeric", month: "short" }) })), "carico")}
-      <span class="small muted">Record: <b class="num" style="font-size:17px;color:var(--ink)">${fmtN(Math.max(...ex.pts.map(p => p.kg)))} kg</b></span>`
+      ${(() => { const M = PROG_M.find(m => m[0] === S.progMetric) || PROG_M[0]; const P = ex.pts.slice(-20); const k = M[0];
+        const val = p => k === "vol" ? Math.round(p.vol) : k === "rm" ? Math.round(p.rm * 2) / 2 : p[k];
+        const pts = P.filter(p => val(p) > 0).map(p => ({ y: val(p), d: p.d, l: fmtDay(p.d, { day: "numeric", month: "short" }) }));
+        const best = pts.length ? Math.max(...pts.map(p => p.y)) : 0; const first = pts[0], lastP = pts[pts.length - 1];
+        const dl = pts.length > 1 ? lastP.y - first.y : null;
+        return `<div class="chips pm-chips">${PROG_M.map(([id, lb]) => `<button class="chip sm ${id === k ? "on-acc" : ""}" data-act="prog-m" data-k="${id}">${lb}</button>`).join("")}</div>
+          ${lineChart(pts, M[1].toLowerCase())}
+          <span class="small muted">${M[3]}</span>
+          <div class="row" style="gap:14px;flex-wrap:wrap"><span class="small muted">Record: <b class="num" style="font-size:17px;color:var(--ink)">${fmtN(best)} ${M[2]}</b></span>${dl != null ? `<span class="small muted">Dalla prima volta: <b style="color:${dl > 0 ? "var(--good,#2fae6b)" : dl < 0 ? "var(--warn,#e5484d)" : "var(--ink)"}">${dl > 0 ? "+" : ""}${fmtN(Math.round(dl * 10) / 10)} ${M[2]}</b></span>` : ""}<span class="small muted">Sedute: <b style="color:var(--ink)">${ex.pts.length}</b></span></div>`; })()}`
       : `<p class="small muted" style="margin:0">Segna le serie con i chili usati e qui vedrai come crescono i carichi.</p>`}
     </div>
     ${recent.length ? `<div class="card"><span class="eyebrow">Ultimi allenamenti</span><div class="hist" style="margin-top:6px">${recent.map(d => `<div><span style="text-transform:capitalize">${esc(fmtDay(d, { weekday: "short", day: "numeric", month: "short" }))}</span><span class="muted">${esc(S.days[d].w.dayName || "")} · ${setsDone(S.days[d])} serie</span></div>`).join("")}</div></div>` : ""}
@@ -3696,6 +3731,7 @@ document.addEventListener("click", ev => {
     case "mf-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per eliminare"; return; } S.profile.foods = (S.profile.foods || []).filter(f => f.id !== b.dataset.id); S.mfOpen = null; store.saveProfile(); render(); toast("Alimento eliminato"); return; }
     case "mf-dedupe": { const F = S.profile.foods || []; const out = []; let n = 0; F.forEach(f => { const ex = out.find(o => o.per100 && f.per100 && sameFood(o, f)); if (ex) { n++; if (!ex.unit && f.unit) ex.unit = f.unit; if (!ex.code && f.code) ex.code = f.code; } else out.push(f); }); S.profile.foods = out; store.saveProfile(); render(); toast(`Uniti ${n} ${n === 1 ? "doppione" : "doppioni"}`); return; }
     case "sched-clear": { const W = plan().workout; delete W.schedule; delete W.moves; delete W.skips; store.saveProfile(); render(); toast("Programma tolto: torno alla rotazione"); return; }
+    case "prog-m": S.progMetric = b.dataset.k; render(); return;
     case "w-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.innerHTML = "Elimina?"; return; } S.profile.weights = (S.profile.weights || []).filter(w => w.d !== b.dataset.d); S.wHistOpen = true; store.saveProfile(); render(); toast("Pesata eliminata"); return; }
     case "force-upd": {
       S.updBusy = true; S.updMsg = null; render();
@@ -4184,6 +4220,7 @@ function lvFirstOpen() {
   return null;
 }
 function openLive() {
+  if (LV.min && LV.iv) { LV.min = false; lvPill(); ovOpen("live"); renderLive(); lvState(); return; }
   const day = lvDay(); if (!day || !(day.exercises || []).length) { toast("Carica prima una scheda di allenamento"); return; }
   { const l0 = dayLog(); useSession(l0, day); if (setsFor(l0, day) === 0 && !l0.w.done && (l0.w.start || l0.w.end)) { const prev = (l0.w.also || []).slice(-1)[0]; if (prev && l0.w.end) { l0.w.times = l0.w.times || {}; if (!l0.w.times[prev]) l0.w.times[prev] = { start: l0.w.start || 0, end: l0.w.end }; } delete l0.w.start; delete l0.w.end; } }
   LV.ask = null; LV.keepShort = false; LV.archived = false; LV.browse = false; LV.listView = false; FX.lv = null; FX.lvOk = null; FX.exdone = null; FX.pr = null;
@@ -4203,9 +4240,25 @@ function openLive() {
 document.addEventListener("visibilitychange", () => { if (document.hidden) return; try { if (LV.resting) lvTick(); if (T.end && !$("#timer").hidden) tick(); } catch (e) {} });
 // se l'iPhone blocca il suono al rientro, riparte al primo tocco (entro gli 8 secondi dell'allarme)
 document.addEventListener("pointerdown", () => { try { if (LV.over && LV.alarmAt && Date.now() - LV.alarmAt < 8000 && ALARM_MODE === "el" && ALARM_EL && ALARM_EL.paused) beep(true); } catch (e) {} }, true);
-function closeLive() { stopAlarm(); LV.resting = false; LV.over = false; clearInterval(LV.iv); try { LV.wake && LV.wake.release(); } catch (e) {} LV.wake = null; ovClose("live"); render(); }
+function lvState() { try { if ($("#live").hidden && !LV.min) return; const day = lvDay(); lsSet("carico.live", JSON.stringify({ d: S.date, day: day && day.id, exIdx: LV.exIdx, setIdx: LV.setIdx, phase: LV.phase, resting: !!LV.resting, restEnd: LV.restEnd, restTotal: LV.restTotal, over: !!LV.over, alarmed: !!LV.alarmAt || !LV.alarmDue, nextLabel: LV.nextLabel || "", mini: !!LV.mini, min: !!LV.min, doneEx: LV.doneEx || null, doneGroup: LV.doneGroup || null })); } catch (e) {} }
+function lvMinimize() { // l'allenamento (e il recupero) continua: resta una barra in basso per tornarci
+  LV.min = true; $("#live").hidden = true; ovClose("live"); lvPill(); lvState(); render();
+}
+function lvPill() {
+  let p = document.getElementById("lvPill");
+  if (!LV.min) { if (p) p.remove(); return; }
+  if (!p) { p = document.createElement("button"); p.id = "lvPill"; p.className = "lvbar"; p.addEventListener("click", () => { unlockAlarm(); openLive(); }); document.body.appendChild(p); }
+  const l = peekLog(); const st = l && l.w.start ? Math.max(0, Math.floor((Date.now() - l.w.start) / 1000)) : 0;
+  const clock = (st >= 3600 ? Math.floor(st / 3600) + ":" + pad(Math.floor(st / 60) % 60) : Math.floor(st / 60)) + ":" + pad(st % 60);
+  let r = "";
+  if (LV.resting && LV.phase !== "done") { if (LV.over) { const x = Math.floor((Date.now() - LV.restEnd) / 1000); r = `<span class="lp-r over">VIA! +${Math.floor(x / 60)}:${pad(x % 60)}</span>`; } else { const left = Math.max(0, Math.ceil((LV.restEnd - Date.now()) / 1000)); r = `<span class="lp-r">⏱ ${Math.floor(left / 60)}:${pad(left % 60)}</span>`; } }
+  p.classList.toggle("over", !!(LV.resting && LV.over));
+  p.innerHTML = `<span class="lp-i">🏋️</span><span class="lp-t"><b>Allenamento in corso</b><small>${clock} · tocca per tornare</small></span>${r}`;
+}
+function closeLive() { LV.min = false; lvPill(); lsSet("carico.live", null); stopAlarm(); LV.resting = false; LV.over = false; clearInterval(LV.iv); try { LV.wake && LV.wake.release(); } catch (e) {} LV.wake = null; ovClose("live"); render(); }
 function bestBefore(name) { const K = exKeys(name); let b = 0; for (const { date: d, ex } of exHistory(S.date, true)) { if (K.since && d < K.since) break; for (const k in ex) if (K.keys.has(norm(ex[k].name))) (ex[k].s || []).forEach(s => { if (s && s.done) b = Math.max(b, num(s.kg) || 0); }); } return b; }
 function lvTick() {
+  if (LV.min) { try { lvPill(); } catch (e) {} }
   const c = $("#lvClock"); const l = peekLog();
   if (c && l && l.w.start) { const s = Math.max(0, Math.floor(((l.w.end || (LV.phase === "done" ? lastSetAt(l, lvDay()) : 0) || Date.now()) - l.w.start) / 1000)); c.textContent = (s >= 3600 ? Math.floor(s / 3600) + ":" + pad(Math.floor(s / 60) % 60) : Math.floor(s / 60)) + ":" + pad(s % 60); }
   if (LV.resting) {
@@ -4214,8 +4267,8 @@ function lvTick() {
     try { const ring = r && (r.closest(".lv-ring") || r.closest(".dk-ring")); if (ring) ring.classList.toggle("fx-ending", !REDUCED() && left > 0 && left <= 5 && !LV.over); } catch (e) {}
     if (n && !LV.over) n.textContent = Math.floor(left / 60) + ":" + pad(left % 60);
     if (r) { const C = 2 * Math.PI * (+r.getAttribute("r") || 22); r.setAttribute("stroke-dasharray", `${(C * left / Math.max(1, LV.restTotal)).toFixed(1)} ${C.toFixed(1)}`); }
-    if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); LV.alarmAt = 0; LV.alarmDue = LV.restTotal >= 5; renderLive(); } // niente suono per recuperi nulli o appena partiti
-    if (LV.over && LV.alarmDue && !document.hidden) { LV.alarmDue = false; LV.alarmAt = LV.lastAlarm = Date.now(); beep(true); } // se il recupero è finito mentre eri fuori, suona appena rientri
+    if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); LV.alarmAt = 0; LV.alarmDue = LV.restTotal >= 5; renderLive(); lvState(); } // niente suono per recuperi nulli o appena partiti
+    if (LV.over && LV.alarmDue && !document.hidden) { LV.alarmDue = false; LV.alarmAt = LV.lastAlarm = Date.now(); beep(true); lvState(); } // se il recupero è finito mentre eri fuori, suona appena rientri
     if (LV.over) {
       const x = Math.floor((Date.now() - LV.restEnd) / 1000); const o = $("#lvOver"); if (o) o.textContent = "+" + Math.floor(x / 60) + ":" + pad(x % 60);
       if (!LV.alarmAt || Date.now() - LV.alarmAt >= 8000) { if (ALARM_MODE) stopAlarm(); } // suona 8 secondi, poi resta solo il banner con il "+" finché non lo tocchi
@@ -4229,10 +4282,11 @@ function lvSummary() {
   const mins = l && l.w.start ? Math.max(1, Math.round(((l.w.end || lastSetAt(l, lvDay()) || Date.now()) - l.w.start) / 60000)) : 0;
   return { sets, vol, prs, mins };
 }
-function renderLive() {
+function renderLive() { renderLive0(); lvState(); }
+function renderLive0() {
   const el = $("#live"); const day = lvDay(); const l = dayLog(); const exs = day.exercises || [];
   const tot = totalSets(day, l), done = l.w.dayId === day.id ? setsFor(l, day) : 0;
-  const top = `<div class="lv-top"><button class="lv-x" data-act="lv-close" aria-label="Chiudi">${ICON_X}</button><div class="lv-day"><span>${esc(day.name)}</span><b id="lvClock">0:00</b></div><button class="lv-spot" data-act="lv-spot" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button><span class="lv-cnt">${done}/${tot}</span></div>
+  const top = `<div class="lv-top"><button class="lv-x" data-act="lv-close" aria-label="Chiudi e salva l'allenamento">${ICON_X}</button><button class="lv-x lv-mn" data-act="lv-min" aria-label="Abbassa: l'allenamento continua"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button><div class="lv-day"><span>${esc(day.name)}</span><b id="lvClock">0:00</b></div><button class="lv-spot" data-act="lv-spot" aria-label="Apri la playlist su Spotify">${ICON_SPOT}</button><span class="lv-cnt">${done}/${tot}</span></div>
     <div class="lv-prog"><i style="width:${tot ? done / tot * 100 : 0}%"></i></div>
     <div class="lv-pills">${exs.map((ex, i) => { const dn = exDone(l, ex), n = exSets(ex); return `<button class="lv-pill ${ssGroup(day, LV.exIdx).includes(i) && LV.phase !== "done" && LV.phase !== "exdone" ? "on" : ""} ${ssGroup(day, i).length > 1 ? "ss" : ""} ${dn >= n ? "ok" : ""} ${isSkipped(l, ex.id) ? "sk" : ""}" data-act="lv-ex" data-i="${i}">${isSkipped(l, ex.id) ? "⏭ " : dn >= n ? "✓ " : ""}${esc(xn(ex))}</button>`; }).join("")}</div>`;
   let body = "";
@@ -4294,7 +4348,7 @@ function renderLive() {
         <div class="lv-tools"><span class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · rec. " + esc(ex.rest) + " s (piano)" : ""}${ex.load ? " · " + esc(ex.load) : ""}</span><button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${noteBox(ex.id, true)}${isSkipped(l, ex.id) ? "" : `<button class="xa-btn dark sk" data-act="xa-skip" data-ex="${ex.id}">⏭ Salta</button>`}</div>${altPicker(ex, true)}</div>
       ${isSkipped(l, ex.id) ? `<div class="lv-skipped">⏭ <b>Esercizio saltato oggi</b><span>Non conta nelle serie della seduta.</span><button class="lv-btn" data-act="xa-unskip" data-ex="${ex.id}">↩ Fallo lo stesso</button></div>` : ""}
       ${muscleBlock(exView(ex), true, ex.notes ? `<div class="lv-note in">${esc(ex.notes)}</div>` : "")}
-      <div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span><button class="lv-tgt" data-act="xa-repedit" data-ex="${ex.id}">obiettivo <b>${esc(t || "–")}</b> rip. ✎</button></div>${repEditor(ex, true)}
+      ${altNote(ex, "lv-last")}<div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span><button class="lv-tgt" data-act="xa-repedit" data-ex="${ex.id}">obiettivo <b>${esc(t || "–")}</b> rip. ✎</button></div>${repEditor(ex, true)}
       ${lastLine(last, "lv-last", false)}
       ${exDone(l, ex) >= n && LV.feelEx !== ex.id ? feelRow(ex.id, true) : ""}
       <div class="lv-steps">
@@ -4311,7 +4365,7 @@ function renderLive() {
     const C = 2 * Math.PI * 88;
     const fx = LV.feelEx && day.exercises.find(x => x.id === LV.feelEx);
     const feel = fx ? `<div class="rf-feel"><span>${esc(fx.name)}: com'è andata?</span><div>${FEELS.map(([k, em, lb]) => `<button class="fl ${((dayLog().w.ex[fx.id] || {}).feel === k) ? "on" : ""}" data-act="feel" data-ex="${fx.id}" data-f="${k}" aria-label="${lb}">${em}<small>${lb}</small></button>`).join("")}</div></div>` : "";
-    const head = `<div class="rf-top"><span class="lv-k">${LV.over ? "Recupero finito" : "Recupero"}</span><button class="rf-min" data-act="lv-mini" aria-label="Riduci a barra">▾ Riduci</button><i class="rf-grab" aria-hidden="true"></i></div>`;
+    const head = `<div class="rf-top"><span class="lv-k"><button class="rf-app" data-act="lv-min" aria-label="Abbassa l'allenamento: continua in sottofondo">⌄ App</button>${LV.over ? "Recupero finito" : "Recupero"}</span><button class="rf-min" data-act="lv-mini" aria-label="Riduci a barra">▾ Riduci</button><i class="rf-grab" aria-hidden="true"></i></div>`;
     dock = LV.over ? `<div class="lv-full over">${head}
         <button class="lv-ring go" data-act="lv-skip" aria-label="Inizia la prossima serie"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="rgba(79,210,150,.14)" stroke="var(--hero-g)" stroke-width="12"/></svg><b>VIA!<small id="lvOver">+0:00</small></b></button>
         <div class="lv-next"><span>Tocca per continuare</span><b>${esc(LV.nextLabel || "")}</b></div>${feel}
@@ -4399,7 +4453,7 @@ function ssBody(day, l) {
     const step = (f, d, lab) => `<div class="lv-step"><span>${lab}</span><div><button data-act="ss-adj" data-x="${x.id}" data-f="${f}" data-d="${-d}" aria-label="Meno">−</button><input data-ssx="${x.id}" data-ssf="${f}" inputmode="${f === "kg" ? "decimal" : "numeric"}" value="${esc(f === "kg" ? fmtN(num(v.kg)) : (v.reps || ""))}" aria-label="${lab} ${esc(x.name)}"><button data-act="ss-adj" data-x="${x.id}" data-f="${f}" data-d="${d}" aria-label="Più">+</button></div></div>`;
     return `<div class="ss-card ${has ? "" : "off"}"><div class="ss-n"><span class="ss-k">${String.fromCharCode(65 + k)}</span><b>${esc(xn(x))}</b> <button class="xa-mini" data-act="xa-open" data-ex="${x.id}" aria-label="Cambia esercizio">⇄</button>${noteBox(x.id, true)}</div>${altPicker(x, true)}
       ${has ? `<div class="ss-meta">${exSets(x)} serie${x.reps ? " × " + esc(x.reps) : ""}${t ? ` · ora <b>${esc(t)}</b> rip.` : ""}${x.load ? " · " + esc(x.load) : ""}</div>
-      ${lastLine(last, "lv-last", false)}
+      ${altNote(x, "lv-last")}${lastLine(last, "lv-last", false)}
       ${x.notes ? `<div class="lv-note">${esc(x.notes)}</div>` : ""}
       <div class="lv-steps ss-steps">${step("kg", 2.5, "kg")}${step("reps", 1, "rip.")}</div>` : `<div class="ss-meta">Serie di questo esercizio già finite</div>`}</div>`;
   }).join("");
@@ -4419,7 +4473,8 @@ document.addEventListener("click", ev => {
   ev.stopPropagation(); const a = b.dataset.act; const day = lvDay();
   if (a === "lv-overview") { LV.browse = false; renderLive(); }
   else if (a === "lv-start") { const l = dayLog(); useSession(l, day); l.w.start = Date.now(); delete l.w.end; LV.needStart = false; LV.browse = false; store.saveDay(S.date); unlockAlarm(); lvDefaults(); renderLive(); }
-  else if (a === "lv-close") { LV.needStart = false; lvCloseAsk(); }
+  else if (a === "lv-close") { LV.needStart = false; const l = dayLog(); if (l.w.dayId === day.id && setsFor(l, day) === 0 && !l.w.done) lvCloseAsk(); else lvFinish(); } // X = chiude davvero e salva quello fatto
+  else if (a === "lv-min") lvMinimize();
   else if (a === "note") { S.noteOpen = S.noteOpen === b.dataset.ex ? null : b.dataset.ex; renderLive(); if (S.noteOpen) setTimeout(() => { const t = document.getElementById("note-" + S.noteOpen); t && t.focus(); }, 30); }
   else if (a === "feel") { setFeel(b.dataset.ex, b.dataset.f); if (LV.feelEx === b.dataset.ex) LV.feelEx = null; renderLive(); const fo = feelOf(b.dataset.f); if (fo) toast(fo[1] + " Segnato: " + fo[2].toLowerCase()); }
   else if (a === "lv-spot") openSpotify();
@@ -5634,6 +5689,17 @@ if (ntSupported()) {
   showMode();
   S.homeEnter = true; render();
   showOnboarding();
+  try { // l'app è stata chiusa dall'iPhone durante l'allenamento: riprendo esattamente da dove eri, recupero compreso
+    const st = JSON.parse(lsGet("carico.live") || "null");
+    if (st && st.d === today() && S.date === today() && wDays().some(d => d.id === st.day)) {
+      S.selDay = st.day; const l = dayLog();
+      if (l.w.dayId === st.day && !l.w.done) {
+        openLive(); Object.assign(LV, { exIdx: st.exIdx, setIdx: st.setIdx, phase: st.phase || "set", resting: !!st.resting, restEnd: st.restEnd || 0, restTotal: st.restTotal || 0, over: !!st.over, nextLabel: st.nextLabel || "", mini: !!st.mini, doneEx: st.doneEx, doneGroup: st.doneGroup, needStart: false, browse: false });
+        LV.alarmAt = 0; LV.alarmDue = !!(st.resting && st.over && !st.alarmed && st.restTotal >= 5); lvDefaults();
+        if (st.min) lvMinimize(); else renderLive();
+      } else lsSet("carico.live", null);
+    } else if (st) lsSet("carico.live", null);
+  } catch (e) {}
   try { const inv = new URLSearchParams(location.search).get("invito"); if (inv && inv.length >= 4) { lsSet("carico.code", inv); setTimeout(() => toast("Codice invito salvato: il coach è attivo 🤝", 4000), 800); } } catch (e) {}
   try { const q = new URLSearchParams(location.search).get("go"); if (q === "chat") { setTimeout(gcOpen, 600); history.replaceState(null, "", location.pathname); } else if (q && ["oggi", "allenamento", "dieta", "progressi", "piano"].includes(q)) { go(q); history.replaceState(null, "", location.pathname); } } catch (e) {}
   if (((S.profile.user || {}).notif || {}).on && ntSupported()) { navigator.serviceWorker.register("./sw.js").catch(() => {}); pushSync(); setTimeout(() => ntAiRefresh(false), 6000); }
