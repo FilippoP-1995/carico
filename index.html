@@ -1182,7 +1182,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "15.3 · 27 ottobre";
+const APP_VERSION = "15.4 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2228,7 +2228,7 @@ function altPicker(ex, dark) {
   const cur = xn(ex); const A = ex.alts || []; const busy = S.busy["xa:" + ex.id];
   const opt = (n, i) => `<div class="xa-o ${cur === n ? "on" : ""}"><button class="xa-u" data-act="xa-use" data-ex="${ex.id}" data-i="${i}">${cur === n ? "✓ " : ""}${esc(n)}${i < 0 ? ' <small>dalla scheda</small>' : ""}</button>${i >= 0 ? `<button class="xa-d" data-act="xa-del" data-ex="${ex.id}" data-i="${i}" aria-label="Togli ${esc(n)}">${ICON_X}</button>` : ""}</div>`;
   return `<div class="xa ${dark ? "dark" : ""}"><span class="xa-t">⇄ Fai un altro esercizio oggi</span>
-    ${opt(ex.name, -1)}${A.map((n, i) => opt(n, i)).join("")}
+    ${cur !== ex.name ? opt(ex.name, -1) : ""}${A.map((n, i) => n === cur ? "" : opt(n, i)).join("")}${!A.filter(n => n !== cur).length && cur === ex.name ? `<span class="xa-h">Nessuna alternativa ancora: aggiungila qui sotto.</span>` : ""}
     <form class="row xa-f" data-form="xa-add" data-ex="${ex.id}"><input class="in" id="xaIn" placeholder="Aggiungi alternativa (es. Leg press)" autocomplete="off"><button class="btn sm">Aggiungi</button></form>
     <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn ghost sm" data-act="xa-ai" data-ex="${ex.id}" ${busy ? "disabled" : ""}>${busy ? '<span class="spin"></span> Cerco…' : "✨ Suggerisci con l'AI"}</button>
     ${cur !== ex.name ? `<button class="btn ghost sm" data-act="xa-always" data-ex="${ex.id}">📌 Usa sempre ${esc(cur)}</button>` : ""}</div>
