@@ -1138,6 +1138,13 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .ph-tips summary{cursor:pointer;font-weight:700;font-size:13.5px;list-style:none}.ph-tips summary::-webkit-details-marker{display:none}
 .ph-tips ul{list-style:none;margin:10px 0 2px;padding:0;display:flex;flex-direction:column;gap:9px}
 .ph-tips li{display:flex;gap:10px;font-size:13px;line-height:1.4;color:var(--muted)}.ph-tips li span{font-size:17px;line-height:1.2}.ph-tips li b{color:var(--ink)}
+
+.imp-bar{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.imp-bar .ib-top{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;font-weight:600}
+.imp-bar .ib-top b{font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.imp-bar .ib-track{height:10px;border-radius:999px;background:color-mix(in srgb,var(--ink) 9%,transparent);overflow:hidden}
+.imp-bar .ib-track i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#4fd296));transition:width .25s linear}
+.imp-bar.ok .ib-track i{background:#2fae6b}.imp-bar.ok{border-color:#2fae6b}
 </style>
 
 <div class="wrap">
@@ -1210,7 +1217,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "16.3 · 27 ottobre";
+const APP_VERSION = "16.4 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3248,7 +3255,8 @@ function vPiano() {
         <div class="stack" style="margin-top:10px"><textarea class="in" id="pasteIn" placeholder="Incolla qui la scheda o la dieta, così come te l'hanno mandata (WhatsApp, email…)"></textarea>
         <button class="btn" data-act="import-text" ${busy ? "disabled" : ""}>Leggi il testo</button></div>
       </details>
-      ${S.importMsg ? `<div class="status ${S.importErr ? "err" : ""}">${busy ? '<span class="spin"></span> ' : ""}${esc(S.importMsg)}</div>` : ""}
+      ${busy && IMP.on ? impBar(S.importMsg, IMP.pct) : S.importDone ? impBar(S.importDone, 100, true) : S.importMsg ? `<div class="status ${S.importErr ? "err" : ""}">${busy ? '<span class="spin"></span> ' : ""}${esc(S.importMsg)}</div>` : ""}
+      ${p && !busy ? impBar("Piano letto: controllalo qui sotto e tocca \"Salva nel piano\" per completare il caricamento", 95) : ""}
       ${busy ? `<button class="btn ghost" data-act="import-stop">Annulla</button>` : ""}
       ${p ? `${p.fixes && p.fixes.length ? `<div class="status">🔍 Al secondo controllo ho corretto ${p.fixes.length} ${p.fixes.length === 1 ? "valore" : "valori"}:<br><span class="small">${p.fixes.slice(0, 12).map(esc).join("<br>")}</span></div>` : p.fixes ? `<div class="status">🔍 Secondo controllo fatto: nessun errore trovato.</div>` : ""}
         ${p.workout ? `<details class="imp-prev" open><summary>Controlla la scheda letta</summary>${p.workout.days.map(d => `<div class="ip-day"><b>${esc(d.name)}</b>${d.exercises.map(e => `<div class="ip-ex"><span>${esc(e.name)}</span><span>${esc(e.sets)} × ${esc(e.reps || "?")}${e.rest ? ` · rec ${esc(e.rest)}s` : ""}${e.load ? ` · ${esc(e.load)}` : ""}</span></div>`).join("")}</div>`).join("")}<p class="small muted" style="margin:6px 0 0">Se qualcosa non torna, salva e correggilo in Scheda di allenamento qui sotto.</p></details>` : ""}
@@ -3463,15 +3471,15 @@ Rispondi solo con JSON: {"fix":[{"v":0,"m":1,"i":2,"field":"qty","value":"80 g"}
 }
 async function runImport({ text = "", images = [], docs = [] }) {
   if (!AI.ready()) { setImport(IN_CLAUDE ? "Per leggere foto e testi serve il permesso di usare Claude. Puoi comunque inserire il piano a mano qui sotto." : aiErr({ code: "no_ai" }), true); return; }
-  S.importBusy = true; S.pending = null; setImport("Sto leggendo la scheda… di solito serve meno di un minuto.");
+  S.importBusy = true; S.pending = null; S.importDone = null; if (!IMP.on) impPhase(0, 8, 2000); impSet(8); impPhase(8, 70, 45000); setImport("Leggo il programma… di solito serve meno di un minuto.");
   S.ctl = new AbortController();
   try {
     const src = docs.length ? "\n\nIl materiale è nel PDF allegato: leggi il testo del documento." : text ? "\n\nMATERIALE (testo estratto dal documento: è la fonte più affidabile per i numeri" + (images.length ? "; le immagini allegate servono solo a capire la struttura" : "") + "):\n" + text : "\n\nIl materiale è nelle immagini allegate (in ordine di pagina).";
     const srcOpts = { images, docs, signal: S.ctl.signal };
     // allenamento e dieta in due richieste parallele: risposte più corte, niente tagli sulle schede lunghe
     const parts = await Promise.allSettled([
-      AI.json(PROMPT + "\n\nIn questa risposta estrai SOLO la scheda di allenamento e metti \"diet\": null." + src, { ...srcOpts, maxTokens: 16000 }),
-      AI.json(PROMPT + "\n\nIn questa risposta estrai SOLO il piano alimentare e metti \"workout\": null." + src, { ...srcOpts, maxTokens: 32000 })
+      AI.json(PROMPT + "\n\nIn questa risposta estrai SOLO la scheda di allenamento e metti \"diet\": null." + src, { ...srcOpts, maxTokens: 16000 }).finally(() => { impSet(Math.max(IMP.pct, 40)); if (IMP.pct < 69) impPhase(IMP.pct, 70, 30000); }),
+      AI.json(PROMPT + "\n\nIn questa risposta estrai SOLO il piano alimentare e metti \"workout\": null." + src, { ...srcOpts, maxTokens: 32000 }).finally(() => { impSet(Math.max(IMP.pct, 40)); if (IMP.pct < 69) impPhase(IMP.pct, 70, 30000); })
     ]);
     const ok = parts.filter(x => x.status === "fulfilled").map(x => x.value || {});
     if (!ok.length) throw parts[1].reason || parts[0].reason;
@@ -3479,16 +3487,26 @@ async function runImport({ text = "", images = [], docs = [] }) {
     if (r.diet && r.diet.grid) { try { const V = expandGrid(r.diet.grid); if (V.length) r.diet.variants = V; } catch (e) { console.warn("griglia", e); } }
     const failed = parts.map((x, i) => x.status === "rejected" && !(x.reason && x.reason.code === "cancelled") ? (i ? "la dieta" : "l'allenamento") : null).filter(Boolean);
     if (failed.length) toast("Non sono riuscito a leggere " + failed.join(" e ") + ": riprova solo con quella parte.", 6000);
-    if (!r.workout && !r.diet) { S.importBusy = false; setImport("Non ho trovato né esercizi né pasti. Prova con una foto più nitida e dritta, o incolla il testo.", true); return; }
-    setImport("Ricontrollo ogni numero con il documento originale…");
+    if (!r.workout && !r.diet) { S.importBusy = false; impStop(); setImport("Non ho trovato né esercizi né pasti. Prova con una foto più nitida e dritta, o incolla il testo.", true); return; }
+    impSet(70); impPhase(70, 92, 25000); setImport("Ricontrollo ogni numero con il documento originale…");
     let fixes = []; try { fixes = await verifyImport(r, srcOpts, src); } catch (e) {}
     const p = normalizePlan(r); p.fixes = fixes;
-    if (!p.workout && !p.diet) { S.importBusy = false; setImport("Non ho trovato né esercizi né pasti. Prova con una foto più nitida e dritta, o incolla il testo.", true); return; }
-    S.pending = p; S.importBusy = false; setImport(null);
+    if (!p.workout && !p.diet) { S.importBusy = false; impStop(); setImport("Non ho trovato né esercizi né pasti. Prova con una foto più nitida e dritta, o incolla il testo.", true); return; }
+    impSet(95); impStop(); S.pending = p; S.importBusy = false; setImport(null);
   } catch (e) {
-    S.importBusy = false; let m = aiErr(e); if (m && e && e.detail) m += " (dettagli: " + String(e.detail).slice(0, 160) + ")"; setImport(m, m !== null);
+    S.importBusy = false; impStop(); let m = aiErr(e); if (m && e && e.detail) m += " (dettagli: " + String(e.detail).slice(0, 160) + ")"; setImport(m, m !== null);
   }
 }
+const IMP = { on: false, lo: 0, hi: 0, t0: 0, exp: 30000, pct: 0, done: 0, iv: null };
+function impPhase(lo, hi, expMs) { IMP.on = true; IMP.lo = Math.max(IMP.pct, lo); IMP.hi = hi; IMP.t0 = Date.now(); IMP.exp = expMs || 20000; if (!IMP.iv) IMP.iv = setInterval(impTick, 200); impTick(); }
+function impSet(p) { IMP.pct = Math.max(IMP.pct, p); IMP.lo = IMP.pct; IMP.t0 = Date.now(); impTick(); }
+function impTick() { // avanza in modo continuo dentro la fase, senza mai superarne il limite finché la fase non è davvero finita
+  if (!IMP.on) return; const e = Date.now() - IMP.t0; const v = IMP.lo + (IMP.hi - IMP.lo) * (1 - Math.exp(-e / IMP.exp)); IMP.pct = Math.max(IMP.pct, Math.min(IMP.hi - 0.5, v));
+  const b = document.getElementById("impFill"), t = document.getElementById("impPct"); const n = Math.floor(IMP.pct);
+  if (b) b.style.width = IMP.pct.toFixed(1) + "%"; if (t) t.textContent = n + "%";
+}
+function impStop() { IMP.on = false; clearInterval(IMP.iv); IMP.iv = null; IMP.pct = 0; IMP.lo = 0; IMP.hi = 0; }
+const impBar = (msg, pct, ok) => `<div class="imp-bar ${ok ? "ok" : ""}"><div class="ib-top"><span>${ok ? "✅ " : ""}${esc(msg || "")}</span><b id="impPct">${Math.floor(pct)}%</b></div><div class="ib-track"><i id="impFill" style="width:${pct}%"></i></div></div>`;
 function setImport(msg, err = false) { S.importMsg = msg; S.importErr = err; if (S.tab === "piano") render(); }
 
 function planFromJson(j) { // piano già trascritto (file .json di Carico): niente AI, nessun costo
@@ -3503,7 +3521,7 @@ async function handleFiles(files) {
   const imgs = []; let text = ""; const docs = [];
   const nativePdf = !AI.sample && !!(AI.key() || AI.code()); // con la chiave API il PDF viene letto direttamente, testo compreso
   try {
-    S.importBusy = true; setImport("Preparo i file…");
+    S.importBusy = true; S.importDone = null; impStop(); impPhase(0, 8, 4000); setImport("Preparo i file…");
     for (const f of files) {
       if (f.type === "application/pdf" || /\.pdf$/i.test(f.name)) {
         if (nativePdf && f.size < 30 * 1024 * 1024) { docs.push(f); continue; }
@@ -3511,7 +3529,7 @@ async function handleFiles(files) {
       } else if (f.type.startsWith("image/") || /\.(jpe?g|png|heic|webp)$/i.test(f.name)) { if (imgs.length < maxImgs) imgs.push(f); }
     }
   } catch (e) {
-    S.importBusy = false; setImport("Non riesco ad aprire questo PDF. Fai uno screenshot delle pagine e carica le immagini.", true); return;
+    S.importBusy = false; impStop(); setImport("Non riesco ad aprire questo PDF. Fai uno screenshot delle pagine e carica le immagini.", true); return;
   }
   S.importBusy = false;
   if (docs.length) return runImport({ docs, images: imgs });
@@ -4131,11 +4149,12 @@ document.addEventListener("click", ev => {
     }
     case "example": { S.pending = normalizePlan(EXAMPLE); applyPending(); toast("Esempio caricato: modificalo o sostituiscilo dal Piano"); go("oggi"); return; }
     case "import-text": { const t = $("#pasteIn").value.trim(); if (t.length < 20) { setImport("Incolla prima il testo della scheda o della dieta.", true); return; } runImport({ text: t.slice(0, 60000) }); return; }
-    case "import-stop": S.ctl && S.ctl.abort(); S.importBusy = false; setImport(null); return;
+    case "import-stop": S.ctl && S.ctl.abort(); S.importBusy = false; impStop(); setImport(null); return;
     case "import-save": {
       const p = S.pending; const repl = p && ((p.workout && wDays().length) || (p.diet && variants().length));
       if (repl && !S.confirmRepl) { S.confirmRepl = true; S.keepLoads = true; render(); setTimeout(() => { const c = $("#replBox"); c && c.scrollIntoView({ block: "center", behavior: "smooth" }); }, 50); return; }
-      S.confirmRepl = false; applyPending(); toast(repl ? "Piano sostituito. Il vecchio è in Piano → Piani precedenti" : "Piano salvato"); go("oggi"); return;
+      S.confirmRepl = false; applyPending(); S.importDone = "Piano caricato completamente nell'app"; render(); const pb = document.querySelector(".imp-bar"); if (pb) pb.scrollIntoView({ block: "center", behavior: "smooth" });
+      setTimeout(() => { S.importDone = null; toast(repl ? "Piano sostituito. Il vecchio è in Piano → Piani precedenti" : "Piano salvato"); go("oggi"); }, 1300); return;
     }
     case "repl-no": S.confirmRepl = false; render(); return;
     case "keep-loads": S.keepLoads = b.dataset.k === "1"; render(); return;
