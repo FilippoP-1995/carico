@@ -1210,7 +1210,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "16.2 · 27 ottobre";
+const APP_VERSION = "16.3 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3242,7 +3242,7 @@ function vPiano() {
       <div class="drop">
         <p class="small muted" style="margin:0">Foto della scheda (anche più pagine) o PDF del trainer o nutrizionista.</p>
         <label class="btn primary" for="fileIn" ${busy ? 'aria-disabled="true"' : ""}>Scegli foto o PDF</label>
-        <input id="fileIn" type="file" accept="image/*,application/pdf" multiple hidden ${busy ? "disabled" : ""}>
+        <input id="fileIn" type="file" accept="image/*,application/pdf,application/json,.json" multiple hidden ${busy ? "disabled" : ""}>
       </div>
       <details data-pnl="paste" ${pnlOpen("paste")}><summary class="small" style="cursor:pointer;font-weight:600">Oppure incolla il testo</summary>
         <div class="stack" style="margin-top:10px"><textarea class="in" id="pasteIn" placeholder="Incolla qui la scheda o la dieta, così come te l'hanno mandata (WhatsApp, email…)"></textarea>
@@ -3491,8 +3491,14 @@ async function runImport({ text = "", images = [], docs = [] }) {
 }
 function setImport(msg, err = false) { S.importMsg = msg; S.importErr = err; if (S.tab === "piano") render(); }
 
+function planFromJson(j) { // piano già trascritto (file .json di Carico): niente AI, nessun costo
+  const r = { diet: j.diet || null, workout: j.workout || null }; if (r.diet && r.diet.grid) { const V = expandGrid(r.diet.grid); if (V.length) r.diet.variants = V; }
+  const p = normalizePlan(r); if (!p.diet && !p.workout) return false; if (Array.isArray(j.supplements)) p.supps = j.supplements;
+  S.pending = p; S.importBusy = false; S.importMsg = null; S.importErr = false; toast("Piano letto dal file, senza usare l'AI: controllalo e conferma", 4500); go("piano"); return true;
+}
 async function handleFiles(files) {
   files = Array.from(files || []); if (!files.length) return;
+  { const jf = files.find(f => /\.json$/i.test(f.name) || f.type === "application/json"); if (jf) { try { const j = JSON.parse(await jf.text()); if (j && j.app === "carico-plan" && planFromJson(j)) return; if (j && j.app === "carico") { importBackup(jf); return; } } catch (e) {} setImport("Questo file non è un piano di Carico.", true); return; } }
   const maxImgs = AI.maxImages();
   const imgs = []; let text = ""; const docs = [];
   const nativePdf = !AI.sample && !!(AI.key() || AI.code()); // con la chiave API il PDF viene letto direttamente, testo compreso
@@ -3619,6 +3625,7 @@ async function exportBackup() {
 async function importBackup(file) {
   try {
     const j = JSON.parse(await file.text());
+    if (j && j.app === "carico-plan") { if (!planFromJson(j)) throw 0; return; }
     if (!j || j.app !== "carico" || !j.profile) throw 0;
     await store.replaceAll(j.profile, j.days || {});
     try { migrateDiet(); } catch (e) {}
@@ -4214,6 +4221,8 @@ function applyPending() {
   if (p.diet) { const customs = []; (P.diet.variants || []).forEach(v => (v.meals || []).forEach(m => { if (m.custom && !customs.some(c => slug(c.name) === slug(m.name))) customs.push(m); }));
     freezeMeals(); archivePlan("diet"); p.diet.since = today(); P.diet = p.diet; relinkMeals();
     customs.forEach(m => { if (!P.diet.variants.some(v => (v.meals || []).some(x => slug(x.name) === slug(m.name)))) addCustomMeal(P.diet, m.name, m.time); }); P.diet.autoX = false; setTimeout(autoExtract, 300); S.selVariant = null; }
+  if (Array.isArray(p.supps)) { S.profile.supps = S.profile.supps || []; p.supps.forEach(x => { if (x && x.name && !S.profile.supps.some(y => norm(y.name) === norm(x.name))) S.profile.supps.push({ id: uid(), name: String(x.name).slice(0, 40), dose: x.dose ? String(x.dose).slice(0, 20) : "" }); }); }
+  if (p.diet && p.supps && (P.diet.levels || []).length) P.diet.autoX = true; // quote già impostate dal piano: non le ricalcolo dalle note
   S.pending = null; S.importMsg = null; store.saveProfile();
 }
 
