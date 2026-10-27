@@ -1116,6 +1116,23 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.tapchart{cursor:pointer}
+.allch{position:fixed;inset:0;z-index:60;background:var(--bg);color:var(--ink);overflow-y:auto;-webkit-overflow-scrolling:touch;animation:rfIn .2s ease-out;padding:calc(12px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.ach-in{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.ach-top{display:flex;align-items:center;justify-content:space-between;gap:10px}.ach-top b{font-size:17px}
+.ach-top button svg{width:20px;height:20px;stroke:currentColor}
+.ach-top button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:inherit;display:grid;place-items:center}
+.ach-chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.ach-chips::-webkit-scrollbar{display:none}
+.ach-chips button{flex:0 0 auto;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:inherit;font:inherit;font-size:13px;font-weight:700}
+.ach-chips.sm button{font-size:12px;padding:6px 10px}.ach-chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ach-chart{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 6px 4px}
+.ach-svg{width:100%;height:auto;display:block;font-size:10.5px}.ach-svg text{fill:currentColor;opacity:.6}.ach-svg text.cv{opacity:1;font-weight:800;font-size:10px}
+.ach-h{margin:0;font-size:12.5px;opacity:.7}
+.ach-leg{display:flex;flex-direction:column;gap:6px}
+.ach-l{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:inherit;font:inherit;text-align:left;transition:opacity .2s}
+.ach-l i{width:12px;height:12px;border-radius:50%;flex:0 0 auto}.ach-l .ach-n{flex:1;font-weight:700;font-size:14px}.ach-l .ach-v{font-size:13px;white-space:nowrap;opacity:.85}
+.ach-l b.up{color:#2fae6b}.ach-l b.dn{color:#e5484d}.ach-l.on{box-shadow:0 0 0 2px var(--ink)}.ach-l.dim{opacity:.45}
 </style>
 
 <div class="wrap">
@@ -1188,7 +1205,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "15.6 · 27 ottobre";
+const APP_VERSION = "15.7 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3012,7 +3029,55 @@ document.addEventListener("change", ev => {
   store.saveProfile(); toast("Salvato");
 });
 document.addEventListener("input", ev => { if (!PH.add) return; if (ev.target.id === "phNote") PH.add.note = ev.target.value; else if (ev.target.id === "phDate") PH.add.d = ev.target.value; });
+function progExMap() { // per ogni esercizio: una voce per seduta con carico, ripetizioni, volume e massimale stimato
+  const exMap = {}; const sess = sessionDates();
+  sess.forEach(d => { const ex = exOf(d); for (const k in ex) { const D = (ex[k].s || []).filter(s => s && s.done); if (!D.length) continue;
+    const top = Math.max(0, ...D.map(s => num(s.kg) || 0)); const reps = D.reduce((a, s) => a + (parseInt(s.reps) || 0), 0); const maxR = Math.max(0, ...D.map(s => parseInt(s.reps) || 0));
+    const vol = D.reduce((a, s) => a + (num(s.kg) || 0) * (parseInt(s.reps) || 0), 0); const rm = Math.max(0, ...D.map(s => (num(s.kg) || 0) * (1 + (parseInt(s.reps) || 0) / 30)));
+    if (top > 0 || reps > 0) { const key = norm(ex[k].name); (exMap[key] = exMap[key] || { name: ex[k].name, pts: [] }).pts.push({ d, kg: top, reps, maxR, vol, rm, sets: D.length }); } } });
+  return exMap;
+}
 const PROG_M = [["kg", "Carico", "kg", "Il carico più alto usato in ogni seduta."], ["maxR", "Ripetizioni", "rip.", "Il numero più alto di ripetizioni fatte in una serie."], ["reps", "Rip. totali", "rip.", "Tutte le ripetizioni della seduta sommate."], ["vol", "Volume", "kg", "Kg × ripetizioni di tutte le serie: misura il lavoro totale."], ["rm", "Massimale stimato", "kg", "Stima del peso che alzeresti per 1 ripetizione (formula di Epley): utile per confrontare serie con rip. diverse."]];
+const ACH_COL = ["#4f6bff", "#e8833a", "#2fae6b", "#d6457a", "#7c5cff", "#1f9fc4", "#c9a227", "#e5484d", "#3cb3a2", "#9a6b4f", "#5d7a99", "#b05cc8"];
+const ACH = { m: "kg", mode: "abs", focus: null };
+function allChOpen() { let o = document.getElementById("allCh"); if (!o) { o = document.createElement("div"); o.id = "allCh"; o.className = "allch"; o.setAttribute("role", "dialog"); document.body.appendChild(o);
+    o.addEventListener("click", ev => { const b = ev.target.closest("[data-ach]"); if (!b) return; const k = b.dataset.ach, v = b.dataset.v;
+      if (k === "close") { o.remove(); document.body.style.overflow = ""; return; } if (k === "m") ACH.m = v; else if (k === "mode") ACH.mode = v; else if (k === "focus") ACH.focus = ACH.focus === v ? null : v; allChRender(); }); }
+  document.body.style.overflow = "hidden"; allChRender(); }
+function allChRender() {
+  const o = document.getElementById("allCh"); if (!o) return; const M = PROG_M.find(m => m[0] === ACH.m) || PROG_M[0]; const E = progExMap();
+  const val = p => ACH.m === "vol" ? Math.round(p.vol) : ACH.m === "rm" ? Math.round(p.rm * 2) / 2 : p[ACH.m];
+  const keys = Object.keys(E).sort((a, b) => E[b].pts.length - E[a].pts.length);
+  const series = keys.map((k, i) => { const P = E[k].pts.filter(p => val(p) > 0); const v0 = P.length ? val(P[0]) : 0;
+    return { k, name: E[k].name, col: ACH_COL[i % ACH_COL.length], pts: P.map(p => ({ d: p.d, t: parseD(p.d).getTime(), v: ACH.mode === "pct" ? Math.round((val(p) / v0 - 1) * 1000) / 10 : val(p), raw: val(p) })) }; }).filter(x => x.pts.length);
+  const all = series.flatMap(x => x.pts); const W = 360, H = 300, L = 46, R = 24, T = 16, B = 26;
+  let body = `<p class="small" style="opacity:.75">Servono almeno due sedute registrate.</p>`;
+  if (all.length > 1) {
+    const t0 = Math.min(...all.map(p => p.t)), t1 = Math.max(...all.map(p => p.t)); let mn = Math.min(...all.map(p => p.v)), mx = Math.max(...all.map(p => p.v));
+    if (ACH.mode === "pct") { mn = Math.min(mn, 0); mx = Math.max(mx, 0); } if (mx - mn < 1) { mn -= 1; mx += 1; } const pd = (mx - mn) * .08; mn -= pd; mx += pd;
+    const x = t => L + (t1 > t0 ? (t - t0) / (t1 - t0) : .5) * (W - L - R), y = v => T + (mx - v) * (H - T - B) / (mx - mn);
+    const ticks = [0, .25, .5, .75, 1].map(f => mn + (mx - mn) * f);
+    const fmtD = t => { const d = new Date(t); return d.getDate() + "/" + (d.getMonth() + 1); };
+    const xt = t1 > t0 ? [0, .5, 1].map(f => t0 + (t1 - t0) * f) : [t0];
+    const lines = series.map(sr => { const dim = ACH.focus && ACH.focus !== sr.k; const op = dim ? .12 : 1; const sw = ACH.focus === sr.k ? 3.4 : 2.2;
+      const path = sr.pts.map((p, i) => (i ? "L" : "M") + x(p.t).toFixed(1) + " " + y(p.v).toFixed(1)).join(" ");
+      const last = sr.pts[sr.pts.length - 1];
+      return `<g opacity="${op}">${sr.pts.length > 1 ? `<path d="${path}" fill="none" stroke="${sr.col}" stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>` : ""}${sr.pts.map((p, i) => `<circle cx="${x(p.t).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="${i === sr.pts.length - 1 ? 4 : 2.6}" fill="${sr.col}"/>`).join("")}${ACH.focus === sr.k ? sr.pts.map(p => `<text class="cv" x="${x(p.t).toFixed(1)}" y="${(y(p.v) - 8).toFixed(1)}" text-anchor="middle">${fmtN(ACH.mode === "pct" ? Math.round(p.v) : p.v)}${ACH.mode === "pct" ? "%" : ""}</text>`).join("") : ""}</g>`; }).join("");
+    body = `<svg class="ach-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Andamento di tutti gli esercizi">
+      ${ticks.map(t => `<line x1="${L}" x2="${W - R}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}" stroke="currentColor" stroke-opacity="${ACH.mode === "pct" && Math.abs(t) < (mx - mn) * .02 ? .45 : .12}"/><text x="${L - 6}" y="${(y(t) + 4).toFixed(1)}" text-anchor="end">${fmtN(mx - mn > 20 ? Math.round(t) : Math.round(t * 10) / 10)}${ACH.mode === "pct" ? "%" : ""}</text>`).join("")}
+      ${ACH.mode === "pct" ? `<line x1="${L}" x2="${W - R}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}" stroke="currentColor" stroke-opacity=".45" stroke-dasharray="4 4"/>` : ""}
+      ${xt.map((t, i) => `<text x="${x(t).toFixed(1)}" y="${H - 6}" text-anchor="${i === 0 ? "start" : i === xt.length - 1 ? "end" : "middle"}">${fmtD(t)}</text>`).join("")}
+      ${lines}</svg>`;
+  }
+  const leg = series.map(sr => { const a = sr.pts[0], z = sr.pts[sr.pts.length - 1]; const dl = sr.pts.length > 1 ? (ACH.mode === "pct" ? z.v : Math.round((z.raw - a.raw) * 10) / 10) : null;
+    return `<button class="ach-l ${ACH.focus === sr.k ? "on" : ""} ${ACH.focus && ACH.focus !== sr.k ? "dim" : ""}" data-ach="focus" data-v="${esc(sr.k)}"><i style="background:${sr.col}"></i><span class="ach-n">${esc(sr.name)}</span><span class="ach-v">${fmtN(z.raw)} ${M[2]}${dl != null ? ` <b class="${dl > 0 ? "up" : dl < 0 ? "dn" : ""}">${dl > 0 ? "+" : ""}${fmtN(dl)}${ACH.mode === "pct" ? "%" : " " + M[2]}</b>` : ""}</span></button>`; }).join("");
+  o.innerHTML = `<div class="ach-in"><div class="ach-top"><b>📈 Andamento di tutti gli esercizi</b><button data-ach="close" aria-label="Chiudi">${ICON_X}</button></div>
+    <div class="ach-chips">${PROG_M.map(([id, lb]) => `<button class="${id === ACH.m ? "on" : ""}" data-ach="m" data-v="${id}">${lb}</button>`).join("")}</div>
+    <div class="ach-chips sm"><button class="${ACH.mode === "abs" ? "on" : ""}" data-ach="mode" data-v="abs">Valori (${M[2]})</button><button class="${ACH.mode === "pct" ? "on" : ""}" data-ach="mode" data-v="pct">% di crescita dalla prima volta</button></div>
+    <div class="ach-chart">${body}</div>
+    <p class="ach-h">${ACH.mode === "pct" ? "In percentuale tutti partono da 0: vedi subito quali esercizi stanno crescendo di più, anche se usano pesi molto diversi." : M[3]} Tocca un esercizio per evidenziarlo.</p>
+    <div class="ach-leg">${leg}</div></div>`;
+}
 function vProgressi() {
   const ws = (S.profile.weights || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
   const wpts = ws.slice(-30).map(w => ({ y: w.kg, d: w.d, l: fmtDay(w.d, { day: "numeric", month: "short" }) }));
@@ -3021,11 +3086,7 @@ function vProgressi() {
   const now = parseD(S.date); const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
   const weeks = Array.from({ length: 8 }, (_, i) => { const s = new Date(monday); s.setDate(monday.getDate() - (7 - i) * 7); const e = new Date(s); e.setDate(s.getDate() + 7); return { s, n: sess.filter(d => d >= dstr(s) && d < dstr(e)).length }; });
   const maxW = Math.max(3, ...weeks.map(w => w.n));
-  const exMap = {};
-  sess.forEach(d => { const ex = exOf(d); for (const k in ex) { const D = (ex[k].s || []).filter(s => s && s.done); if (!D.length) continue;
-    const top = Math.max(0, ...D.map(s => num(s.kg) || 0)); const reps = D.reduce((a, s) => a + (parseInt(s.reps) || 0), 0); const maxR = Math.max(0, ...D.map(s => parseInt(s.reps) || 0));
-    const vol = D.reduce((a, s) => a + (num(s.kg) || 0) * (parseInt(s.reps) || 0), 0); const rm = Math.max(0, ...D.map(s => (num(s.kg) || 0) * (1 + (parseInt(s.reps) || 0) / 30)));
-    if (top > 0 || reps > 0) { const key = norm(ex[k].name); (exMap[key] = exMap[key] || { name: ex[k].name, pts: [] }).pts.push({ d, kg: top, reps, maxR, vol, rm, sets: D.length }); } } });
+  const exMap = progExMap();
   const exKeys = Object.keys(exMap).sort((a, b) => exMap[b].pts.length - exMap[a].pts.length);
   if (!S.progEx || !exMap[S.progEx]) S.progEx = exKeys[0] || null;
   const ex = S.progEx && exMap[S.progEx];
@@ -3057,7 +3118,7 @@ function vProgressi() {
         <div class="weeks vol">${vw.map((w, i) => `<div title="${Math.round(w.v)} kg · ${w.st} serie"><span class="num" style="font-size:12px;color:var(--ink)">${w.v ? f(w.v) : ""}</span><i style="height:${w.v / mv * 64}px;${i === 7 ? "" : "opacity:.55"}"></i><span>${w.st ? w.st + " s" : ""}</span></div>`).join("")}</div>`; })()}
     </div>
     <div class="card stack">
-      <span class="eyebrow">Andamento per esercizio</span>
+      <div class="row between"><span class="eyebrow">Andamento per esercizio</span>${exKeys.length > 1 ? `<button class="btn ghost sm" data-act="allch-open">📈 Tutti in un grafico</button>` : ""}</div>
       ${exKeys.length ? `<select class="in" id="progSel" aria-label="Esercizio">${exKeys.map(k => `<option value="${esc(k)}" ${k === S.progEx ? "selected" : ""}>${esc(exMap[k].name)}</option>`).join("")}</select>
       ${(() => { const M = PROG_M.find(m => m[0] === S.progMetric) || PROG_M[0]; const P = ex.pts.slice(-20); const k = M[0];
         const val = p => k === "vol" ? Math.round(p.vol) : k === "rm" ? Math.round(p.rm * 2) / 2 : p[k];
@@ -3065,7 +3126,7 @@ function vProgressi() {
         const best = pts.length ? Math.max(...pts.map(p => p.y)) : 0; const first = pts[0], lastP = pts[pts.length - 1];
         const dl = pts.length > 1 ? lastP.y - first.y : null;
         return `<div class="chips pm-chips">${PROG_M.map(([id, lb]) => `<button class="chip sm ${id === k ? "on-acc" : ""}" data-act="prog-m" data-k="${id}">${lb}</button>`).join("")}</div>
-          ${lineChart(pts, M[1].toLowerCase())}
+          <div class="tapchart" data-act="allch-open" title="Tocca per vedere tutti gli esercizi insieme">${lineChart(pts, M[1].toLowerCase())}</div>
           <span class="small muted">${M[3]}</span>
           <div class="row" style="gap:14px;flex-wrap:wrap"><span class="small muted">Record: <b class="num" style="font-size:17px;color:var(--ink)">${fmtN(best)} ${M[2]}</b></span>${dl != null ? `<span class="small muted">Dalla prima volta: <b style="color:${dl > 0 ? "var(--good,#2fae6b)" : dl < 0 ? "var(--warn,#e5484d)" : "var(--ink)"}">${dl > 0 ? "+" : ""}${fmtN(Math.round(dl * 10) / 10)} ${M[2]}</b></span>` : ""}<span class="small muted">Sedute: <b style="color:var(--ink)">${ex.pts.length}</b></span></div>`; })()}`
       : `<p class="small muted" style="margin:0">Segna le serie con i chili usati e qui vedrai come crescono i carichi.</p>`}
@@ -3739,7 +3800,8 @@ document.addEventListener("click", ev => {
     case "mf-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per eliminare"; return; } S.profile.foods = (S.profile.foods || []).filter(f => f.id !== b.dataset.id); S.mfOpen = null; store.saveProfile(); render(); toast("Alimento eliminato"); return; }
     case "mf-dedupe": { const F = S.profile.foods || []; const out = []; let n = 0; F.forEach(f => { const ex = out.find(o => o.per100 && f.per100 && sameFood(o, f)); if (ex) { n++; if (!ex.unit && f.unit) ex.unit = f.unit; if (!ex.code && f.code) ex.code = f.code; } else out.push(f); }); S.profile.foods = out; store.saveProfile(); render(); toast(`Uniti ${n} ${n === 1 ? "doppione" : "doppioni"}`); return; }
     case "sched-clear": { const W = plan().workout; delete W.schedule; delete W.moves; delete W.skips; store.saveProfile(); render(); toast("Programma tolto: torno alla rotazione"); return; }
-    case "prog-m": S.progMetric = b.dataset.k; render(); return;
+    case "prog-m": S.progMetric = b.dataset.k; ACH.m = b.dataset.k; render(); return;
+    case "allch-open": ACH.m = S.progMetric || "kg"; ACH.focus = null; allChOpen(); return;
     case "w-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.innerHTML = "Elimina?"; return; } S.profile.weights = (S.profile.weights || []).filter(w => w.d !== b.dataset.d); S.wHistOpen = true; store.saveProfile(); render(); toast("Pesata eliminata"); return; }
     case "force-upd": {
       S.updBusy = true; S.updMsg = null; render();
