@@ -1210,7 +1210,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "15.8 · 27 ottobre";
+const APP_VERSION = "15.9 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3328,7 +3328,8 @@ function vPiano() {
 
     <div class="card stack">
       <span class="eyebrow">AI e dati</span>
-      ${snapsList().length ? `<details><summary class="small" style="cursor:pointer;font-weight:600">🛟 Recupera allenamenti cancellati per errore</summary><div class="stack" style="margin-top:8px;gap:6px"><span class="small muted">L'app salva da sola una copia degli allenamenti ogni giorno (ultimi 7). Il recupero rimette solo quello che manca, senza toccare il resto.</span>${snapsList().map((sn, i) => `<button class="btn sm" data-act="snap-rec" data-i="${i}">Copia di ${esc(fmtDay(sn.d, { weekday: "long", day: "numeric", month: "short" }))}</button>`).join("")}</div></details>` : ""}
+      ${Object.keys(checkDayTotals()).length ? `<details><summary class="small" style="cursor:pointer;font-weight:600">🛟 Recupera i pasti dai check settimanali</summary><div class="stack" style="margin-top:8px;gap:6px"><span class="small muted">Nei check salvati nella chat del coach ci sono le kcal e le proteine di ${Object.keys(checkDayTotals()).length} giorni. Le rimetto come "totale della giornata" solo nei giorni che ora sono vuoti (non so quali pasti erano, né carboidrati e grassi).</span><button class="btn sm" data-act="chk-rec">Recupera ${Object.keys(checkDayTotals()).length} giorni</button></div></details>` : ""}
+      ${snapsList().length ? `<details><summary class="small" style="cursor:pointer;font-weight:600">🛟 Recupera dati cancellati per errore</summary><div class="stack" style="margin-top:8px;gap:6px"><span class="small muted">L'app salva da sola una copia di allenamenti e pasti ogni giorno (ultimi 7). Il recupero rimette solo quello che manca, senza toccare il resto.</span>${snapsList().map((sn, i) => `<button class="btn sm" data-act="snap-rec" data-i="${i}">Copia di ${esc(fmtDay(sn.d, { weekday: "long", day: "numeric", month: "short" }))}</button>`).join("")}</div></details>` : ""}
       ${AI.sample ? `<p class="small muted" style="margin:0">Lettura delle schede, macro e varianti usano il tuo account Claude.</p>`
       : `<p class="small muted" style="margin:0">Fuori da Claude l'AI funziona con una chiave API Anthropic personale (si paga a consumo, pochi centesimi a scheda letta). La chiave resta solo su questo dispositivo.</p>
         <form class="row" data-form="apikey"><input class="in" id="keyIn" type="password" autocomplete="off" placeholder="${key ? "Chiave salvata ••••" + esc(key.slice(-4)) : "sk-ant-…"}" aria-label="Chiave API Anthropic"><button class="btn">Salva</button></form>
@@ -3536,14 +3537,34 @@ const EXAMPLE = {
 /* ---------- backup ---------- */
 function autoSnapshot() { // all'apertura del giorno salvo una copia degli allenamenti: serve a recuperare dati cancellati per errore
   try { const k = "carico.snaps"; const arr = JSON.parse(lsGet(k) || "[]"); const t = today(); if (arr[0] && arr[0].d === t) return;
-    const days = {}; for (const d in S.days) { const l = S.days[d]; if (isSession(l)) days[d] = { w: l.w, runs: l.runs }; }
+    const days = {}; for (const d in S.days) { const l = S.days[d]; const hasM = l && l.m && (Object.keys(l.m.eaten || {}).length || (l.m.extra || []).length); if (isSession(l) || hasM) { days[d] = {}; if (isSession(l)) { days[d].w = l.w; days[d].runs = l.runs; } if (hasM) days[d].m = l.m; } }
     arr.unshift({ d: t, days }); lsSet(k, JSON.stringify(arr.slice(0, 7))); } catch (e) {}
+}
+function checkDayTotals() { // dai check settimanali salvati nella chat del coach: kcal e proteine di ogni giorno segnato
+  const out = {}; const WD = {}; try { (CH.msgs || []).forEach(m => {
+    const t = m && m.role === "user" && (m.full || m.content); if (!t || !/Dettaglio:/.test(t) || !m.at) return;
+    const end = new Date(m.at); const days = []; for (let i = 6; i >= 0; i--) { const d = new Date(end); d.setDate(end.getDate() - i); days.push(dstr(d)); }
+    const map = {}; days.forEach(d => { map[fmtDay(d, { weekday: "short" }).toLowerCase().replace(/\.$/, "")] = d; });
+    const det = (t.match(/Dettaglio:\s*([^\n]*)/) || [])[1] || "";
+    det.split(";").forEach(part => { const x = part.trim().match(/^(\S+)\s+([\d.]+)\/[\d.]+\s*kcal,\s*P\s*([\d.]+)/i); if (!x) return; const d = map[x[1].toLowerCase().replace(/\.$/, "")]; if (!d) return;
+      out[d] = { kcal: +x[2].replace(/\./g, ""), p: +x[3].replace(/\./g, ""), from: dstr(end) }; }); }); } catch (e) {}
+  return out;
+}
+function recoverFromChecks() { // rimette un totale della giornata solo nei giorni che ora non hanno pasti
+  const R = checkDayTotals(); let n = 0;
+  for (const d in R) { const l = S.days[d]; const m = l && l.m; const has = m && (Object.values(m.eaten || {}).some(Boolean) || (m.extra || []).length);
+    if (has) continue; const L = dayLog(d); L.m = L.m || { eaten: {}, pick: {}, manual: {}, extra: [] }; L.m.extra = L.m.extra || [];
+    L.m.extra.push({ id: uid(), food: "Totale della giornata (recuperato dal check)", qty: "", kcal: R[d].kcal, p: R[d].p, c: 0, f: 0, rec: true }); store.saveDay(d); n++; }
+  return n;
 }
 function snapsList() { try { return JSON.parse(lsGet("carico.snaps") || "[]"); } catch (e) { return []; } }
 function recoverFrom(i) { // rimette gli allenamenti che nella copia c'erano e ora mancano (non tocca il resto)
   const sn = snapsList()[i]; if (!sn) return 0; let n = 0;
   const cnt = l => l ? setsDone({ w: l.w || { ex: {} } }) + (l.runs || []).reduce((a, r) => a + setsDone({ w: { ex: r.ex || {} } }), 0) : 0;
-  for (const d in sn.days) { const cur = S.days[d]; const old = sn.days[d]; if (cnt(old) > cnt(cur)) { const l = dayLog(d); l.w = JSON.parse(JSON.stringify(old.w)); if (old.runs) l.runs = JSON.parse(JSON.stringify(old.runs)); else delete l.runs; store.saveDay(d); n++; } }
+  for (const d in sn.days) { const cur = S.days[d]; const old = sn.days[d];
+    if (old.m) { const cm = cur && cur.m; const nOld = Object.values(old.m.eaten || {}).filter(Boolean).length + (old.m.extra || []).length, nCur = cm ? Object.values(cm.eaten || {}).filter(Boolean).length + (cm.extra || []).length : 0; if (nOld > nCur) { const l = dayLog(d); l.m = JSON.parse(JSON.stringify(old.m)); store.saveDay(d); n++; } }
+    if (!old.w) continue;
+    if (cnt(old) > cnt(cur)) { const l = dayLog(d); l.w = JSON.parse(JSON.stringify(old.w)); if (old.runs) l.runs = JSON.parse(JSON.stringify(old.runs)); else delete l.runs; store.saveDay(d); n++; } }
   return n;
 }
 async function exportBackup() {
@@ -4079,8 +4100,8 @@ document.addEventListener("click", ev => {
     case "arch-restore": {
       const a = (S.profile.archive || []).find(x => x.id === b.dataset.id); if (!a) return;
       if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo: il piano attuale andrà nei piani precedenti"; return; }
-      archivePlan(a.kind); const data = JSON.parse(JSON.stringify(a.data)); data.since = today();
-      if (a.kind === "workout") { plan().workout = data; S.selDay = null; } else plan().diet = data;
+      if (a.kind === "diet") freezeMeals(); archivePlan(a.kind); const data = JSON.parse(JSON.stringify(a.data)); data.since = today();
+      if (a.kind === "workout") { plan().workout = data; S.selDay = null; } else { plan().diet = data; relinkMeals(); }
       S.profile.archive = S.profile.archive.filter(x => x.id !== a.id); store.saveProfile(); render(); toast("Piano ripristinato"); return;
     }
     case "arch-del": { if (!b.dataset.sure) { b.dataset.sure = "1"; b.textContent = "Tocca di nuovo per eliminare"; return; } S.profile.archive = (S.profile.archive || []).filter(x => x.id !== b.dataset.id); store.saveProfile(); render(); return; }
@@ -4088,6 +4109,7 @@ document.addEventListener("click", ev => {
     case "code-del": lsSet("carico.code", null); toast("Codice tolto"); render(); return;
     case "key-del": lsSet("carico.apikey", null); toast("Chiave rimossa"); render(); return;
     case "backup-out": exportBackup(); return;
+    case "chk-rec": { const n = recoverFromChecks(); toast(n ? `Recuperati i totali di ${n} ${n === 1 ? "giorno" : "giorni"}` : "Niente da recuperare: quei giorni hanno già dei pasti", 4500); render(); return; }
     case "snap-rec": { const n = recoverFrom(+b.dataset.i); toast(n ? `Recuperati gli allenamenti di ${n} ${n === 1 ? "giorno" : "giorni"}` : "In questa copia non c'è niente in più da recuperare", 4000); render(); return; }
     case "backup-in": $("#backupIn").click(); return;
     case "day-add": P.workout.days.push({ id: uid(), name: "Giorno " + String.fromCharCode(65 + P.workout.days.length), exercises: [{ id: uid(), name: "", sets: 3, reps: "10", rest: 90, load: "", notes: "" }] }); break;
@@ -4122,6 +4144,22 @@ function planMatches(newW) { // esercizi del piano nuovo che c'erano già in que
   return out;
 }
 function firstSessionDate() { return sessionDates()[0] || today(); }
+function freezeMeals() { // prima di cambiare dieta: ogni pasto segnato diventa "scritto" con i suoi alimenti, così lo storico non dipende più dal piano
+  const SL = slots(); let n = 0;
+  for (const d in S.days) { const m = S.days[d].m; if (!m || !m.eaten) continue; let ch = false;
+    for (const k in m.eaten) { if (!m.eaten[k]) continue; m.pick = m.pick || {}; m.manual = m.manual || {}; if (m.pick[k] === "manual") { (m.mname = m.mname || {})[k] = m.mname[k] || ((SL.find(x => x.key === k) || {}).name || k); continue; }
+      const sl = SL.find(x => x.key === k); if (!sl) continue; const pk = slotPick({ eaten: m.eaten, pick: m.pick, manual: m.manual, extra: m.extra || [] }, sl);
+      m.manual[k] = JSON.parse(JSON.stringify(pk.items || [])); m.pick[k] = "manual"; (m.mname = m.mname || {})[k] = sl.name; ch = true; n++; }
+    if (ch) store.saveDay(d); }
+  return n;
+}
+function relinkMeals() { // dopo il cambio: i pasti con un nome che nel nuovo piano non c'è più finiscono tra gli extra del giorno (non si perde niente)
+  const keys = new Set(slots().map(x => x.key));
+  for (const d in S.days) { const m = S.days[d].m; if (!m || !m.eaten) continue; let ch = false;
+    for (const k in m.eaten) { if (!m.eaten[k] || keys.has(k) || m.pick?.[k] !== "manual") continue; const it = (m.manual || {})[k] || []; const nm = (m.mname || {})[k] || k;
+      m.extra = m.extra || []; it.forEach(x => m.extra.push({ ...x, id: x.id || uid(), food: `${nm}: ${x.food}` })); delete m.eaten[k]; delete m.manual[k]; delete m.pick[k]; ch = true; }
+    if (ch) store.saveDay(d); }
+}
 function archivePlan(kind) { // il piano sostituito resta consultabile in "Piani precedenti"
   const P = plan(); const cur = kind === "workout" ? P.workout : P.diet;
   if (kind === "workout" && !(cur.days || []).length) return; if (kind === "diet" && !(cur.variants || []).length) return;
@@ -4139,8 +4177,8 @@ function applyPending() {
     archivePlan("workout"); p.workout.since = today(); P.workout = p.workout; S.selDay = null;
   }
   if (p.diet) { const customs = []; (P.diet.variants || []).forEach(v => (v.meals || []).forEach(m => { if (m.custom && !customs.some(c => slug(c.name) === slug(m.name))) customs.push(m); }));
-    archivePlan("diet"); p.diet.since = today(); P.diet = p.diet;
-    customs.forEach(m => { if (!P.diet.variants.some(v => (v.meals || []).some(x => slug(x.name) === slug(m.name)))) addCustomMeal(P.diet, m.name, m.time); }); P.diet.autoX = false; setTimeout(autoExtract, 300); S.selVariant = null; for (const d in S.days) { const m = S.days[d].m; if (m) { m.pick = {}; m.eaten = {}; m.manual = {}; } } Object.keys(S.days).forEach(d => store.saveDay(d)); }
+    freezeMeals(); archivePlan("diet"); p.diet.since = today(); P.diet = p.diet; relinkMeals();
+    customs.forEach(m => { if (!P.diet.variants.some(v => (v.meals || []).some(x => slug(x.name) === slug(m.name)))) addCustomMeal(P.diet, m.name, m.time); }); P.diet.autoX = false; setTimeout(autoExtract, 300); S.selVariant = null; }
   S.pending = null; S.importMsg = null; store.saveProfile();
 }
 
