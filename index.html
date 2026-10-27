@@ -859,9 +859,11 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 #live .lv-body:has(> .lv-steps) .lv-steps:has(.lv-rec) .lv-step input{font-size:clamp(22px,3.7vh,32px)}
 #live .lv-steps:has(.lv-rec) .lv-step:not(.lv-rec){padding:5px 5px}
 #live .lv-rec>span{font-size:9.5px;letter-spacing:.05em}
-#live .lv-rec b{font-family:var(--f-display);font-size:clamp(17px,2.4vh,21px);font-variant-numeric:tabular-nums;line-height:1.1}
+#live .lv-rec input{width:100%;min-width:0;text-align:center;border:0;background:transparent;color:inherit;padding:0;outline:none;font-weight:700;font-family:var(--f-display);font-size:clamp(17px,2.4vh,21px);font-variant-numeric:tabular-nums;line-height:1.1}
 #live .lv-rec>div{justify-content:center;gap:4px}
-#live .lv-rec b.chg{color:var(--hero-d)}
+#live .lv-steps .lv-step.lv-rec input#lvRec{font-size:clamp(17px,2.4vh,21px);font-family:var(--f-display);height:auto}
+#live .lv-rec input:focus{background:rgba(255,255,255,.1);border-radius:8px}
+#live .lv-rec input.chg{color:var(--hero-d)}
 #live .lv-tgt{border:0;background:none;color:var(--hero-mut);font:inherit;font-size:14px;padding:0;display:flex;align-items:baseline;gap:4px}
 #live .lv-tgt b{color:var(--hero-ink);font-family:var(--f-display);font-size:18px;background:var(--hero-a);color:#0b1020;border-radius:8px;padding:0 7px}
 .rep-ed{display:flex;flex-direction:column;gap:8px;background:var(--pc-soft,var(--surface-2));border-radius:12px;padding:10px}
@@ -1182,7 +1184,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "15.4 · 27 ottobre";
+const APP_VERSION = "15.5 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -4354,7 +4356,7 @@ function renderLive0() {
       <div class="lv-steps">
         <div class="lv-step"><span>kg</span><div><button data-act="lv-adj" data-f="kg" data-d="-2.5" aria-label="Meno 2,5 kg">−</button><input id="lvKg" inputmode="decimal" value="${esc(fmtN(num(LV.kg)))}" aria-label="Chili"><button data-act="lv-adj" data-f="kg" data-d="2.5" aria-label="Più 2,5 kg">+</button></div></div>
         <div class="lv-step"><span>ripetizioni</span><div><button data-act="lv-adj" data-f="reps" data-d="-1" aria-label="Una ripetizione in meno">−</button><input id="lvReps" inputmode="numeric" value="${esc(LV.reps)}" aria-label="Ripetizioni"><button data-act="lv-adj" data-f="reps" data-d="1" aria-label="Una ripetizione in più">+</button></div></div>
-        <div class="lv-step lv-rec"><span>recupero</span><b class="${exRest(ex, l) !== planRest(ex) ? "chg" : ""}">${fmtRest(exRest(ex, l))}</b><div><button data-act="lv-rec" data-ex="${ex.id}" data-d="-15" aria-label="Recupero 15 secondi in meno">−</button><button data-act="lv-rec" data-ex="${ex.id}" data-d="15" aria-label="Recupero 15 secondi in più">+</button></div></div>
+        <div class="lv-step lv-rec"><span>recupero</span><input id="lvRec" data-ex="${ex.id}" class="${exRest(ex, l) !== planRest(ex) ? "chg" : ""}" inputmode="decimal" enterkeyhint="done" value="${esc(recTxt(exRest(ex, l)))}" aria-label="Recupero (minuti:secondi o secondi)"><div><button data-act="lv-rec" data-ex="${ex.id}" data-d="-15" aria-label="Recupero 15 secondi in meno">−</button><button data-act="lv-rec" data-ex="${ex.id}" data-d="15" aria-label="Recupero 15 secondi in più">+</button></div></div>
       </div>
       <div class="lv-sets">${Array.from({ length: n }, (_, i) => { const s = e && e.s && e.s[i]; const pre = s && !s.done && (s.kg || s.reps); return `<button class="lv-s ${s && s.done ? "ok" : ""} ${pre ? "pre" : ""} ${i === LV.setIdx ? "on" : ""}" data-act="lv-set" data-i="${i}">${s && (s.done || pre) ? `${esc(s.kg || "–")}×${esc(s.reps || "–")}` : i + 1}</button>`; }).join("")}<button class="lv-s lv-pm" data-act="xa-setdel" data-ex="${ex.id}" aria-label="Togli una serie" ${n > 1 ? "" : "disabled"}>−</button><button class="lv-s lv-pm" data-act="xa-setadd" data-ex="${ex.id}" aria-label="Aggiungi una serie">+</button>${n > 1 ? `<button class="lv-copy" data-act="lv-copy">⤵ Stessi kg e rip. su tutte</button>` : ""}</div>
       <button class="lv-go" data-act="lv-done">✓ Serie fatta</button>
@@ -4514,7 +4516,23 @@ document.addEventListener("click", ev => {
 }, true);
 document.addEventListener("input", ev => { if (ev.target.id === "mfQ") { S.mfQ = ev.target.value; const pos = ev.target.selectionStart; render(); const n = $("#mfQ"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } return; } });
 document.addEventListener("input", ev => { const nk = ev.target.dataset && ev.target.dataset.note; if (nk) { setNote(nk, ev.target.value); return; }
-  const sx = ev.target.dataset && ev.target.dataset.ssx; if (sx) { const v = LV.ssv[sx] = LV.ssv[sx] || {}; v[ev.target.dataset.ssf] = ev.target.dataset.ssf === "kg" ? String(num(ev.target.value) ?? "") : String(parseInt(ev.target.value) || ""); lvPersist(sx, LV.setIdx, v.kg, v.reps); return; } if (ev.target.id === "lvKg") { LV.kg = String(num(ev.target.value) ?? ""); lvPersistCur(); } else if (ev.target.id === "lvReps") { LV.reps = String(parseInt(ev.target.value) || ""); lvPersistCur(); } });
+  const sx = ev.target.dataset && ev.target.dataset.ssx; if (sx) { const v = LV.ssv[sx] = LV.ssv[sx] || {}; v[ev.target.dataset.ssf] = ev.target.dataset.ssf === "kg" ? String(num(ev.target.value) ?? "") : String(parseInt(ev.target.value) || ""); lvPersist(sx, LV.setIdx, v.kg, v.reps); return; } if (ev.target.id === "lvRec") { lvRecSet(ev.target, false); return; } if (ev.target.id === "lvKg") { LV.kg = String(num(ev.target.value) ?? ""); lvPersistCur(); } else if (ev.target.id === "lvReps") { LV.reps = String(parseInt(ev.target.value) || ""); lvPersistCur(); } });
+const recTxt = sec => Math.floor(sec / 60) + ":" + pad(sec % 60);
+function parseRec(v) { // "2:30", "2.30", "2,30" = minuti e secondi; "90" = secondi; "2" = minuti
+  v = String(v || "").trim(); if (!v) return null; const m = v.match(/^(\d{1,2})\s*[:.,']\s*(\d{0,2})$/);
+  if (m) return +m[1] * 60 + (m[2] ? (m[2].length === 1 ? +m[2] * 10 : +m[2]) : 0);
+  if (/^\d+$/.test(v)) { const n = +v; return n <= 10 ? n * 60 : n; } return null;
+}
+function lvRecSet(inp, final) {
+  const day = lvDay(); const ex = exs0(day).find(x => x.id === inp.dataset.ex); if (!ex) return; let v = parseRec(inp.value);
+  if (v == null) { if (final) inp.value = recTxt(exRest(ex)); return; }
+  if (!final && (v < 15 || v > 600)) return; v = Math.min(600, Math.max(15, Math.round(v / 5) * 5));
+  const l = dayLog(); l.restSel = l.restSel || {}; if (v === planRest(ex)) delete l.restSel[ex.id]; else l.restSel[ex.id] = v; store.saveDay(S.date);
+  inp.classList.toggle("chg", v !== planRest(ex)); if (final) inp.value = recTxt(v);
+}
+document.addEventListener("focusin", ev => { if (ev.target.id === "lvRec") setTimeout(() => { try { ev.target.select(); } catch (e) {} }, 30); });
+document.addEventListener("focusout", ev => { if (ev.target.id === "lvRec") lvRecSet(ev.target, true); });
+document.addEventListener("keydown", ev => { if (ev.target.id === "lvRec" && ev.key === "Enter") { ev.preventDefault(); ev.target.blur(); } });
 function lvPersistCur() { const ex = lvDay().exercises[LV.exIdx]; if (ex) lvPersist(ex.id, LV.setIdx, LV.kg, LV.reps); }
 
 /* ---------- foto del piatto ---------- */
