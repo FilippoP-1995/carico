@@ -90,6 +90,8 @@ h3{font-size:17px;font-weight:700;margin:0;line-height:1.25}
 .ex-t b{color:var(--ink);font-weight:600}
 .ex-n{font-size:13.5px;background:var(--surface-2);border-radius:10px;padding:8px 10px;margin-top:4px;color:var(--ink)}
 .last{font-size:12.5px;color:var(--accent);font-weight:600}
+.feel-tag{display:inline-block;padding:1px 7px;border-radius:999px;font-size:11.5px;font-weight:800;white-space:nowrap;background:color-mix(in srgb,currentColor 14%,transparent);margin-left:2px}
+.feel-tag.f-heavy{color:#e8833a}.feel-tag.f-pain{color:#e5484d}.feel-tag.f-light{color:#2ea6c9}.feel-tag.f-ok{color:#2fae6b}
 .sets{display:flex;flex-direction:column;border-top:1px solid var(--line)}
 .set{display:grid;grid-template-columns:30px 1fr 18px 1fr 52px;align-items:center;gap:8px;padding:8px 12px 8px 16px;border-bottom:1px solid var(--line)}
 .set:last-child{border-bottom:0}
@@ -1172,7 +1174,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "14.8 · 27 ottobre";
+const APP_VERSION = "15.0 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1651,11 +1653,15 @@ function setNote(exId, txt) {
   if (l.w.dayId !== day.id && setsDone(l) === 0) l.w = { dayId: day.id, dayName: day.name, ex: {}, done: false };
   const e = l.w.ex[exId] = l.w.ex[exId] || { name: xn(ex), s: [] }; e.note = txt.slice(0, 500); store.saveDay(S.date);
 }
-function feelHint(last) {
+function lastLine(last, cls, withDate) { // "Ultima volta": serie, sensazione (giusto, pesante…) e nota
+  if (!last) return ""; const fo = last.feel ? feelOf(last.feel) : null;
+  return `<div class="${cls}">Ultima volta${withDate ? ` (${esc(fmtDay(last.date, { day: "numeric", month: "short" }))})` : ""}: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${fo ? ` <span class="feel-tag f-${esc(last.feel)}">${fo[1]} ${esc(fo[2])}</span>` : ""}${esc(feelHint(last, true))}</div>`;
+}
+function feelHint(last, noLabel) {
   const nt = last && last.note ? ` · 📝 "${last.note.length > 60 ? last.note.slice(0, 60) + "…" : last.note}"` : "";
   if (!last || !last.feel) return nt; const fo = feelOf(last.feel); if (!fo) return nt;
   const tip = { light: "prova a salire di carico", ok: "tieni il carico o prova una rip. in più", heavy: "tieni il carico e cura la tecnica", pain: "attenzione: riduci o chiedi al trainer" }[last.feel];
-  return ` · ${fo[1]} ${fo[2].toLowerCase()}, ${tip}` + nt;
+  return (noLabel ? ` · ${tip}` : ` · ${fo[1]} ${fo[2].toLowerCase()}, ${tip}`) + nt;
 }
 function exKeys(name) { // nomi con cui cercare lo storico di un esercizio (alias dal piano vecchio) e data da cui ripartire
   const key = norm(name); let pe = null;
@@ -1782,7 +1788,7 @@ function beepSynth() { // allarme a due toni, forte, per la fine del recupero
 function tick() {
   const el = $("#timer"); const left = Math.round((T.end - Date.now()) / 1000);
   const over = left <= 0;
-  if (over && !T.beeped) { T.beeped = true; beep(); }
+  if (over && !T.beeped && !document.hidden) { T.beeped = true; beep(); } // fuori dall'app non suona: suona appena rientri
   const a = Math.abs(left);
   el.hidden = false; el.classList.toggle("over", over); try { el.classList.toggle("fx-ending", !REDUCED() && !over && left <= 5); } catch (e) {}
   el.innerHTML = `<div class="tb"><span class="tt">${over ? "Via!" : Math.floor(a / 60) + ":" + pad(a % 60)}</span><span class="tl">${over ? "Recupero finito" : "Recupero"}<br>${esc(T.label)}</span><button data-act="rest-add">+15s</button><button data-act="rest-stop">${over ? "OK" : "Salta"}</button></div>`;
@@ -2274,18 +2280,19 @@ function vAllenamento() {
     if (open) {
       const rows = Array.from({ length: Math.max(sets, logged.length) }, (_, i) => {
         const s = logged[i] || {}; const ls = last && last.sets[Math.min(i, last.sets.length - 1)];
+        const kgDef = ls && ls.kg !== "" && ls.kg != null ? String(ls.kg) : (ex.kg0 ? String(ex.kg0) : ""); const rDef = String((ls && parseInt(ls.reps)) || parseInt(targets[i]) || "");
         const row = `<div class="set ${s.done ? "done" : ""} ${i === nextI ? "next" : ""}" data-ex="${ex.id}" data-i="${i}">
           <span class="sn">${i + 1}</span>
-          <div><input inputmode="decimal" data-f="kg" value="${esc(s.kg ?? "")}" placeholder="${ls && ls.kg !== "" && ls.kg != null ? esc(ls.kg) : (ex.kg0 ? esc(ex.kg0) : "–")}" aria-label="Serie ${i + 1} chili"><span class="unit">kg</span></div>
+          <div><input inputmode="decimal" data-f="kg" value="${esc(s.kg !== "" && s.kg != null ? s.kg : (s.done ? "" : kgDef))}" placeholder="${esc(kgDef || "–")}" aria-label="Serie ${i + 1} chili"><span class="unit">kg</span></div>
           <span class="x">×</span>
-          <div><input inputmode="numeric" data-f="reps" value="${esc(s.reps ?? "")}" placeholder="${esc(targets[i] || "–")}" aria-label="Serie ${i + 1} ripetizioni"><span class="unit">rip.</span></div>
+          <div><input inputmode="numeric" data-f="reps" value="${esc(s.reps !== "" && s.reps != null ? s.reps : (s.done ? "" : rDef))}" placeholder="${esc(rDef || targets[i] || "–")}" aria-label="Serie ${i + 1} ripetizioni"><span class="unit">rip.</span></div>
           <button class="chk" data-act="set" aria-label="Serie ${i + 1} fatta">${ICON_CHECK}</button>
         </div>`;
         const copy = i === 0 && sets > 1 ? `<div class="copyrow" data-copy="${ex.id}" ${copyVisible(ex.id) ? "" : "hidden"}><button data-act="copy-first" data-ex="${ex.id}">${ICON_DOWN}Stessi kg e rip. per le altre serie</button></div>` : "";
         return row + copy;
       }).join("");
       inner = `<div class="ex-b">${altPicker(ex, false)}${muscleBlock(exView(ex), false)}${noteBox(ex.id, false)}</div>${last || ex.notes ? `<div class="ex-b">
-          ${last ? `<div class="last">Ultima volta (${esc(fmtDay(last.date, { day: "numeric", month: "short" }))}): ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${esc(feelHint(last))}</div>` : ""}
+          ${lastLine(last, "last", true)}
           ${ex.notes ? `<div class="ex-n">${esc(ex.notes)}</div>` : ""}</div>` : ""}
         <div class="sets">${rows}</div>
         ${complete ? `<div style="padding:8px 12px 0;border-top:1px solid var(--line)">${feelRow(ex.id, false)}</div>` : ""}
@@ -4131,8 +4138,8 @@ function exDefaultsFor(ex, j) {
   const prev = e && e.s && e.s[j - 1];
   const last = lastPerformance(xn(ex), S.date); const ls = last && last.sets[Math.min(j, last.sets.length - 1)];
   const t = repTargets(ex.reps, exSets(ex))[j];
-  return { kg: s && s.kg !== "" && s.kg != null ? String(s.kg) : prev && prev.kg ? String(prev.kg) : ls && ls.kg ? String(ls.kg) : (ex.kg0 ? String(ex.kg0) : ""),
-    reps: s && s.reps ? String(s.reps) : prev && prev.reps ? String(prev.reps) : String(parseInt(t) || (ls && ls.reps) || "") };
+  return { kg: s && s.kg !== "" && s.kg != null ? String(s.kg) : ls && ls.kg ? String(ls.kg) : prev && prev.kg ? String(prev.kg) : (ex.kg0 ? String(ex.kg0) : ""),
+    reps: s && s.reps ? String(s.reps) : ls && parseInt(ls.reps) ? String(parseInt(ls.reps)) : prev && prev.reps ? String(prev.reps) : String(parseInt(t) || "") };
 }
 function lvDefaults() {
   const day = lvDay(); if (!day.exercises[LV.exIdx]) return;
@@ -4175,6 +4182,10 @@ function openLive() {
   try { if (!T.audio) T.audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
   tagMuscles();
 }
+// rientro nell'app: controllo subito i timer (così l'allarme scaduto mentre eri fuori suona adesso)
+document.addEventListener("visibilitychange", () => { if (document.hidden) return; try { if (LV.resting) lvTick(); if (T.end && !$("#timer").hidden) tick(); } catch (e) {} });
+// se l'iPhone blocca il suono al rientro, riparte al primo tocco (entro gli 8 secondi dell'allarme)
+document.addEventListener("pointerdown", () => { try { if (LV.over && LV.alarmAt && Date.now() - LV.alarmAt < 8000 && ALARM_MODE === "el" && ALARM_EL && ALARM_EL.paused) beep(true); } catch (e) {} }, true);
 function closeLive() { stopAlarm(); LV.resting = false; LV.over = false; clearInterval(LV.iv); try { LV.wake && LV.wake.release(); } catch (e) {} LV.wake = null; ovClose("live"); render(); }
 function bestBefore(name) { const K = exKeys(name); let b = 0; for (const { date: d, ex } of exHistory(S.date, true)) { if (K.since && d < K.since) break; for (const k in ex) if (K.keys.has(norm(ex[k].name))) (ex[k].s || []).forEach(s => { if (s && s.done) b = Math.max(b, num(s.kg) || 0); }); } return b; }
 function lvTick() {
@@ -4186,10 +4197,11 @@ function lvTick() {
     try { const ring = r && (r.closest(".lv-ring") || r.closest(".dk-ring")); if (ring) ring.classList.toggle("fx-ending", !REDUCED() && left > 0 && left <= 5 && !LV.over); } catch (e) {}
     if (n && !LV.over) n.textContent = Math.floor(left / 60) + ":" + pad(left % 60);
     if (r) { const C = 2 * Math.PI * (+r.getAttribute("r") || 22); r.setAttribute("stroke-dasharray", `${(C * left / Math.max(1, LV.restTotal)).toFixed(1)} ${C.toFixed(1)}`); }
-    if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); if (LV.restTotal >= 5) beep(true); renderLive(); } // niente suono per recuperi nulli o appena partiti
+    if (left <= 0 && !LV.over) { LV.over = true; LV.lastAlarm = Date.now(); LV.alarmAt = 0; LV.alarmDue = LV.restTotal >= 5; renderLive(); } // niente suono per recuperi nulli o appena partiti
+    if (LV.over && LV.alarmDue && !document.hidden) { LV.alarmDue = false; LV.alarmAt = LV.lastAlarm = Date.now(); beep(true); } // se il recupero è finito mentre eri fuori, suona appena rientri
     if (LV.over) {
       const x = Math.floor((Date.now() - LV.restEnd) / 1000); const o = $("#lvOver"); if (o) o.textContent = "+" + Math.floor(x / 60) + ":" + pad(x % 60);
-      if (x >= 8) { if (ALARM_MODE) stopAlarm(); } // suona 8 secondi, poi resta solo il banner con il "+" finché non lo tocchi
+      if (!LV.alarmAt || Date.now() - LV.alarmAt >= 8000) { if (ALARM_MODE) stopAlarm(); } // suona 8 secondi, poi resta solo il banner con il "+" finché non lo tocchi
       else if (ALARM_MODE === "synth" && Date.now() - LV.lastAlarm > 1900) { LV.lastAlarm = Date.now(); beepSynth(); }
     }
   }
@@ -4266,7 +4278,7 @@ function renderLive() {
       ${isSkipped(l, ex.id) ? `<div class="lv-skipped">⏭ <b>Esercizio saltato oggi</b><span>Non conta nelle serie della seduta.</span><button class="lv-btn" data-act="xa-unskip" data-ex="${ex.id}">↩ Fallo lo stesso</button></div>` : ""}
       ${muscleBlock(exView(ex), true, ex.notes ? `<div class="lv-note in">${esc(ex.notes)}</div>` : "")}
       <div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span><button class="lv-tgt" data-act="xa-repedit" data-ex="${ex.id}">obiettivo <b>${esc(t || "–")}</b> rip. ✎</button></div>${repEditor(ex, true)}
-      ${last ? `<div class="lv-last">Ultima volta: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${esc(feelHint(last))}</div>` : ""}
+      ${lastLine(last, "lv-last", false)}
       ${exDone(l, ex) >= n && LV.feelEx !== ex.id ? feelRow(ex.id, true) : ""}
       <div class="lv-steps">
         <div class="lv-step"><span>kg</span><div><button data-act="lv-adj" data-f="kg" data-d="-2.5" aria-label="Meno 2,5 kg">−</button><input id="lvKg" inputmode="decimal" value="${esc(fmtN(num(LV.kg)))}" aria-label="Chili"><button data-act="lv-adj" data-f="kg" data-d="2.5" aria-label="Più 2,5 kg">+</button></div></div>
@@ -4370,7 +4382,7 @@ function ssBody(day, l) {
     const step = (f, d, lab) => `<div class="lv-step"><span>${lab}</span><div><button data-act="ss-adj" data-x="${x.id}" data-f="${f}" data-d="${-d}" aria-label="Meno">−</button><input data-ssx="${x.id}" data-ssf="${f}" inputmode="${f === "kg" ? "decimal" : "numeric"}" value="${esc(f === "kg" ? fmtN(num(v.kg)) : (v.reps || ""))}" aria-label="${lab} ${esc(x.name)}"><button data-act="ss-adj" data-x="${x.id}" data-f="${f}" data-d="${d}" aria-label="Più">+</button></div></div>`;
     return `<div class="ss-card ${has ? "" : "off"}"><div class="ss-n"><span class="ss-k">${String.fromCharCode(65 + k)}</span><b>${esc(xn(x))}</b> <button class="xa-mini" data-act="xa-open" data-ex="${x.id}" aria-label="Cambia esercizio">⇄</button>${noteBox(x.id, true)}</div>${altPicker(x, true)}
       ${has ? `<div class="ss-meta">${exSets(x)} serie${x.reps ? " × " + esc(x.reps) : ""}${t ? ` · ora <b>${esc(t)}</b> rip.` : ""}${x.load ? " · " + esc(x.load) : ""}</div>
-      ${last ? `<div class="lv-last">Ultima volta: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}</div>` : ""}
+      ${lastLine(last, "lv-last", false)}
       ${x.notes ? `<div class="lv-note">${esc(x.notes)}</div>` : ""}
       <div class="lv-steps ss-steps">${step("kg", 2.5, "kg")}${step("reps", 1, "rip.")}</div>` : `<div class="ss-meta">Serie di questo esercizio già finite</div>`}</div>`;
   }).join("");
