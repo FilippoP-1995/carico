@@ -1210,7 +1210,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "16.0 · 27 ottobre";
+const APP_VERSION = "16.1 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1442,7 +1442,11 @@ function dayLog(date = S.date) {
 const peekLog = (date = S.date) => S.days[date];
 const slug = t => deacc(t).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "pasto";
 function dayVariants(date = S.date) { // se il piano distingue giorni ON/OFF mostro solo le varianti del tipo di giornata
-  const V = variants(); if (!V.some(v => v.type === "on" || v.type === "off")) return V;
+  let V = variants();
+  if (V.some(v => v.level)) { const lv = (plan().diet.levels || []).length ? levelFor(date) : null; const ln = lv ? norm(lv.name) : "";
+    const match = v => { const a = norm(v.level || ""); return !a || (ln && (ln === a || ln.endsWith(" " + a) || ln.startsWith(a + " "))); };
+    let f = V.filter(match); if (!f.length || f.every(v => !v.level)) { const L = [...new Set(V.map(v => v.level).filter(Boolean))]; f = V.filter(v => !v.level || v.level === L[0]); } V = f; }
+  if (!V.some(v => v.type === "on" || v.type === "off")) return V;
   const t = dayTypeFor(date).t; const f = V.filter(v => !v.type || v.type === t); return f.length ? f : V;
 }
 function slots() { // un pannello per pasto (colazione, pranzo…); le giornate/opzioni della scheda diventano le sue varianti
@@ -1455,7 +1459,7 @@ function slots() { // un pannello per pasto (colazione, pranzo…); le giornate/
       if (!map.has(k)) map.set(k, { key: k, name: m.name, time: m.time || "", pos: mi + vi * 0.01, options: [], custom: !!m.custom });
       const sl = map.get(k); if (!sl.time && m.time) sl.time = m.time; if (!m.custom) sl.custom = false;
       const sig = (m.items || []).map(x => deacc(x.food) + "|" + deacc(x.qty)).join(";");
-      if (!m.custom && !sl.options.some(o => o.sig === sig)) sl.options.push({ id: m.id, meal: m, sig, vname: many ? (typed ? String(v.name).replace(/^\s*(ON|OFF)\s*[·\-–:]\s*/i, "") : v.name) : "", items: m.items || [] });
+      if (!m.custom && !sl.options.some(o => o.sig === sig)) sl.options.push({ id: m.id, meal: m, sig, title: m.title || "", vname: m.title || (many ? (typed || v.level ? String(v.name).replace(/^\s*((livello\s*)?[A-Z]\s*[·\-–:]\s*)?((ON|OFF)\s*[·\-–:]\s*)?/i, "") : v.name) : ""), items: m.items || [] });
     });
   });
   const list = [...map.values()];
@@ -1467,7 +1471,7 @@ const findSlot = k => slots().find(x => x.key === k);
 function mealLog() { const l = peekLog(); const m = (l && l.m) || {}; return { eaten: m.eaten || {}, pick: m.pick || {}, manual: m.manual || {}, extra: m.extra || [] }; }
 function optLabel(sl, id) {
   if (id === "manual") return "Scritto da me";
-  const i = sl.options.findIndex(o => o.id === id); if (i >= 0) return sl.options.length > 1 ? "Variante " + (i + 1) : "Scheda";
+  const i = sl.options.findIndex(o => o.id === id); if (i >= 0) return sl.options[i].title || (sl.options.length > 1 ? "Variante " + (i + 1) : "Scheda");
   const a = sl.alts.find(x => x.id === id); return a ? (a.name || (a.manual ? "Variante mia" : "Variante AI")) : "Scheda";
 }
 function slotPick(ml, sl) {
@@ -3363,7 +3367,7 @@ const PROMPT = `Trasforma questo materiale (scheda di allenamento e/o piano alim
 Non inventare esercizi o alimenti: riporta solo quello che c'è. Mantieni i nomi in italiano come scritti. Se un valore manca usa null o "".
 Rispondi solo con un oggetto JSON con questa forma:
 {"workout": {"days": [{"name": "Giorno A - Petto e tricipiti", "exercises": [{"name": "Panca piana", "sets": 4, "reps": "8-10", "rest": 90, "load": "", "notes": "", "ss": "", "alts": []}]}]} oppure null se non c'è una scheda,
- "diet": {"targets": {"kcal": 2400, "protein": 160, "carbs": 280, "fat": 70}, "day_targets": {"on": {"kcal": 2750, "protein": 185, "carbs": 360, "fat": 63}, "off": {"kcal": 2525, "protein": 180, "carbs": 310, "fat": 64}}, "notes": "", "variants": [{"name": "ON · Variante 1", "type": "on", "meals": [{"name": "Colazione", "time": "07:30", "items": [{"food": "Fiocchi d'avena", "qty": "80 g", "alt": "Pane integrale 100 g", "kcal": 300, "p": 11, "c": 54, "f": 6}], "notes": ""}]}]} oppure null se non c'è una dieta}
+ "diet": {"targets": {"kcal": 2400, "protein": 160, "carbs": 280, "fat": 70}, "day_targets": {"on": {"kcal": 2750, "protein": 185, "carbs": 360, "fat": 63}, "off": {"kcal": 2525, "protein": 180, "carbs": 310, "fat": 64}}, "notes": "", "levels": null, "variants": [{"name": "ON · Variante 1", "type": "on", "level": "", "meals": [{"name": "Colazione", "title": "", "time": "07:30", "items": [{"food": "Fiocchi d'avena", "qty": "80 g", "alt": "Pane integrale 100 g", "kcal": 300, "p": 11, "c": 54, "f": 6}], "notes": ""}]}]} oppure null se non c'è una dieta}
 Regole:
 - sets è un numero intero; reps è testo (es. "10", "8-10", "12-10-8-6", "30 sec", "max").
 - rest è il recupero in secondi come numero, copiato ESATTAMENTE dal documento: 60" o 60'' o 60 sec = 60; 1' = 60; 1'30" = 90; 2' = 120; per un intervallo (es. 60-90") usa il valore più basso. null se non indicato.
@@ -3374,6 +3378,7 @@ Regole:
 - Tempo sotto tensione e tecnica vanno in notes dell'esercizio.
 - Se la dieta ha giornate diverse (allenamento/riposo, giorni della settimana) o più opzioni numerate per i pasti (Variante/Opzione 1, 2, 3), crea una variante per ciascuna, con lo stesso elenco di pasti e gli stessi nomi dei pasti (Colazione, Spuntino, Pranzo…); i pasti che non cambiano vanno ripetuti uguali. Altrimenti una sola variante chiamata "Giornata tipo".
 - GIORNI ON/OFF: se ci sono tabelle separate per giorni con allenamento (ON, con i pesi) e senza (OFF, riposo), metti "type":"on" o "type":"off" su ogni variante. Se in più ogni pasto ha opzioni numerate, crea una variante per ogni combinazione: "ON · Variante 1", "ON · Variante 2", "ON · Variante 3", "OFF · Variante 1"… dove "ON · Variante 2" contiene per OGNI pasto la sua Variante 2 del giorno ON, con le grammature esatte di quella tabella. Non mescolare mai grammature ON e OFF. Senza distinzione ON/OFF lascia "type":"".
+- LIVELLI / FASI: se le grammature cambiano per livello o fase con una data (es. colonne "A · prima settimana" e "B · secondo livello", "dal 26 ottobre"), crea le varianti per OGNI combinazione livello × tipo di giornata × opzione, con "level":"A" (o "B"…) e nome "A · ON · Variante 1". Per ogni pasto metti in "title" il nome dell'opzione se c'è (es. "Avena, yogurt e banana"). In diet.levels elenca i livelli: [{"name":"A","from":"2026-10-19","on":{kcal,protein,carbs,fat},"off":{…}}] con la data di inizio e le quote ON/OFF di ciascuno (per un intervallo usa il valore medio). Senza livelli: "level":"" e levels null.
 - Se il documento indica gli obiettivi giornalieri separati per ON e OFF, mettili in day_targets.on e day_targets.off (kcal, protein, carbs, fat); altrimenti day_targets null.
 - Trascrivi gli alimenti con nome e quantità come scritti (es. "Riso basmati (peso a crudo)" 125 g, "Verdure tollerate e gradite" 250 g): non sostituire con alimenti specifici diversi.
 - Se il documento riporta i macro di ogni pasto (es. "654 kcal · P 40 · C 90 · F 15 g"), stima i macro degli alimenti in modo che la loro somma corrisponda a quei valori.
@@ -3391,9 +3396,10 @@ function normalizePlan(r) {
   if (r && r.diet && Array.isArray(r.diet.variants) && r.diet.variants.length) {
     const t = r.diet.targets || {}; const dt = r.diet.day_targets;
     out.diet = { targets: { kcal: num(t.kcal) || "", protein: num(t.protein) || "", carbs: num(t.carbs) || "", fat: num(t.fat) || "" }, notes: r.diet.notes ? String(r.diet.notes) : "",
-      variants: r.diet.variants.map((v, i) => ({ id: uid(), name: String(v.name || "Giornata " + (i + 1)), type: /^(on|off)$/i.test(String(v.type || "")) ? String(v.type).toLowerCase() : "", meals: (v.meals || []).filter(m => m).map(m => ({ id: uid(), name: String(m.name || "Pasto"), time: m.time ? String(m.time) : "", notes: m.notes ? String(m.notes) : "", alts: [], items: (m.items || []).filter(x => x && x.food).map(cleanItem) })) })) };
+      variants: r.diet.variants.map((v, i) => ({ id: uid(), name: String(v.name || "Giornata " + (i + 1)), type: /^(on|off)$/i.test(String(v.type || "")) ? String(v.type).toLowerCase() : "", level: v.level ? String(v.level).trim().slice(0, 20) : "", meals: (v.meals || []).filter(m => m).map(m => ({ id: uid(), name: String(m.name || "Pasto"), title: m.title ? String(m.title).slice(0, 60) : "", time: m.time ? String(m.time) : "", notes: m.notes ? String(m.notes) : "", alts: [], items: (m.items || []).filter(x => x && x.food).map(cleanItem) })) })) };
     const tg = o => { o = o || {}; return { kcal: num(o.kcal) || "", protein: num(o.protein) || "", carbs: num(o.carbs) || "", fat: num(o.fat) || "" }; };
-    if (dt && (dt.on || dt.off) && (num((dt.on || {}).kcal) || num((dt.off || {}).kcal))) out.diet.levels = [{ id: uid(), name: "Quote del piano", from: today(), on: tg(dt.on || dt.off), off: tg(dt.off || dt.on) }];
+    if (Array.isArray(r.diet.levels) && r.diet.levels.length) out.diet.levels = r.diet.levels.filter(x => x && (x.on || x.off)).map(x => ({ id: uid(), name: String(x.name || "Livello").slice(0, 40), from: /^\d{4}-\d{2}-\d{2}$/.test(x.from || "") ? x.from : today(), on: tg(x.on || x.off), off: tg(x.off || x.on) }));
+    else if (dt && (dt.on || dt.off) && (num((dt.on || {}).kcal) || num((dt.off || {}).kcal))) out.diet.levels = [{ id: uid(), name: "Quote del piano", from: today(), on: tg(dt.on || dt.off), off: tg(dt.off || dt.on) }];
   }
   return out;
 }
