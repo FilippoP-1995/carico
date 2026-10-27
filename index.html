@@ -1133,6 +1133,11 @@ nav.tabs button[aria-current="page"]{color:var(--accent)}
 .ach-l{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:inherit;font:inherit;text-align:left;transition:opacity .2s}
 .ach-l i{width:12px;height:12px;border-radius:50%;flex:0 0 auto}.ach-l .ach-n{flex:1;font-weight:700;font-size:14px}.ach-l .ach-v{font-size:13px;white-space:nowrap;opacity:.85}
 .ach-l b.up{color:#2fae6b}.ach-l b.dn{color:#e5484d}.ach-l.on{box-shadow:0 0 0 2px var(--ink)}.ach-l.dim{opacity:.45}
+
+.ph-tips{border:1px solid var(--line);border-radius:12px;padding:9px 12px;background:var(--surface)}
+.ph-tips summary{cursor:pointer;font-weight:700;font-size:13.5px;list-style:none}.ph-tips summary::-webkit-details-marker{display:none}
+.ph-tips ul{list-style:none;margin:10px 0 2px;padding:0;display:flex;flex-direction:column;gap:9px}
+.ph-tips li{display:flex;gap:10px;font-size:13px;line-height:1.4;color:var(--muted)}.ph-tips li span{font-size:17px;line-height:1.2}.ph-tips li b{color:var(--ink)}
 </style>
 
 <div class="wrap">
@@ -1205,7 +1210,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "15.7 · 27 ottobre";
+const APP_VERSION = "15.8 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2962,9 +2967,23 @@ async function phUrl(id) { if (PH.urls[id]) return PH.urls[id]; const r = await 
 function phWeek() { const cd = checkDay(); const t = parseD(today()); const back = (t.getDay() - cd + 7) % 7; const end = new Date(t); end.setDate(t.getDate() - back); const st = new Date(end); st.setDate(end.getDate() - 6); return [dstr(st), dstr(end)]; }
 function checkPhotos() { // foto di questa settimana (fino al check) e la precedente con cui confrontarla
   const [st] = phWeek(); const P = photos(); const cur = P.filter(p => p.d >= st && p.d <= today());
-  const c = cur.find(p => p.pose === "fronte") || cur[0] || null; if (!c) return { cur: null, prev: null };
-  const older = P.filter(p => p.d < st); const prev = older.find(p => p.pose === c.pose) || older[0] || null; return { cur: c, prev };
+  const c = cur.find(p => p.pose === "fronte") || cur[0] || null; if (!c) return { cur: null, prev: null, list: [] };
+  const older = P.filter(p => p.d < st); const prev = older.find(p => p.pose === c.pose) || older[0] || null;
+  // da confrontare: per la posa principale la prima foto, quella di circa 4 settimane fa, la settimana prima e oggi; per le altre pose di questa settimana la precedente e oggi
+  const back = n => { const d = parseD(st); d.setDate(d.getDate() - n); return dstr(d); };
+  const same = pose => older.filter(p => p.pose === pose); const L = []; const add = (x, role) => { if (x && !L.some(y => y.p.id === x.id)) L.push({ p: x, role }); };
+  const S0 = same(c.pose); const first = S0[S0.length - 1]; const m4 = S0.find(p => p.d <= back(21));
+  add(first, "PRIMA FOTO"); add(m4, "CIRCA 4 SETTIMANE FA"); add(S0[0] || prev, "SETTIMANA PRECEDENTE"); add(c, "QUESTA SETTIMANA");
+  const others = POSES.map(x => x[0]).filter(k => k !== c.pose && k !== "altro").map(k => cur.find(p => p.pose === k)).filter(Boolean);
+  others.forEach(o => { const pv = same(o.pose)[0]; add(pv, "SETTIMANA PRECEDENTE"); add(o, "QUESTA SETTIMANA"); });
+  const cap = Math.min(8, AI.maxImages ? AI.maxImages() : 5); const main = c.pose;
+  const drop = [x => x.role === "CIRCA 4 SETTIMANE FA", x => x.p.pose !== main && x.role === "SETTIMANA PRECEDENTE", x => x.p.pose !== main, x => x.role === "PRIMA FOTO"];
+  for (const f of drop) while (L.length > cap) { const k = L.map(f).lastIndexOf(true); if (k < 0) break; L.splice(k, 1); }
+  L.splice(0, Math.max(0, L.length - cap));
+  return { cur: c, prev, list: L };
 }
+const PH_TIPS = [["🕗", "Stesso momento", "mattina, a digiuno, prima di allenarti: dopo l'allenamento il pompaggio falsa il confronto"], ["💡", "Stessa luce", "sempre nello stesso posto, luce davanti a te (finestra o lampada), niente controluce e niente flash"], ["📏", "Stessa distanza e altezza", "telefono appoggiato all'altezza dell'ombelico, a 2–3 metri, con il timer: si deve vedere tutto il corpo"], ["🩳", "Stesso abbigliamento", "costume o intimo aderente, sempre lo stesso, pancia e gambe scoperte"], ["🧍", "Tre pose", "fronte (braccia lungo i fianchi), lato (di profilo, braccia leggermente avanti) e retro"], ["😌", "Postura rilassata", "in piedi naturale, senza contrarre né trattenere la pancia: conta che sia sempre uguale"], ["📅", "Ogni settimana", "nel giorno del check: le stesse foto ogni volta rendono il confronto del coach affidabile"]];
+const phTipsHtml = () => `<details class="ph-tips"><summary>📏 Come scattare le foto per un confronto affidabile</summary><ul>${PH_TIPS.map(([i, t, d]) => `<li><span>${i}</span><div><b>${t}</b> ${d}</div></li>`).join("")}</ul></details>`;
 async function phSave(file) {
   const f = PH.add; if (!f) return; PH.busy = true; render();
   try {
@@ -2989,14 +3008,15 @@ function photosCard() {
       <div class="chips">${POSES.map(([k, l]) => `<button type="button" class="chip sm ${f.pose === k ? "on-acc" : ""}" data-act="ph-pose" data-k="${k}">${l}</button>`).join("")}</div>
       <input class="in" id="phNote" placeholder="Note (facoltative): es. a digiuno, dopo allenamento…" value="${esc(f.note || "")}" maxlength="300">
       <div class="row" style="gap:8px"><button type="button" class="btn sm acc" data-act="ph-lib" ${PH.busy ? "disabled" : ""}>📸 Carica foto</button><button type="button" class="btn ghost sm" data-act="ph-cancel">Annulla</button></div>
-      ${PH.busy ? `<span class="small muted"><span class="spin"></span> Salvo la foto…</span>` : `<span class="small muted">Scegli prima data e posa, poi carica la foto (scatta, libreria o file). Puoi mettere anche una data passata.</span>`}</form>` : "";
+      ${PH.busy ? `<span class="small muted"><span class="spin"></span> Salvo la foto…</span>` : `<span class="small muted">Scegli prima data e posa, poi carica la foto (scatta, libreria o file). Ricorda: mattina a digiuno, stessa luce, stessa distanza, corpo intero. Puoi mettere anche una data passata.</span>`}</form>` : "";
   return `<details class="ph-card ph-in" data-pnl="photos" ${pnlOpen("photos") || (need ? "open" : "")}><summary>📸 Foto dei progressi <span class="small muted" style="font-weight:500;margin-left:auto">${P.length ? `${P.length} · ultima ${esc(fmtDay(P[0].d, { day: "numeric", month: "short" }))}` : "nessuna"}</span></summary>
     <div class="stack" style="margin-top:10px;gap:10px">
-      ${need ? `<div class="ph-need">📋 Per il check di questa settimana carica una foto: il coach la confronterà con quella precedente.<div class="row" style="gap:8px;margin-top:8px"><button class="btn sm acc" data-act="ph-new">📸 Carica la foto</button><button class="btn ghost sm" data-act="ph-skipcheck">Fai il check senza foto</button></div></div>` : ""}
+      ${need ? `<div class="ph-need">📋 Per il check di questa settimana carica le foto (fronte, lato e retro): il coach le confronterà con la settimana prima, con 4 settimane fa e con la prima foto.<div class="row" style="gap:8px;margin-top:8px"><button class="btn sm acc" data-act="ph-new">📸 Carica la foto</button><button class="btn ghost sm" data-act="ph-skipcheck">Fai il check senza foto</button></div></div>` : ""}
+      ${phTipsHtml()}
       ${form || `<button class="btn" data-act="ph-new">📸 Aggiungi foto</button>`}
       ${P.length ? Object.entries(groups).map(([d, L]) => `<div class="ph-day"><span class="small" style="font-weight:700">${esc(fmtDay(d, { weekday: "short", day: "numeric", month: "long", year: d.slice(0, 4) !== today().slice(0, 4) ? "numeric" : undefined }))}</span>
         <div class="ph-grid">${L.map(p => `<button class="ph-t" data-act="ph-open" data-id="${p.id}"><img src="${p.thumb}" alt=""><span>${esc((POSES.find(x => x[0] === p.pose) || [, ""])[1])}${p.note ? " · 📝" : ""}</span></button>`).join("")}</div></div>`).join("")
-        : `<span class="small muted">Le foto restano solo su questo telefono e si vedono solo aprendo questa sezione. Ogni check settimanale il coach confronta la foto della settimana con la precedente.</span>`}
+        : `<span class="small muted">Le foto restano solo su questo telefono e si vedono solo aprendo questa sezione. Ogni check settimanale il coach confronta le foto della settimana con la precedente, con 4 settimane fa e con la prima.</span>`}
     </div></details>`;
 }
 async function phOpen(id, cmp) {
@@ -4934,9 +4954,16 @@ async function runCheck(force) {
   const cp = IN_CLAUDE ? { cur: null, prev: null } : checkPhotos();
   if (!force && !IN_CLAUDE && !cp.cur) { S.checkNeedPhoto = true; PANELS.add("photos"); go("progressi"); setTimeout(() => { const c = document.querySelector(".ph-card"); if (c) c.scrollIntoView({ block: "start", behavior: "smooth" }); }, 120); return; }
   let extra = "";
-  if (cp.cur) { const blobs = []; const lab = [];
-    for (const p of [cp.prev, cp.cur].filter(Boolean)) { const r = await PDB.get(p.id).catch(() => null); if (r && r.blob) { blobs.push({ blob: r.blob, thumb: p.thumb }); lab.push(`${fmtDay(p.d, { day: "numeric", month: "long" })} (${(POSES.find(x => x[0] === p.pose) || [, ""])[1].toLowerCase()})${p.note ? ' — nota: "' + p.note + '"' : ""}`); } }
-    if (blobs.length) { CH.att = blobs; extra = blobs.length > 1 ? `\nFOTO ALLEGATE: la prima è del ${lab[0]} (precedente), la seconda del ${lab[1]} (questa settimana). Nel punto sul peso aggiungi un confronto onesto delle foto: cosa è cambiato in modo visibile (spalle, braccia, addome, vita, gambe, postura), cosa no, e collegalo ai dati della settimana. Se luce o posa sono diverse dillo e consiglia di rifarle uguali.` : `\nFOTO ALLEGATA: questa settimana (${lab[0]}). Non c'è una foto precedente da confrontare: commentala brevemente e dì che dalla prossima settimana farai il confronto.`; } }
+  if (cp.cur && cp.list && cp.list.length) { const blobs = []; const lab = [];
+    for (const { p, role } of cp.list) { const r = await PDB.get(p.id).catch(() => null); if (r && r.blob) { blobs.push({ blob: r.blob, thumb: p.thumb }); lab.push(`Foto ${blobs.length}: ${role} — ${fmtDay(p.d, { day: "numeric", month: "long", year: "numeric" })}, posa ${(POSES.find(x => x[0] === p.pose) || [, ""])[1].toLowerCase()}${p.note ? ' — nota: "' + p.note + '"' : ""}`); } }
+    if (blobs.length === 1) { CH.att = blobs; extra = `\nFOTO ALLEGATA: ${lab[0]}. Non c'è ancora una foto precedente da confrontare: commentala brevemente senza stimare la percentuale di grasso, e dì che dalla prossima settimana farai il confronto.\n`; }
+    else if (blobs.length) { CH.att = blobs; extra = `\nFOTO ALLEGATE (in quest'ordine):\n${lab.join("\n")}\nNel punto sul fisico fai un confronto ONESTO e prudente:
+- prima confronta QUESTA SETTIMANA con la SETTIMANA PRECEDENTE: in 7 giorni di solito non cambia quasi niente di visibile, quindi dillo apertamente invece di inventare differenze;
+- poi guarda la tendenza vera rispetto a CIRCA 4 SETTIMANE FA e alla PRIMA FOTO (se ci sono): lì i cambiamenti si vedono davvero. Descrivi zona per zona (spalle, braccia, petto, addome, vita, gambe, schiena) solo ciò che è chiaramente visibile;
+- se luce, distanza, posa, abbigliamento o pompaggio sono diversi tra le foto, dillo e spiega che il confronto è meno affidabile;
+- non stimare la percentuale di grasso dalle foto e non dare numeri inventati;
+- collega quello che vedi ai dati (peso, misure, allenamenti, dieta) e chiudi con un consiglio pratico.\n`; }
+  }
   openCoach(); coachSend(CHECK_PROMPT + weekStats() + extra, { check: true, label: cp.cur ? "📋 Check settimanale (con foto)" : "📋 Check settimanale" });
 }
 
