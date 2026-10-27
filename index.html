@@ -1210,7 +1210,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "16.1 · 27 ottobre";
+const APP_VERSION = "16.2 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -3378,6 +3378,10 @@ Regole:
 - Tempo sotto tensione e tecnica vanno in notes dell'esercizio.
 - Se la dieta ha giornate diverse (allenamento/riposo, giorni della settimana) o più opzioni numerate per i pasti (Variante/Opzione 1, 2, 3), crea una variante per ciascuna, con lo stesso elenco di pasti e gli stessi nomi dei pasti (Colazione, Spuntino, Pranzo…); i pasti che non cambiano vanno ripetuti uguali. Altrimenti una sola variante chiamata "Giornata tipo".
 - GIORNI ON/OFF: se ci sono tabelle separate per giorni con allenamento (ON, con i pesi) e senza (OFF, riposo), metti "type":"on" o "type":"off" su ogni variante. Se in più ogni pasto ha opzioni numerate, crea una variante per ogni combinazione: "ON · Variante 1", "ON · Variante 2", "ON · Variante 3", "OFF · Variante 1"… dove "ON · Variante 2" contiene per OGNI pasto la sua Variante 2 del giorno ON, con le grammature esatte di quella tabella. Non mescolare mai grammature ON e OFF. Senza distinzione ON/OFF lascia "type":"".
+- GRIGLIA (PREFERITA): se nel documento le grammature di ogni opzione di pasto sono in COLONNE (per livello/fase e/o per giorno ON/OFF, es. "A ON | A OFF | B ON | B OFF"), NON scrivere "variants": metti "variants": [] e usa "grid":
+  {"columns":[{"key":"A_on","level":"A","type":"on"},{"key":"A_off","level":"A","type":"off"},{"key":"B_on","level":"B","type":"on"},{"key":"B_off","level":"B","type":"off"}],
+   "meals":[{"name":"Colazione","time":"","options":[{"title":"Avena, yogurt e banana","items":[{"food":"Fiocchi d'avena","unit":"g","q":{"A_on":50,"A_off":40,"B_on":45,"B_off":35},"kcal":186,"p":7,"c":30,"f":3.5}]}]}]}
+  Una colonna per ogni combinazione presente nel documento (senza livelli: level ""; senza ON/OFF: type ""). "q" ha la quantità numerica per OGNI colonna, copiata esattamente dalla tabella; kcal/p/c/f si riferiscono alla quantità della PRIMA colonna (la app ricalcola le altre in proporzione) e la loro somma per l'opzione deve corrispondere ai macro scritti nel documento per quella colonna. Elenca tutte le opzioni di ogni pasto nello stesso ordine del documento. Con la griglia compila comunque diet.levels con date e quote.
 - LIVELLI / FASI: se le grammature cambiano per livello o fase con una data (es. colonne "A · prima settimana" e "B · secondo livello", "dal 26 ottobre"), crea le varianti per OGNI combinazione livello × tipo di giornata × opzione, con "level":"A" (o "B"…) e nome "A · ON · Variante 1". Per ogni pasto metti in "title" il nome dell'opzione se c'è (es. "Avena, yogurt e banana"). In diet.levels elenca i livelli: [{"name":"A","from":"2026-10-19","on":{kcal,protein,carbs,fat},"off":{…}}] con la data di inizio e le quote ON/OFF di ciascuno (per un intervallo usa il valore medio). Senza livelli: "level":"" e levels null.
 - Se il documento indica gli obiettivi giornalieri separati per ON e OFF, mettili in day_targets.on e day_targets.off (kcal, protein, carbs, fat); altrimenti day_targets null.
 - Trascrivi gli alimenti con nome e quantità come scritti (es. "Riso basmati (peso a crudo)" 125 g, "Verdure tollerate e gradite" 250 g): non sostituire con alimenti specifici diversi.
@@ -3387,6 +3391,19 @@ Regole:
 - targets: usa i valori scritti nella dieta se presenti, altrimenti null.
 - Indicazioni generali della dieta (acqua, integratori, sgarri, condimenti) vanno in diet.notes.`;
 
+function expandGrid(G) { // tabelle "un'opzione per pasto, grammature in colonne" -> una giornata per colonna e opzione
+  const cols = (G.columns || []).filter(c => c && c.key); const meals = (G.meals || []).filter(m => m && Array.isArray(m.options) && m.options.length); if (!cols.length || !meals.length) return [];
+  const nOpt = Math.max(...meals.map(m => m.options.length)); const k0 = cols[0].key; const out = [];
+  cols.forEach(c => { for (let i = 0; i < nOpt; i++) {
+    const type = /^(on|off)$/i.test(c.type || "") ? String(c.type).toLowerCase() : ""; const level = c.level ? String(c.level).trim() : "";
+    out.push({ name: [level, type.toUpperCase()].filter(Boolean).join(" · ") + (level || type ? " · " : "") + "Variante " + (i + 1), type, level,
+      meals: meals.map(m => { const o = m.options[Math.min(i, m.options.length - 1)]; return { name: m.name, time: m.time || "", title: o.title || "",
+        items: (o.items || []).map(it => { const q = it.q || {}; const base = num(q[k0]); const v = q[c.key] != null ? num(q[c.key]) : base; if (v === 0) return null;
+          const r = base && v != null ? v / base : 1; const u = it.unit || "g";
+          return { food: it.food, qty: v != null ? `${fmtN(v)} ${u}`.trim() : (it.qty || ""), alt: it.alt || "", kcal: Math.round((num(it.kcal) || 0) * r), p: Math.round((num(it.p) || 0) * r * 10) / 10, c: Math.round((num(it.c) || 0) * r * 10) / 10, f: Math.round((num(it.f) || 0) * r * 10) / 10 }; }).filter(Boolean) }; }) });
+  } });
+  return out;
+}
 function normalizePlan(r) {
   const out = {};
   if (r && r.workout && Array.isArray(r.workout.days) && r.workout.days.length) {
@@ -3459,6 +3476,7 @@ async function runImport({ text = "", images = [], docs = [] }) {
     const ok = parts.filter(x => x.status === "fulfilled").map(x => x.value || {});
     if (!ok.length) throw parts[1].reason || parts[0].reason;
     const r = { workout: (ok.find(x => x.workout) || {}).workout || null, diet: (ok.find(x => x.diet) || {}).diet || null };
+    if (r.diet && r.diet.grid) { try { const V = expandGrid(r.diet.grid); if (V.length) r.diet.variants = V; } catch (e) { console.warn("griglia", e); } }
     const failed = parts.map((x, i) => x.status === "rejected" && !(x.reason && x.reason.code === "cancelled") ? (i ? "la dieta" : "l'allenamento") : null).filter(Boolean);
     if (failed.length) toast("Non sono riuscito a leggere " + failed.join(" e ") + ": riprova solo con quella parte.", 6000);
     if (!r.workout && !r.diet) { S.importBusy = false; setImport("Non ho trovato né esercizi né pasti. Prova con una foto più nitida e dritta, o incolla il testo.", true); return; }
