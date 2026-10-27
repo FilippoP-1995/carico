@@ -785,6 +785,10 @@ html.neo-dark{--p0:#f2b33d;--p0s:rgba(242,179,61,.15);--p1:#4fd18b;--p1s:rgba(79
 .xa-o{display:flex;align-items:stretch;gap:6px}
 .xa-u{flex:1;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 12px;font:inherit;font-size:14.5px;font-weight:600}
 .xa-u small{font-weight:500;color:var(--muted);font-size:11.5px}
+.xa-u{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.xa-u .xa-tag{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.01em}
+.xa-tag.t-plan{color:#1f8fb0;background:rgba(31,143,176,.13)}.xa-tag.t-mine{color:#c26a12;background:rgba(232,131,58,.15)}.xa-tag.t-ai{color:#7c5cff;background:rgba(124,92,255,.14)}.xa-tag.t-main{color:var(--ink);background:rgba(127,127,127,.15)}
+.xa.dark .xa-u .xa-tag.t-plan{color:#7fd3ee}.xa.dark .xa-u .xa-tag.t-mine{color:#ffb877}.xa.dark .xa-u .xa-tag.t-ai{color:#b9a6ff}.xa.dark .xa-u .xa-tag.t-main{color:#fff;background:rgba(255,255,255,.14)}
 .xa-o.on .xa-u{border-color:var(--pc,var(--accent));box-shadow:0 0 0 1px var(--pc,var(--accent))}
 .xa-d{flex:none;width:40px;border:1px solid var(--line);background:var(--surface);border-radius:10px;display:grid;place-items:center}
 .xa-d svg{width:14px;height:14px;stroke:var(--muted)}
@@ -1184,7 +1188,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "15.5 · 27 ottobre";
+const APP_VERSION = "15.6 · 27 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -2228,7 +2232,9 @@ function exView(ex) { const n = xn(ex); if (n === ex.name) return ex; const m = 
 function altPicker(ex, dark) {
   if (S.altPick !== ex.id) return "";
   const cur = xn(ex); const A = ex.alts || []; const busy = S.busy["xa:" + ex.id];
-  const opt = (n, i) => `<div class="xa-o ${cur === n ? "on" : ""}"><button class="xa-u" data-act="xa-use" data-ex="${ex.id}" data-i="${i}">${cur === n ? "✓ " : ""}${esc(n)}${i < 0 ? ' <small>dalla scheda</small>' : ""}</button>${i >= 0 ? `<button class="xa-d" data-act="xa-del" data-ex="${ex.id}" data-i="${i}" aria-label="Togli ${esc(n)}">${ICON_X}</button>` : ""}</div>`;
+  const O = ex.altOrig || {}; const TAG = { mine: ["aggiunta da te", "t-mine"], ai: ["suggerita dall'AI", "t-ai"], main: ["era l'esercizio della scheda", "t-plan"] };
+  const tag = (n, i) => { const t = i < 0 ? ["esercizio principale della scheda", "t-main"] : TAG[O[norm(n)]] || ["alternativa della scheda", "t-plan"]; return `<small class="xa-tag ${t[1]}">${t[0]}</small>`; };
+  const opt = (n, i) => `<div class="xa-o ${cur === n ? "on" : ""}"><button class="xa-u" data-act="xa-use" data-ex="${ex.id}" data-i="${i}"><span>${cur === n ? "✓ " : ""}${esc(n)}</span>${tag(n, i)}</button>${i >= 0 ? `<button class="xa-d" data-act="xa-del" data-ex="${ex.id}" data-i="${i}" aria-label="Togli ${esc(n)}">${ICON_X}</button>` : ""}</div>`;
   return `<div class="xa ${dark ? "dark" : ""}"><span class="xa-t">⇄ Fai un altro esercizio oggi</span>
     ${cur !== ex.name ? opt(ex.name, -1) : ""}${A.map((n, i) => n === cur ? "" : opt(n, i)).join("")}${!A.filter(n => n !== cur).length && cur === ex.name ? `<span class="xa-h">Nessuna alternativa ancora: aggiungila qui sotto.</span>` : ""}
     <form class="row xa-f" data-form="xa-add" data-ex="${ex.id}"><input class="in" id="xaIn" placeholder="Aggiungi alternativa (es. Leg press)" autocomplete="off"><button class="btn sm">Aggiungi</button></form>
@@ -3669,7 +3675,7 @@ document.addEventListener("submit", ev => {
   }
   else if (f.dataset.form === "rep-ed") { if (repCommit(f) === false) return; repClose(); }
   else if (f.dataset.form === "xa-add") { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === f.dataset.ex); const n = ($("#xaIn") || {}).value ? $("#xaIn").value.trim().slice(0, 60) : "";
-    if (ex && n && norm(n) !== norm(ex.name)) { ex.alts = ex.alts || []; if (!ex.alts.some(y => norm(y) === norm(n))) ex.alts.push(n); store.saveProfile(); tagMuscles(); }
+    if (ex && n && norm(n) !== norm(ex.name)) { ex.alts = ex.alts || []; if (!ex.alts.some(y => norm(y) === norm(n))) { ex.alts.push(n); (ex.altOrig = ex.altOrig || {})[norm(n)] = "mine"; } store.saveProfile(); tagMuscles(); }
     if (!$("#live").hidden) renderLive(); else render(); }
   else if (f.dataset.form === "hk") { const o = parseHK($("#hkTxt").value); if (!o) { toast("Non riconosco il testo: deve iniziare con CARICO", 4500); return; } applyHK(o); }
   else if (f.dataset.form === "supp") { const n = $("#suppName").value.trim(); if (!n) { toast("Scrivi il nome dell'integratore"); return; } S.profile.supps = [...supps(), { id: uid(), name: n.slice(0, 40), dose: $("#suppDose").value.trim().slice(0, 20) }]; store.saveProfile(); render(); }
@@ -3852,16 +3858,16 @@ document.addEventListener("click", ev => {
         if (n === ex.name) delete l.altSel[ex.id]; else l.altSel[ex.id] = n;
         const e = l.w.ex[ex.id]; if (e) e.name = xn(ex, l);
         store.saveDay(S.date); S.altPick = null; rr(); toast(n === ex.name ? "Torni all'esercizio della scheda" : `⇄ Oggi fai ${n}`); return; }
-      if (a === "xa-del") { const n = (ex.alts || [])[i]; ex.alts.splice(i, 1); const l = dayLog(); if (l.altSel && l.altSel[ex.id] === n) { delete l.altSel[ex.id]; store.saveDay(S.date); } store.saveProfile(); rr(); return; }
+      if (a === "xa-del") { const n = (ex.alts || [])[i]; ex.alts.splice(i, 1); if (ex.altOrig && n) delete ex.altOrig[norm(n)]; const l = dayLog(); if (l.altSel && l.altSel[ex.id] === n) { delete l.altSel[ex.id]; store.saveDay(S.date); } store.saveProfile(); rr(); return; }
       if (a === "xa-always") { const l = dayLog(); const n = xn(ex, l); if (n === ex.name) return; const old = ex.name;
-        ex.alts = [old, ...(ex.alts || []).filter(x => x !== n)]; ex.altMus = ex.altMus || {}; if (ex.muscles) ex.altMus[norm(old)] = ex.muscles;
+        ex.alts = [old, ...(ex.alts || []).filter(x => x !== n)]; ex.altOrig = ex.altOrig || {}; delete ex.altOrig[norm(n)]; ex.altOrig[norm(old)] = "main"; ex.altMus = ex.altMus || {}; if (ex.muscles) ex.altMus[norm(old)] = ex.muscles;
         const m = ex.altMus[norm(n)]; delete ex.altMus[norm(n)]; if (m) ex.muscles = m; else { delete ex.muscles; delete ex.muscleTried; }
         ex.name = n; delete l.altSel[ex.id]; store.saveDay(S.date); store.saveProfile(); S.altPick = null; rr(); tagMuscles(); toast(`📌 ${n} è ora l'esercizio della scheda`); return; }
       if (a === "xa-ai") { if (!AI.ready()) { toast(aiErr({ code: "no_ai" }), 4500); return; }
         const k = "xa:" + ex.id; S.busy[k] = true; rr(); const mu = exMuscles(ex);
         AI.json(`Sei un preparatore atletico. Suggerisci 3 esercizi alternativi a "${ex.name}"${mu ? ` (muscoli principali: ${mu.p.map(x => MNAMES[x]).join(", ")})` : ""} che si trovano in una normale palestra, per gli stessi muscoli e con un movimento simile, utili se l'attrezzo è occupato. Escludi: ${[ex.name, ...(ex.alts || [])].join(", ")}. Nomi brevi in italiano come li scrive un personal trainer. Rispondi solo con JSON: {"alts":["...","...","..."]}`, { tier: "quick" })
           .then(r => { const L = (r && Array.isArray(r.alts) ? r.alts : []).map(x => String(x).trim().slice(0, 60)).filter(Boolean);
-            ex.alts = ex.alts || []; L.forEach(n => { if (!ex.alts.some(y => norm(y) === norm(n)) && norm(n) !== norm(ex.name)) ex.alts.push(n); });
+            ex.alts = ex.alts || []; L.forEach(n => { if (!ex.alts.some(y => norm(y) === norm(n)) && norm(n) !== norm(ex.name)) { ex.alts.push(n); (ex.altOrig = ex.altOrig || {})[norm(n)] = "ai"; } });
             store.saveProfile(); S.busy[k] = false; rr(); tagMuscles(); toast(L.length ? "Alternative aggiunte" : "Nessun suggerimento"); })
           .catch(e => { S.busy[k] = false; rr(); const m = aiErr(e); if (m) toast(m, 4500); });
         return; }
