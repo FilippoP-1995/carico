@@ -1217,7 +1217,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "16.4 · 27 ottobre";
+const APP_VERSION = "16.5 · 28 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -4539,7 +4539,7 @@ function renderLive0() {
         <div class="lv-tools"><span class="lv-meta">${n} serie${ex.reps ? " × " + esc(ex.reps) : ""}${ex.rest ? " · rec. " + esc(ex.rest) + " s (piano)" : ""}${ex.load ? " · " + esc(ex.load) : ""}</span><button class="xa-btn dark ${S.altPick === ex.id ? "on" : ""}" data-act="xa-open" data-ex="${ex.id}">⇄ Cambia esercizio</button>${noteBox(ex.id, true)}${isSkipped(l, ex.id) ? "" : `<button class="xa-btn dark sk" data-act="xa-skip" data-ex="${ex.id}">⏭ Salta</button>`}</div>${altPicker(ex, true)}</div>
       ${isSkipped(l, ex.id) ? `<div class="lv-skipped">⏭ <b>Esercizio saltato oggi</b><span>Non conta nelle serie della seduta.</span><button class="lv-btn" data-act="xa-unskip" data-ex="${ex.id}">↩ Fallo lo stesso</button></div>` : ""}
       ${muscleBlock(exView(ex), true, ex.notes ? `<div class="lv-note in">${esc(ex.notes)}</div>` : "")}
-      ${altNote(ex, "lv-last")}<div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span><button class="lv-tgt" data-act="xa-repedit" data-ex="${ex.id}">obiettivo <b>${esc(t || "–")}</b> rip. ✎</button></div>${repEditor(ex, true)}
+      ${altNote(ex, "lv-last")}<div class="lv-set"><span>Serie <b>${LV.setIdx + 1}</b> di ${n}</span><span class="lv-tgt">obiettivo <b>${esc(t || "–")}</b> rip.</span></div>
       ${lastLine(last, "lv-last", false)}
       ${exDone(l, ex) >= n && LV.feelEx !== ex.id ? feelRow(ex.id, true) : ""}
       <div class="lv-steps">
