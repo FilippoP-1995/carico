@@ -1217,7 +1217,7 @@ const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.6" stro
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const ICON_UP = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>';
 const ICON_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v13M6 12l6 6 6-6"/></svg>';
-const APP_VERSION = "16.6 · 28 ottobre";
+const APP_VERSION = "16.7 · 29 ottobre";
 const IN_CLAUDE = !!(window.claude && window.claude.use);
 
 let toastT;
@@ -1252,7 +1252,7 @@ const store = {
           const local = this.readLocal();
           if (snap.exists) S.profile = Object.assign(EMPTY_PROFILE(), snap.data());
           else if (local.profile) S.profile = Object.assign(EMPTY_PROFILE(), local.profile);
-          daysSnap.docs.forEach(d => { if (d.exists) S.days[d.id] = JSON.parse(JSON.stringify(d.data())); });
+          daysSnap.docs.forEach(d => { if (d.exists) S.days[d.id] = JSON.parse(JSON.stringify(d.data())); }); xnReset();
           return;
         }
       }
@@ -1260,7 +1260,7 @@ const store = {
     this.mode = "local";
     const l = this.readLocal();
     if (l.profile) S.profile = Object.assign(EMPTY_PROFILE(), l.profile);
-    S.days = l.days || {};
+    S.days = l.days || {}; xnReset();
     try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
   },
   readLocal() {
@@ -1288,13 +1288,13 @@ const store = {
     pushSync();
   },
   saveDay(date) {
-    this.writeLocal();
+    xnReset(); this.writeLocal();
     if (this.mode === "cloud") this.queue("day:" + date, () => this.profRef.collection("days").doc(date).set(JSON.parse(JSON.stringify(S.days[date]))));
     if (date === today()) pushSync();
   },
   async replaceAll(profile, days) {
     const oldDays = Object.keys(S.days);
-    S.profile = Object.assign(EMPTY_PROFILE(), profile); S.days = days || {};
+    S.profile = Object.assign(EMPTY_PROFILE(), profile); S.days = days || {}; xnReset();
     this.writeLocal();
     if (this.mode === "cloud") {
       try {
@@ -1718,7 +1718,8 @@ function lastLine(last, cls, withDate) { // "Ultima volta": serie, sensazione (g
   return `<div class="${cls}">Ultima volta${withDate ? ` (${esc(fmtDay(last.date, { day: "numeric", month: "short" }))})` : ""}: ${last.sets.map(s => `${esc(s.kg || "–")}×${esc(s.reps || "–")}`).join(" · ")}${fo ? ` <span class="feel-tag f-${esc(last.feel)}">${fo[1]} ${esc(fo[2])}</span>` : ""}${esc(feelHint(last, true))}</div>`;
 }
 function lastAltOf(ex) { // l'ultima volta che hai fatto questo esercizio della scheda: se era una variante, quale
-  const l0 = peekLog(); if (l0 && l0.altSel && l0.altSel[ex.id]) return null; // oggi stai già facendo una variante
+  const l0 = peekLog(); if (l0 && l0.altSel && l0.altSel[ex.id]) return null; // oggi hai già scelto
+  if (xn(ex) !== ex.name) return null; // oggi parti già dalla variante dell'ultima volta
   const ds = Object.keys(S.days).filter(d => d < S.date).sort().reverse();
   for (const d of ds) { const l = S.days[d]; const e = l && l.w && l.w.ex && l.w.ex[ex.id]; const D = e && (e.s || []).filter(x => x && x.done); if (!D || !D.length) continue;
     const a = l.altSel && l.altSel[ex.id]; return a && a !== ex.name ? { date: d, name: a, sets: D, feel: e.feel || "" } : null; }
@@ -2273,7 +2274,18 @@ function migrateAlts() { // una volta: "Hack squat oppure leg press", "(alt. leg
   W.altsSplit2 = true; return true;
 }
 /* alternative degli esercizi: la scelta vale per il giorno (l.altSel), storico separato per nome */
-const xn = (ex, l) => { l = l || peekLog(); const a = l && l.altSel && l.altSel[ex.id]; return a || ex.name; };
+/* la sostituzione scelta resta anche le volte dopo: se l'ultima volta hai fatto una variante, oggi parti da quella */
+let XN_C = {}; const xnReset = () => { XN_C = {}; };
+function xnCarry(ex, date) {
+  const k = date + "|" + ex.id; if (k in XN_C) return XN_C[k];
+  let r = ""; const ds = Object.keys(S.days).filter(d => d < date).sort().reverse();
+  for (const d of ds) { const l = S.days[d]; const e = l && l.w && l.w.ex && l.w.ex[ex.id]; if (!e || !(e.s || []).some(x => x && x.done)) continue;
+    const a = (l.altSel && l.altSel[ex.id]) || e.name || ""; if (a && norm(a) !== norm(ex.name)) r = (ex.alts || []).find(y => norm(y) === norm(a)) || ""; break; }
+  return (XN_C[k] = r);
+}
+const xn = (ex, l) => { l = l || peekLog(); const a = l && l.altSel && l.altSel[ex.id]; if (a) return a;
+  const e = l && l.w && l.w.ex && l.w.ex[ex.id]; if (e && e.name && (e.s || []).some(x => x && x.done)) return e.name;
+  return xnCarry(ex, (l && l.date) || S.date) || ex.name; };
 function exView(ex) { const n = xn(ex); if (n === ex.name) return ex; const m = (ex.altMus || {})[norm(n)]; const v = { ...ex, name: n, notes: "" }; delete v.muscles; if (m) v.muscles = m; return v; }
 function altPicker(ex, dark) {
   if (S.altPick !== ex.id) return "";
@@ -4026,7 +4038,7 @@ document.addEventListener("click", ev => {
       const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === b.dataset.ex); if (!ex) return; const i = +b.dataset.i;
       const rr = () => { if (!$("#live").hidden) { lvDefaults(); renderLive(); } else render(); };
       if (a === "xa-use") { const l = dayLog(); const n = i < 0 ? ex.name : (ex.alts || [])[i]; l.altSel = l.altSel || {};
-        if (n === ex.name) delete l.altSel[ex.id]; else l.altSel[ex.id] = n;
+        l.altSel[ex.id] = n; // anche tornare all'esercizio della scheda è una scelta esplicita
         const e = l.w.ex[ex.id]; if (e) e.name = xn(ex, l);
         store.saveDay(S.date); S.altPick = null; rr(); toast(n === ex.name ? "Torni all'esercizio della scheda" : `⇄ Oggi fai ${n}`); return; }
       if (a === "xa-del") { const n = (ex.alts || [])[i]; ex.alts.splice(i, 1); if (ex.altOrig && n) delete ex.altOrig[norm(n)]; const l = dayLog(); if (l.altSel && l.altSel[ex.id] === n) { delete l.altSel[ex.id]; store.saveDay(S.date); } store.saveProfile(); rr(); return; }
@@ -4477,7 +4489,7 @@ function lvTick() {
 }
 function lvSummary() {
   const l = peekLog(); const day = lvDay(); let sets = 0, vol = 0; const prs = [];
-  (day.exercises || []).forEach(ex => { const e = l && l.w.ex[ex.id]; if (!e) return; const done = (e.s || []).filter(s => s && s.done); sets += done.length; done.forEach(s => vol += (num(s.kg) || 0) * (num(s.reps) || 0)); const top = Math.max(0, ...done.map(s => num(s.kg) || 0)); const b = bestBefore(xn(ex)); if (top && b && top > b) prs.push(`${ex.name}: ${fmtN(top)} kg (prima ${fmtN(b)})`); });
+  (day.exercises || []).forEach(ex => { const e = l && l.w.ex[ex.id]; if (!e) return; const done = (e.s || []).filter(s => s && s.done); sets += done.length; done.forEach(s => vol += (num(s.kg) || 0) * (num(s.reps) || 0)); const top = Math.max(0, ...done.map(s => num(s.kg) || 0)); const b = bestBefore(xn(ex)); if (top && b && top > b) prs.push(`${xn(ex)}: ${fmtN(top)} kg (prima ${fmtN(b)})`); });
   const mins = l && l.w.start ? Math.max(1, Math.round(((l.w.end || lastSetAt(l, lvDay()) || Date.now()) - l.w.start) / 60000)) : 0;
   return { sets, vol, prs, mins };
 }
@@ -4503,8 +4515,8 @@ function renderLive0() {
       <span class="small" style="color:var(--hero-mut)">Tocca un esercizio per vederlo. Il cronometro parte quando tocchi il tasto.</span></div>`;
   } else if (LV.phase === "exdone" && LV.doneGroup) {
     const gx = LV.doneGroup.map(id => exs.find(x => x.id === id)).filter(Boolean); const nx = exs[LV.exIdx];
-    body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Super serie completata</span><h1>${gx.map(x => esc(x.name)).join(" + ")}</h1>
-      ${gx.map(x => { const sets = ((l.w.ex[x.id] || {}).s || []).filter(y => y && y.done); return `<div class="ss-done"><b>${esc(x.name)}</b><div class="xd-sets">${sets.map(y => `<span>${esc(y.kg || "–")}×${esc(y.reps || "–")}</span>`).join("")}</div>${feelRow(x.id, true)}</div>`; }).join("")}
+    body = `<div class="lv-exdone"><div class="xd-check">✓</div><span class="lv-k">Super serie completata</span><h1>${gx.map(x => esc(xn(x))).join(" + ")}</h1>
+      ${gx.map(x => { const sets = ((l.w.ex[x.id] || {}).s || []).filter(y => y && y.done); return `<div class="ss-done"><b>${esc(xn(x))}</b><div class="xd-sets">${sets.map(y => `<span>${esc(y.kg || "–")}×${esc(y.reps || "–")}</span>`).join("")}</div>${feelRow(x.id, true)}</div>`; }).join("")}
       ${LV.flash ? `<div class="lv-flash">${esc(LV.flash)}</div>` : ""}
       <button class="lv-go xd-next" data-act="lv-nextex"><span>Prossimo esercizio</span><b>${esc(nx ? xn(nx) : "")} →</b></button><div class="lv-row"><button class="lv-btn" data-act="lv-backex">‹ Rivedi l'esercizio</button><button class="lv-btn" data-act="lv-list">📋 Tutti gli esercizi</button></div></div>`;
   } else if (LV.phase === "exdone") {
@@ -4520,7 +4532,7 @@ function renderLive0() {
     const s = lvSummary();
     body = `<div class="lv-done"><div class="lv-emoji">🎉</div><h1>Allenamento completato</h1><p>${esc(day.name)}. Ottimo lavoro, ora recupera bene.</p>
       <div class="lv-stats"><div><b>${s.mins}</b><span>minuti</span></div><div><b>${s.sets}</b><span>serie</span></div><div><b>${s.vol >= 10000 ? fmtN(Math.round(s.vol / 100) / 10) + " t" : fmtI(s.vol)}</b><span>${s.vol >= 10000 ? "sollevate" : "kg sollevati"}</span></div></div>
-      <div class="lv-feels">${exs.filter(x => exDone(l, x) > 0).map(x => `<div class="lf-row"><span>${esc(x.name)}</span>${feelRow(x.id, true).replace('<span>' + ((l.w.ex[x.id] || {}).feel ? "Sensazione:" : "Com'è andata?") + '</span>', "")}</div>`).join("")}</div>
+      <div class="lv-feels">${exs.filter(x => exDone(l, x) > 0).map(x => `<div class="lf-row"><span>${esc(xn(x))}</span>${feelRow(x.id, true).replace('<span>' + ((l.w.ex[x.id] || {}).feel ? "Sensazione:" : "Com'è andata?") + '</span>', "")}</div>`).join("")}</div>
       ${s.prs.length ? `<div class="lv-prs"><span>🏆 Nuovi record</span>${s.prs.map(p => `<div>${esc(p)}</div>`).join("")}</div>` : ""}
       <button class="lv-go" data-act="lv-finish">Salva e chiudi</button>
       <button class="lv-btn" data-act="lv-review" style="width:100%">✏️ Rivedi o modifica le serie</button></div>`;
@@ -5395,7 +5407,7 @@ function registroTxt() { // quello che è DAVVERO registrato nelle sezioni Dieta
     if (ss.length) out.push(sessDetail(t0));
     else if (L0 && L0.rest) out.push("- Oggi l'utente ha segnato RIPOSO (nessun allenamento).");
     else { const pl = hasSched() ? plannedOn(t0) : undefined; out.push("- Nessuna serie registrata oggi" + (pl ? ` (in programma: ${(wDays().find(d => d.id === pl) || {}).name})` : pl === null ? " (giorno di riposo da programma)" : "") + "."); }
-    if (L0 && L0.altSel && Object.keys(L0.altSel).length) out.push("Sostituzioni scelte per oggi: " + Object.entries(L0.altSel).map(([id, n]) => { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === id); return ex ? `${n} al posto di ${ex.name}` : n; }).join(", "));
+    if (L0 && L0.altSel && Object.keys(L0.altSel).length) out.push("Sostituzioni scelte per oggi: " + Object.entries(L0.altSel).filter(([id, n]) => { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === id); return !ex || n !== ex.name; }).map(([id, n]) => { const ex = wDays().flatMap(d => d.exercises || []).find(x => x.id === id); return ex ? `${n} al posto di ${ex.name}` : n; }).join(", "));
     // ultimi giorni di dieta
     const past = Object.keys(S.days).filter(d => d < t0).sort().slice(-6).reverse(); const rows = [];
     past.forEach(d => { S.date = d; const ml = mealLog(); const nE = slots().filter(sl => ml.eaten[sl.key]).length; if (!nE && !ml.extra.length) return; rows.push(`${d}: ${mac(dayTotals())} (${nE}/${slots().length} pasti spuntati)`); });
